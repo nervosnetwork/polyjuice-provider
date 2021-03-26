@@ -2,11 +2,11 @@
 
 a godwoken-compatible http provider for web3.js.
 
-now you can your smart-contract on godwoken with metamask and eth address.
+now you can call your smart-contract on godwoken with metamask and eth address.
 
 ## init web3
 
-before:
+Before:
 
 ```js
 import Web3 from 'web3';
@@ -14,18 +14,18 @@ import Web3 from 'web3';
 var web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
 ```
 
-now:
+Now:
 
 ```js
 import Web3 from 'web3';
-import { PolyjuiceHttpProvider } from './PolyjuiceHttpProvider';
+import PolyjuiceHttpProvider from './PolyjuiceHttpProvider';
 
 var web3 = new Web3(new PolyjuiceHttpProvider('http://localhost:8545', GodwokenOption));
 ```
 
 ## init contract instance
 
-before:
+Before:
 
 ```js
 import Web3 from 'web3';
@@ -36,11 +36,11 @@ var web3 = new Web3(provider);
 var contract = web3.eth.Contract(abi, contract_address);
 ```
 
-now:
+Now:
 
 ```js
 import Web3 from 'web3';
-import { PolyjuiceHttpProvider } from './PolyjuiceHttpProvider';
+import PolyjuiceHttpProvider from './PolyjuiceHttpProvider';
 
 var provider = new PolyjuiceHttpProvider('http://localhost:8545', GodwokenOption);
 var web3 = new Web3(provider);
