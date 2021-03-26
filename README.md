@@ -1,0 +1,53 @@
+# Polyjuice Http Provider
+
+a godwoken-compatible http provider for web3.js.
+
+now you can your smart-contract on godwoken with metamask and eth address.
+
+## init web3
+
+before:
+
+```js
+import Web3 from 'web3';
+
+var web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+```
+
+now:
+
+```js
+import Web3 from 'web3';
+import { PolyjuiceHttpProvider } from './PolyjuiceHttpProvider';
+
+var web3 = new Web3(new PolyjuiceHttpProvider('http://localhost:8545', GodwokenOption));
+```
+
+## init contract instance
+
+before:
+
+```js
+import Web3 from 'web3';
+
+var provider = new Web3.providers.HttpProvider('http://localhost:8545');
+var web3 = new Web3(provider);
+
+var contract = web3.eth.Contract(abi, contract_address);
+```
+
+now:
+
+```js
+import Web3 from 'web3';
+import { PolyjuiceHttpProvider } from './PolyjuiceHttpProvider';
+
+var provider = new PolyjuiceHttpProvider('http://localhost:8545', GodwokenOption);
+var web3 = new Web3(provider);
+
+var contract = web3.eth.Contract(abi, provider.encodeContractAddr(godwoken_account_id));
+```
+
+for ```GodwokenOption```: see [here](/src/util.ts#L30-L36).
+
+basically, PolyjuiceHttpProvider is just a extended class of [[web3-providers-http](https://github.com/ChainSafe/web3.js/tree/1.x/packages/web3-providers-http)]
