@@ -3,12 +3,10 @@ import '@babel/polyfill';
 import { Script, Hash, utils, HexNumber, HexString } from "@ckb-lumos/base";
 
 import { GodwokenUtils, RawL2Transaction, L2Transaction } from "./godwoken";
-import { SerializeL2Transaction } from "./godwoken/schemas";
+import { SerializeL2Transaction, Uint32 } from "./godwoken/schemas";
 import { NormalizeL2Transaction} from "./godwoken/normalizer";
 
 import { Reader } from "ckb-js-toolkit";
-import createKeccakHash from "keccak";
-//import keccak256 from "keccak256";
 
 const jaysonBrowserClient = require('jayson/lib/client/browser');
 
@@ -140,8 +138,8 @@ export class Godwoker {
     }
 
     async extractTo (address: HexString) {
-      if(address.slice(2).substring(0, 32) === '0'.repeat(32) ) { // contract address, encoded with our simple method: see encodeContractAddr
-        return this.decodeContractAddr(address);
+      if(address.slice(2).substring(8, 40) === '0'.repeat(32) ) { // contract address, encoded with polyuice method: see accountIdToEthAddr and ethAddrToAccountId 
+        return this.ethAddrToAccountId(address);
       }
 
       // account address, fetch id from rpc
@@ -149,39 +147,44 @@ export class Godwoker {
       return account_id;
     }
 
-    encodeContractAddr (account_id: HexNumber) {
-      if( BigInt(account_id) > BigInt('0x'+'f'.repeat(8)) ) throw Error(`the max account id is 0xfffffffff, received ${account_id}`);
+    /* 
+       polyjuice account_id vs eth_address convert rule.
+       see: https://github.com/nervosnetwork/godwoken-polyjuice/blob/v0.1.4/polyjuice-tests/src/helper.rs#L70-L88
+    */
+    accountIdToEthAddr (_id: HexNumber, _ethabi?: boolean): HexString{
+      const ethabi = _ethabi === true ? _ethabi : false;
+      const offset = ethabi ? 12 : 0;
+      var data = new Uint8Array(offset + 20);
+      const id_u32 = new Uint32(this.numberToArrayBuffer(parseInt(_id, 16), 4))
+      var id = Buffer.from(this.numberToArrayBuffer(id_u32.toLittleEndianUint32(), 4));
 
-      // encode rule: 
-      //  1. total fixed-length 42 (20 bytes) start with '0x'
-      //  2. last 8 length is the HexNumber of account_id
-      //  3. first 32 after '0x' is all zero
-      const tail = ( '0'.repeat(10) + account_id.slice(2) ).slice(-8);
-      const head = '0'.repeat(32);
-      return this.toChecksumAddress('0x' + head + tail);
+      data[offset] = id[0];
+      data[offset+1] = id[1];
+      data[offset+2] = id[2];
+      data[offset+3] = id[3];       
+      
+      return '0x' + Buffer.from(data).toString('hex');
     }
 
-    decodeContractAddr (address: HexString) {
-        return '0x' + BigInt(address).toString(16);
+    ethAddrToAccountId (_address: HexString): HexNumber {
+      const address = Buffer.from(_address.slice(2), "hex");
+      if( address.byteLength !== 20 )
+        throw new Error(`Invalid eth address length: ${address.byteLength}`);
+      if( !address.slice(4, 20).equals(Buffer.from(Array(16).fill(0))) ) 
+        throw new Error(`Invalid eth address data: ${JSON.stringify(address.slice(4,20))}, ${JSON.stringify(Buffer.from(Array(16).fill(0)))}`);
+
+      const _id = new Uint32(this.numberToArrayBuffer(parseInt(address.slice(0, 4).toString('hex'), 16), 4)).toLittleEndianUint32();
+      const id = Buffer.from(this.numberToArrayBuffer(_id, 4));
+      return '0x' + parseInt(id.toString('hex'), 16).toString(16);
     }
 
-    // make a hexString meets the requirement of eth address checksum
-    // copy from https://github.com/ethereum/EIPs/blob/master/EIPS/eip-55.md
-    toChecksumAddress (address: HexString) {
-      address = address.toLowerCase().replace('0x', '')
-      var hash = createKeccakHash('keccak256').update(address).digest('hex');
-      //var hash = keccak256(address).toString("hex")
-      var ret = '0x'
-    
-      for (var i = 0; i < address.length; i++) {
-        if (parseInt(hash[i], 16) >= 8) {
-          ret += address[i].toUpperCase()
-        } else {
-          ret += address[i]
-        }
+    numberToArrayBuffer(value: number, length: number) {
+      const view = new DataView(new ArrayBuffer(length))
+      for (var index = length - 1; index >= 0; --index) {
+        view.setUint8(index, value % 256)
+        value = value >> 8;
       }
-    
-      return ret
+      return view.buffer;
     }
 
     encodeArgs(args: L2TransactionArgs) {

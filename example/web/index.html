@@ -27,10 +27,11 @@
             const p = new PolyjuiceHttpProvider(godwoken_rpc_url, provider_config);
             const web3 = new Web3(p);
             
-            console.log(`// deploy the-simple-storage-contract to your local godwoken node before you try testing.`);
-            console.log(`// see: https://github.com/nervosnetwork/godwoken-examples/tree/9dbd0cb2f942de4127cf7ec7f98c2b4707ed4e73/packages/tools/sample-contracts`);
+            console.log(`Hey, welcome to our example dapp on polyjuice!`);
+            console.log(`deploy the-simple-storage-contract to your local godwoken node before you try testing.`);
+            console.log(`see: https://github.com/nervosnetwork/godwoken-examples/tree/9dbd0cb2f942de4127cf7ec7f98c2b4707ed4e73/packages/tools/sample-contracts`);
             
-            const simplestorage = new web3.eth.Contract( SimpleContract.abi, p.encodeContractAddr(SimpleContract.account_id) );
+            const simplestorage = new web3.eth.Contract( SimpleContract.abi, SimpleContract.address );
 
             function get() {
                 simplestorage.methods.get().call();
@@ -42,6 +43,11 @@
                   gas: 5000000,
                   value: '0'
                 });
+            }
+
+            // connect account
+            if(window.ethereum){
+                ethereum.request({ method: 'eth_requestAccounts' });
             }
         </script>
 

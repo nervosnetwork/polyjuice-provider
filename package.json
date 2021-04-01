@@ -5,8 +5,10 @@
   "license": "MIT",
   "scripts": {
     "clean": "rimraf lib/*",
-    "build": "yarn run clean && webpack --config=webpack.prod.config.js",
-    "test": "cp lib/polyjuice_provider.min.js tests/web/static/js/ && node tests/web/server.js"
+    "build": "yarn run clean && webpack --config=webpack.browser.config.js",
+    "build:node": "webpack --config=webpack.node.config.js",
+    "example": "cp lib/polyjuice_provider.min.js example/web/static/js/ && node example/web/server.js",
+    "test": "yarn run build:node && ava"
   },
   "devDependencies": {
     "@babel/cli": "^7.13.10",
@@ -16,6 +18,7 @@
     "@babel/preset-react": "^7.12.13",
     "@babel/preset-typescript": "^7.13.0",
     "@types/node": "^14.14.34",
+    "ava": "^3.15.0",
     "babel-loader": "^8.2.2",
     "babel-plugin-transform-runtime": "^6.23.0",
     "browserify": "^17.0.0",
@@ -42,6 +45,8 @@
     "@babel/polyfill": "^7.12.1",
     "@ckb-lumos/base": "^0.16.0",
     "buffer": "^6.0.3",
+    "ckb-js-toolkit": "^0.10.2",
+    "encoding": "^0.1.13",
     "jayson": "^3.4.4",
     "keccak": "^3.0.1",
     "keccak256": "^1.0.2",

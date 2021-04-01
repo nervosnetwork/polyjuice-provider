@@ -45,9 +45,41 @@ import PolyjuiceHttpProvider from './PolyjuiceHttpProvider';
 var provider = new PolyjuiceHttpProvider('http://localhost:8545', GodwokenOption);
 var web3 = new Web3(provider);
 
-var contract = web3.eth.Contract(abi, provider.encodeContractAddr(godwoken_account_id));
+var contract = web3.eth.Contract(abi, contract_address);
 ```
 
 for ```GodwokenOption```: see [here](/src/util.ts#L30-L36).
 
 basically, PolyjuiceHttpProvider is just a extended class of [[web3-providers-http](https://github.com/ChainSafe/web3.js/tree/1.x/packages/web3-providers-http)]
+
+## getting started
+
+```sh
+    git clone https://github.com/RetricSu/polyjuice-providers-http.git
+    cd polyjuice-providers-http
+    yarn 
+```
+
+build browser version:
+
+```sh
+    yarn build
+```
+
+build node version:
+
+```sh
+    yarn build:node
+```
+
+test:
+
+```sh
+    yarn test
+```
+
+## start a minimal dapp example
+
+```sh
+    yarn example
+```
