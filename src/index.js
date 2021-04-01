@@ -85,15 +85,6 @@ class PolyjuiceHttpProvider extends HttpProvider {
                }
         } 
     }
-
-    // convert polyjuice-contract-account-id to ethAddress-compaitable string
-    // eg: 
-    //    ```
-    //        const contractInstance = new web3.eth.Contract(abi, <used in here...>);
-    //    ```
-    encodeContractAddr (account_id) {
-        return this.godwoker.encodeContractAddr(account_id);
-    }
 }
 
 module.exports = PolyjuiceHttpProvider
