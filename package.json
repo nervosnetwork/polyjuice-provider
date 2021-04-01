@@ -8,7 +8,7 @@
     "build": "yarn run clean && webpack --config=webpack.browser.config.js",
     "build:node": "webpack --config=webpack.node.config.js",
     "example": "cp lib/polyjuice_provider.min.js example/web/static/js/ && node example/web/server.js",
-    "test": "yarn run build:node && ava"
+    "test": "ava"
   },
   "devDependencies": {
     "@types/node": "^14.14.37",
