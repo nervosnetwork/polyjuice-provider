@@ -9,7 +9,7 @@ const {
   NormalizeRawWithdrawalRequest,
 } = require("./normalizer");
 const normalizer = require("./normalizer");
-const core = require("./schemas");
+const core = require("./schemas/godwoken");
 
 function numberToUInt32LE(value) {
   const buf = Buffer.alloc(4);
@@ -59,43 +59,61 @@ class Godwoken {
     return await method(data);
   }
 
+  async ping() {
+    return await this.rpc.ping();
+  }
+
+  async getTipBlockHash() {
+    return await this.rpc.get_tip_block_hash();
+  }
+
+  async getBlockHash(block_number) {
+    return await this.rpc.get_block_hash(block_number);
+    
+  }
+
+  async getBlock(block_hash) {
+    return await this.rpc.get_block(block_hash);
+  }
+
+  async getBlockByNumber(block_number) {
+    return await this.rpc.get_block_by_number(block_number);
+  }
+
   async executeL2Transaction(l2tx) {
-    return this._send(l2tx, this.rpc.gw_executeL2Tranaction);
+    return this._send(l2tx, this.rpc.execute_l2transaction);
   }
   async submitL2Transaction(l2tx) {
-    return this._send(l2tx, this.rpc.gw_submitL2Transaction);
+    return this._send(l2tx, this.rpc.submit_l2transaction);
   }
   async submitWithdrawalRequest(request) {
     const data = new Reader(
       core.SerializeWithdrawalRequest(NormalizeWithdrawalRequest(request))
     ).serializeJson();
-    return await this.rpc.gw_submitWithdrawalRequest(data);
+    return await this.rpc.submit_withdrawal_request(data);
   }
   async getBalance(sudt_id, account_id) {
     // TODO: maybe swap params later?
-    const hex = await this.rpc.gw_getBalance(account_id, sudt_id);
+    const hex = await this.rpc.get_balance(account_id, sudt_id);
     return BigInt(hex);
   }
   async getStorageAt(account_id, key) {
-    return await this.rpc.gw_getStorageAt(account_id, key);
+    return await this.rpc.get_storage_at(account_id, key);
   }
   async getAccountIdByScriptHash(script_hash) {
-    return await this.rpc.gw_getAccountIdByScriptHash(script_hash);
+    return await this.rpc.get_account_id_by_script_hash(script_hash);
   }
   async getNonce(account_id) {
-    return await this.rpc.gw_getNonce(account_id);
+    return await this.rpc.get_nonce(account_id);
   }
   async getScript(script_hash) {
-    return await this.rpc.gw_getScript(script_hash);
+    return await this.rpc.get_script(script_hash);
   }
   async getScriptHash(account_id) {
-    return await this.rpc.gw_getScriptHash(account_id);
+    return await this.rpc.get_script_hash(account_id);
   }
   async getData(data_hash) {
-    return await this.rpc.gw_getData(data_hash);
-  }
-  async hasDataHash(data_hash) {
-    return await this.rpc.gw_getDataHash(data_hash);
+    return await this.rpc.get_data(data_hash);
   }
 }
 

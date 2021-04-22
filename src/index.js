@@ -29,6 +29,8 @@ class PolyjuiceHttpProvider extends HttpProvider {
                         data: data || '',
                         gas: gas 
                     }
+                    // todo: use real gas later instead of hard-code one
+                    
                     const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
                     const message = this.godwoker.generateTransactionMessageToSign(polyjuice_tx);
                     const signature = await window.ethereum.request({

@@ -3,7 +3,7 @@ import '@babel/polyfill';
 import { Script, Hash, utils, HexNumber, HexString } from "@ckb-lumos/base";
 
 import { GodwokenUtils, RawL2Transaction, L2Transaction } from "./godwoken";
-import { SerializeL2Transaction, Uint32 } from "./godwoken/schemas";
+import { SerializeL2Transaction, Uint32 } from "./godwoken/schemas/godwoken";
 import { NormalizeL2Transaction} from "./godwoken/normalizer";
 
 import { Reader } from "ckb-js-toolkit";
@@ -187,32 +187,40 @@ export class Godwoker {
       return view.buffer;
     }
 
-    encodeArgs(args: L2TransactionArgs) {
-        const {to_id, value, data}  = args;
-        const call_kind = to_id > 0 ? 0 : 3;
-        const data_buf = Buffer.from(data.slice(2), "hex");
-
-        const value_buf = Buffer.alloc(32);
-        value_buf.writeBigUInt64BE(value & BigInt("0xFFFFFFFFFFFFFFFF"), 24);
-        value_buf.writeBigUInt64BE(value >> BigInt(64), 16);
-      
-        const data_size_buf = Buffer.alloc(4);
-        data_size_buf.writeUInt32LE(data_buf.length, 0);
-        const total_size = 40 + data_buf.length;
-      
-        const buf = Buffer.alloc(total_size);
-      
-        // depth = 0
-        buf[0] = 0;
-        buf[1] = 0;
-        // call kind
-        buf[2] = call_kind;
-        // not static call
-        buf[3] = 0;
-        value_buf.copy(buf, 4);
-        data_size_buf.copy(buf, 36);
-        data_buf.copy(buf, 40);
-        return `0x${buf.toString("hex")}`;
+    // {gas_limit: u64, gas_price: u128, value: u128}
+    encodeArgs( args: L2TransactionArgs) {
+      const {to_id, value, data}  = args;
+      const gas_limit = 5000n; // todo remove: hard-code
+      const gas_price = 50n; // todo remove: hard-code
+      const call_kind = to_id > 0 ? 0 : 3;
+      const data_buf = Buffer.from(data.slice(2), "hex");
+    
+      const gas_limit_buf = Buffer.alloc(8);
+      gas_limit_buf.writeBigUInt64LE(gas_limit);
+    
+      const gas_price_buf = Buffer.alloc(16);
+      gas_price_buf.writeBigUInt64LE(gas_price & BigInt("0xFFFFFFFFFFFFFFFF"), 0);
+      gas_price_buf.writeBigUInt64LE(gas_price >> BigInt(64), 8);
+    
+      const value_buf = Buffer.alloc(32);
+      value_buf.writeBigUInt64BE(value & BigInt("0xFFFFFFFFFFFFFFFF"), 24);
+      value_buf.writeBigUInt64BE(value >> BigInt(64), 16);
+    
+      const data_size_buf = Buffer.alloc(4);
+      data_size_buf.writeUInt32LE(data_buf.length);
+      const total_size = 62 + data_buf.length;
+    
+      const buf = Buffer.alloc(total_size);
+    
+      buf[0] = call_kind;
+      // not static call
+      buf[1] = 0;
+      gas_limit_buf.copy(buf, 2);
+      gas_price_buf.copy(buf, 10);
+      value_buf.copy(buf, 26);
+      data_size_buf.copy(buf, 58);
+      data_buf.copy(buf, 62);
+      return `0x${buf.toString("hex")}`;
     }
     
 }
