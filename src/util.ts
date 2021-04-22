@@ -65,7 +65,7 @@ export class Godwoker {
         }
         const lock_hash = utils.computeScriptHash(layer2_lock);
         return new Promise(resolve => {
-            this.client.request("gw_getAccountIdByScriptHash", [lock_hash], (err: any, res: any) => {
+            this.client.request("eth_gw_getAccountIdByScriptHash", [lock_hash], (err: any, res: any) => {
                 if(err) throw err;
                 if(res.result === undefined || res.result === null) throw Error(`unable to fetch account id from ${eth_address}, lock_hash is ${lock_hash}`);
                 resolve(res.result);
@@ -75,7 +75,7 @@ export class Godwoker {
 
     async getNonce (account_id: number): Promise<string> {
       return new Promise(resolve => {
-          this.client.request("gw_getNonce", [account_id], (err: any, res: any) => {
+          this.client.request("eth_gw_getNonce", [account_id], (err: any, res: any) => {
               if(err) throw err;
               if(res.result === undefined || res.result === null) throw Error(`unable to fetch nonce, account_id:${account_id}, ${JSON.stringify(res)}`);
               resolve(res.result);
@@ -117,7 +117,7 @@ export class Godwoker {
       const l2_tx = {raw: raw_tx, signature: signature};
       const serialize_tx = this.serializeL2Transaction(l2_tx); 
       return new Promise(resolve => {
-        this.client.request("gw_executeL2Tranaction", [serialize_tx], (err: any, res: any) => {
+        this.client.request("eth_gw_executeL2Tranaction", [serialize_tx], (err: any, res: any) => {
             if(err) throw err;
             if(res.result === undefined || res.result === null) throw Error(`failed to send gw_executeL2Tranaction rpc, ${JSON.stringify(res)}`);
             resolve(res.result);
@@ -129,7 +129,7 @@ export class Godwoker {
       const l2_tx = {raw: raw_tx, signature: signature};
       const serialize_tx = this.serializeL2Transaction(l2_tx); 
       return new Promise(resolve => {
-        this.client.request("gw_submitL2Transaction", [serialize_tx], (err: any, res: any) => {
+        this.client.request("eth_gw_submitL2Transaction", [serialize_tx], (err: any, res: any) => {
             if(err) throw err;
             if(res.result === undefined || res.result === null) throw Error(`failed to send gw_submitL2Transaction rpc, ${JSON.stringify(res)}`);
             resolve(res.result);
