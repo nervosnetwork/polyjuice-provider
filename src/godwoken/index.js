@@ -69,7 +69,6 @@ class Godwoken {
 
   async getBlockHash(block_number) {
     return await this.rpc.get_block_hash(block_number);
-    
   }
 
   async getBlock(block_hash) {
