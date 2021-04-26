@@ -82,7 +82,9 @@ class PolyjuiceHttpProvider extends HttpProvider {
                         params: [message, window.ethereum.selectedAddress],
                     });
                     const signature = this.godwoker.packSignature(_signature);
-                    const run_result = await this.godwoker.gw_submitL2Transaction(polyjuice_tx, signature);
+                    const tx_hash = await this.godwoker.gw_submitL2Transaction(polyjuice_tx, signature);
+                    await this.godwoker.waitForTransactionReceipt(tx_hash);
+                    const run_result = await this.godwoker.gw_getTransactionReceipt(tx_hash);
                     console.log(`runResult: ${JSON.stringify(run_result, null, 2)}`);
                     break;
                 } catch (error) {

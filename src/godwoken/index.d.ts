@@ -124,6 +124,10 @@ export interface L2Block {
   hash: Hash,
 }
 
+export interface TxReceipt {
+  logs: []
+}
+
 export enum Status {
   Running = "running",
   Halting = "halting",
@@ -147,6 +151,7 @@ export declare class Godwoken {
   getScript(script_hash: Hash): Promise<Script>;
   getScriptHash(account_id: Uint32): Promise<Hash>;
   getData(data_hash: Hash): Promise<HexString>;
+  getTransactionReceipt(tx_hash: Hash): Promise<TxReceipt>
 }
 
 export declare class GodwokenUtils {

@@ -72,7 +72,6 @@ export class Godwoker {
         hash_type: this.eth_account_lock.hash_type as "type" | "data",
         args:  this.rollup_type_hash + eth_address.slice(2)
       }
-      console.log(layer2_lock);
       const lock_hash = utils.computeScriptHash(layer2_lock); 
       return lock_hash;
     }
@@ -94,7 +93,6 @@ export class Godwoker {
             args:  this.rollup_type_hash + eth_address.slice(2)
         }
         const lock_hash = utils.computeScriptHash(layer2_lock);
-        console.log(lock_hash);
         return new Promise(resolve => {
             this.client.request("eth_gw_getAccountIdByScriptHash", [lock_hash], (err: any, res: any) => {
                 if(err) throw err;
@@ -168,6 +166,35 @@ export class Godwoker {
             resolve(res.result);
         });
       }) 
+    }
+
+    async gw_getTransactionReceipt (tx_hash: Hash) {
+      return new Promise(resolve => {
+        this.client.request("eth_gw_getTransactionReceipt", [tx_hash], (err: any, res: any) => {
+            if(err) throw err;
+            //if(res.result === undefined || res.result === null) throw Error(`failed to send gw_getTransactionReceipt rpc, ${JSON.stringify(res)}`);
+            resolve(res.result);
+        });
+      }) 
+    }
+
+    async waitForTransactionReceipt(tx_hash: Hash){
+      while (true) {
+        await this.asyncSleep(3000);
+        const tx_receipt = await this.gw_getTransactionReceipt(
+          tx_hash
+        );
+        console.log(`keep waitting for tx_receipt: ${JSON.stringify(tx_receipt)}`);
+  
+        if (tx_receipt) {
+          break;
+        }
+      }
+      return;
+    }
+
+    asyncSleep(ms = 0) {
+      return new Promise((r) => setTimeout(r, ms));
     }
 
     async extractTo (address: HexString) {
