@@ -6,7 +6,7 @@ export type Uint128 = bigint;
 export type Uint256 = bigint;
 
 import { HexNumber, HexString, Hash, Script } from "@ckb-lumos/base";
-import * as core from "./schemas/godwoken";
+import * as core from "./schemas";
 import * as normalizer from "./normalizer";
 // import { L2Block } from "./schemas/godwoken";
 export { core, normalizer };
@@ -151,7 +151,12 @@ export declare class Godwoken {
 
 export declare class GodwokenUtils {
   constructor(rollup_type_hash: Hash);
-  generateTransactionMessageToSign(raw_l2tx: RawL2Transaction): Hash;
+  generateTransactionMessageToSign(
+    raw_l2tx: RawL2Transaction,
+    sender_script_hash: string,
+    receiver_script_hash: string,
+    add_prefix?: boolean,
+  ): Hash;
   generateWithdrawalMessageToSign(
     raw_request: RawWithdrawalRequest
   ): Hash;

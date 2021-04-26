@@ -41,5 +41,8 @@ module.exports = {
       new webpack.ProvidePlugin({
         transformruntime: 'process/browser',
       })
-  ]
+  ],
+  optimization: {
+    minimize: false
+  },
 };

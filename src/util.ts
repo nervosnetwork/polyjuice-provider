@@ -3,7 +3,7 @@ import '@babel/polyfill';
 import { Script, Hash, utils, HexNumber, HexString } from "@ckb-lumos/base";
 
 import { GodwokenUtils, RawL2Transaction, L2Transaction } from "./godwoken";
-import { SerializeL2Transaction, Uint32 } from "./godwoken/schemas/godwoken";
+import { SerializeL2Transaction, Uint32 } from "./godwoken/schemas";
 import { NormalizeL2Transaction} from "./godwoken/normalizer";
 
 import { Reader } from "ckb-js-toolkit";
@@ -28,13 +28,14 @@ export type L2TransactionArgs = {
 export type GodwokerOption = {
   godwoken: {
     rollup_type_hash: Hash
-    layer2_lock: Omit<Script, 'args'>
+    eth_account_lock: Omit<Script, 'args'> 
   }
   request_option?: object
 }
 
 export class Godwoker {
-    private layer2_lock: Omit<Script, 'args'>;
+    private eth_account_lock: Omit<Script, 'args'>;
+    private rollup_type_hash: string;
     private client: any;
     private godwkenUtils: GodwokenUtils;
 
@@ -54,16 +55,46 @@ export class Godwoker {
         };
         this.client = jaysonBrowserClient(callServer);
         this.godwkenUtils = new GodwokenUtils(option.godwoken.rollup_type_hash);
-        this.layer2_lock = option.godwoken.layer2_lock
+        this.eth_account_lock = option.godwoken.eth_account_lock;
+        this.rollup_type_hash = option.godwoken.rollup_type_hash;
+    }
+
+    packSignature(_signature: Hash): Hash{
+      let v = Number.parseInt(_signature.slice(-2), 16);
+      if (v >= 27) v -= 27;
+      const signature = _signature.slice(0, -2) + v.toString(16).padStart(2, "0");
+      return signature;
+    }
+
+    getScriptHashByEthAddress(eth_address: string): string{
+      const layer2_lock: Script = {
+        code_hash: this.eth_account_lock.code_hash,
+        hash_type: this.eth_account_lock.hash_type as "type" | "data",
+        args:  this.rollup_type_hash + eth_address.slice(2)
+      }
+      console.log(layer2_lock);
+      const lock_hash = utils.computeScriptHash(layer2_lock); 
+      return lock_hash;
+    }
+
+    async getScriptHashByAccountId(account_id: number): Promise<string>{
+      return new Promise(resolve => {
+        this.client.request("eth_gw_getScriptHashByAccountId", [`${account_id.toString(16)}`], (err: any, res: any) => {
+            if(err) throw err;
+            if(res.result === undefined || res.result === null) throw Error(`unable to fetch account script hash from ${account_id}`);
+            resolve(res.result);
+        });
+      })
     }
 
     async getAccountId (eth_address: string): Promise<string> {
         const layer2_lock: Script = {
-            code_hash: this.layer2_lock.code_hash,
-            hash_type: this.layer2_lock.hash_type,
-            args: eth_address
+            code_hash: this.eth_account_lock.code_hash,
+            hash_type: this.eth_account_lock.hash_type as "type" | "data",
+            args:  this.rollup_type_hash + eth_address.slice(2)
         }
         const lock_hash = utils.computeScriptHash(layer2_lock);
+        console.log(lock_hash);
         return new Promise(resolve => {
             this.client.request("eth_gw_getAccountIdByScriptHash", [lock_hash], (err: any, res: any) => {
                 if(err) throw err;
@@ -75,7 +106,7 @@ export class Godwoker {
 
     async getNonce (account_id: number): Promise<string> {
       return new Promise(resolve => {
-          this.client.request("eth_gw_getNonce", [account_id], (err: any, res: any) => {
+          this.client.request("eth_gw_getNonce", [`0x${account_id.toString(16)}`], (err: any, res: any) => {
               if(err) throw err;
               if(res.result === undefined || res.result === null) throw Error(`unable to fetch nonce, account_id:${account_id}, ${JSON.stringify(res)}`);
               resolve(res.result);
@@ -102,8 +133,9 @@ export class Godwoker {
         return tx;
     }
 
-    generateTransactionMessageToSign (tx: RawL2Transaction) {
-      return this.godwkenUtils.generateTransactionMessageToSign(tx);
+    generateTransactionMessageToSign (tx: RawL2Transaction, sender_script_hash: string, receiver_script_hash: string) {
+      const add_prefix_in_signing_message = false;
+      return this.godwkenUtils.generateTransactionMessageToSign(tx, sender_script_hash, receiver_script_hash, add_prefix_in_signing_message);
     }
 
     serializeL2Transaction (tx: L2Transaction) {
@@ -115,6 +147,7 @@ export class Godwoker {
 
     async gw_executeL2Tranaction (raw_tx: RawL2Transaction, signature: HexString) {
       const l2_tx = {raw: raw_tx, signature: signature};
+      console.log(JSON.stringify(l2_tx, null, 2));
       const serialize_tx = this.serializeL2Transaction(l2_tx); 
       return new Promise(resolve => {
         this.client.request("eth_gw_executeL2Tranaction", [serialize_tx], (err: any, res: any) => {
@@ -190,7 +223,7 @@ export class Godwoker {
     // {gas_limit: u64, gas_price: u128, value: u128}
     encodeArgs( args: L2TransactionArgs) {
       const {to_id, value, data}  = args;
-      const gas_limit = 5000n; // todo remove: hard-code
+      const gas_limit = 21000000n; // todo remove: hard-code
       const gas_price = 50n; // todo remove: hard-code
       const call_kind = to_id > 0 ? 0 : 3;
       const data_buf = Buffer.from(data.slice(2), "hex");

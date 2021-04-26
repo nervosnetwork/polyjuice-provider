@@ -14,13 +14,17 @@
 
         <script>
             // init provider and web3
-            const godwoken_rpc_url = 'http://127.0.0.1:8119';
+            const godwoken_rpc_url = 'http://localhost:8024';
             const provider_config =  {
                 godwoken: {
-                    rollup_type_hash: "0x0cafffe5a6049ee107a3c9f83c68984806028b4cf196d841739ba92e31e5288f",
+                    rollup_type_hash: "0xf70aa98a96fba847185be1b58c1d1e3cae7ad91f971eecc5749799d5e72939f0",
                     layer2_lock: {
                         code_hash: "0x0000000000000000000000000000000000000000000000000000000000000001",
                         hash_type: "data"
+                    },
+                    eth_account_lock: {
+                        code_hash: "0xeeb39042bd7a1907e35823438db35f0a67fd495464abd0d183220e1ee8dda009",
+                        hash_type: "type"
                     }
                 }
             }
@@ -34,7 +38,7 @@
             const simplestorage = new web3.eth.Contract( SimpleContract.abi, SimpleContract.address );
 
             function get() {
-                simplestorage.methods.get().call();
+                simplestorage.methods.get().call({from: ethereum.selectedAddress});
             }
 
             function set() {

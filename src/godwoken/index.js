@@ -9,7 +9,7 @@ const {
   NormalizeRawWithdrawalRequest,
 } = require("./normalizer");
 const normalizer = require("./normalizer");
-const core = require("./schemas/godwoken");
+const core = require("./schemas");
 
 function numberToUInt32LE(value) {
   const buf = Buffer.alloc(4);
@@ -69,6 +69,7 @@ class Godwoken {
 
   async getBlockHash(block_number) {
     return await this.rpc.get_block_hash(block_number);
+    
   }
 
   async getBlock(block_hash) {
@@ -93,7 +94,8 @@ class Godwoken {
   }
   async getBalance(sudt_id, account_id) {
     // TODO: maybe swap params later?
-    const hex = await this.rpc.get_balance(account_id, sudt_id);
+    console.log('0x'+account_id.toString(16), '0x'+sudt_id.toString(16));
+    const hex = await this.rpc.get_balance('0x'+account_id.toString(16), '0x'+sudt_id.toString(16));
     return BigInt(hex);
   }
   async getStorageAt(account_id, key) {
@@ -103,13 +105,14 @@ class Godwoken {
     return await this.rpc.get_account_id_by_script_hash(script_hash);
   }
   async getNonce(account_id) {
-    return await this.rpc.get_nonce(account_id);
+    console.log(account_id.toString(16))
+    return await this.rpc.get_nonce('0x'+account_id.toString(16));
   }
   async getScript(script_hash) {
     return await this.rpc.get_script(script_hash);
   }
   async getScriptHash(account_id) {
-    return await this.rpc.get_script_hash(account_id);
+    return await this.rpc.get_script_hash('0x'+account_id.toString(16));
   }
   async getData(data_hash) {
     return await this.rpc.get_data(data_hash);
@@ -121,15 +124,27 @@ class GodwokenUtils {
     this.rollup_type_hash = rollup_type_hash;
   }
 
-  generateTransactionMessageToSign(raw_l2tx) {
+  generateTransactionMessageToSign(raw_l2tx, _sender_scirpt_hash, _receiver_script_hash, add_prefix = true) {
     const raw_tx_data = core.SerializeRawL2Transaction(
       NormalizeRawL2Transaction(raw_l2tx)
     );
     const rollup_type_hash = Buffer.from(this.rollup_type_hash.slice(2), "hex");
+    const sender_scirpt_hash = Buffer.from(_sender_scirpt_hash.slice(2), "hex"); 
+    const receiver_script_hash = Buffer.from(_receiver_script_hash.slice(2), "hex");
+
     const data = toArrayBuffer(
-      Buffer.concat([rollup_type_hash, toBuffer(raw_tx_data)])
+      Buffer.concat([rollup_type_hash, sender_scirpt_hash, receiver_script_hash, toBuffer(raw_tx_data)])
     );
     const message = utils.ckbHash(data).serializeJson();
+    
+    if(add_prefix === false){ 
+      // do not add `\x19Ethereum Signed Message:\n32` prefix when generating message
+      // set true when you want to pass message for metamask signing, 
+      // metamask will add this automattically.
+      
+      return message;
+    }
+
     const prefix_buf = Buffer.from(`\x19Ethereum Signed Message:\n32`);
     const buf = Buffer.concat([
       prefix_buf,

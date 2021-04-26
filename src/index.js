@@ -31,12 +31,21 @@ class PolyjuiceHttpProvider extends HttpProvider {
                     }
                     // todo: use real gas later instead of hard-code one
                     
+                    const sender_script_hash = this.godwoker.getScriptHashByEthAddress(from);
+                    const to_id = this.godwoker.ethAddrToAccountId(to);
+                    const receiver_script_hash = await this.godwoker.getScriptHashByAccountId(to_id);
+                    console.log(`receiver_hash: ${receiver_script_hash}`);
+
                     const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
-                    const message = this.godwoker.generateTransactionMessageToSign(polyjuice_tx);
-                    const signature = await window.ethereum.request({
+                    const message = this.godwoker.generateTransactionMessageToSign(polyjuice_tx, sender_script_hash, receiver_script_hash);
+                    console.log(message); 
+                    const _signature = await window.ethereum.request({
                         method: 'personal_sign',
                         params: [message, window.ethereum.selectedAddress],
-                    })
+                    });
+
+                    const signature = this.godwoker.packSignature(_signature);
+
                     const run_result = await this.godwoker.gw_executeL2Tranaction(polyjuice_tx, signature);
                     console.log(`runResult: ${JSON.stringify(run_result, null, 2)}`);
                     break;
@@ -61,12 +70,18 @@ class PolyjuiceHttpProvider extends HttpProvider {
                         data: data || '',
                         gas: gas 
                     }
+
+                    const sender_script_hash = this.godwoker.getScriptHashByEthAddress(from);
+                    const to_id = this.godwoker.ethAddrToAccountId(to);
+                    const receiver_script_hash = await this.godwoker.getScriptHashByAccountId(to_id);
+
                     const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
-                    const message = this.godwoker.generateTransactionMessageToSign(polyjuice_tx);
-                    const signature = await window.ethereum.request({
+                    const message = this.godwoker.generateTransactionMessageToSign(polyjuice_tx, sender_script_hash, receiver_script_hash);
+                    const _signature = await window.ethereum.request({
                         method: 'personal_sign',
                         params: [message, window.ethereum.selectedAddress],
                     });
+                    const signature = this.godwoker.packSignature(_signature);
                     const run_result = await this.godwoker.gw_submitL2Transaction(polyjuice_tx, signature);
                     console.log(`runResult: ${JSON.stringify(run_result, null, 2)}`);
                     break;
