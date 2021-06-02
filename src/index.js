@@ -13,47 +13,6 @@ class PolyjuiceHttpProvider extends HttpProvider {
 
         switch (method) {
 
-            case 'eth_call':
-
-                if (!window.ethereum) {
-                    alert('PolyjuiceHttpProvider needs a wallet provider such as metamask!');
-                    break;
-                }
-
-                try {
-                    const { from, gas, value, data, to } = params[0];
-                    const t = {
-                        from: from || window.ethereum.selectedAddress,
-                        to: to,
-                        value: value || 0,
-                        data: data || '',
-                        gas: gas 
-                    }
-                    // todo: use real gas later instead of hard-code one
-                    
-                    const sender_script_hash = this.godwoker.getScriptHashByEthAddress(from);
-                    const to_id = this.godwoker.ethAddrToAccountId(to);
-                    const receiver_script_hash = await this.godwoker.getScriptHashByAccountId(to_id);
-                    console.log(`receiver_hash: ${receiver_script_hash}`);
-
-                    const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
-                    const message = this.godwoker.generateTransactionMessageToSign(polyjuice_tx, sender_script_hash, receiver_script_hash);
-                    console.log(message); 
-                    const _signature = await window.ethereum.request({
-                        method: 'personal_sign',
-                        params: [message, window.ethereum.selectedAddress],
-                    });
-
-                    const signature = this.godwoker.packSignature(_signature);
-
-                    const run_result = await this.godwoker.gw_executeL2Tranaction(polyjuice_tx, signature);
-                    console.log(`runResult: ${JSON.stringify(run_result, null, 2)}`);
-                    break;
-                } catch(error) {
-                    this.connected = false;
-                    throw error;
-                }
-            
             case 'eth_sendTransaction':
                     
                 if (!window.ethereum) {
