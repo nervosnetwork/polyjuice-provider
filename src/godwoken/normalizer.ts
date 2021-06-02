@@ -73,16 +73,16 @@ function toNormalize(normalize: Function) {
   };
 }
 
-export interface DepositionRequest {
+export interface DepositRequest {
   capacity: HexNumber;
   amount: HexNumber;
   sudt_script_hash: Hash;
   script: Script;
 }
 
-export function NormalizeDepositionRequest(
+export function NormalizeDepositRequest(
   request: object,
-  { debugPath = "deposition_request" } = {}
+  { debugPath = "deposit_request" } = {}
 ) {
   return normalizeObject(debugPath, request, {
     capacity: normalizeHexNumber(8),
@@ -92,9 +92,9 @@ export function NormalizeDepositionRequest(
   });
 }
 
-export function NormalizeDepositionLockArgs(
+export function NormalizeDepositLockArgs(
   args: object,
-  { debugPath = "deposition_lock_args" } = {}
+  { debugPath = "deposit_lock_args" } = {}
 ) {
   return normalizeObject(debugPath, args, {
     owner_lock_hash: normalizeRawData(32),
@@ -120,8 +120,8 @@ export function NormalizeHeaderInfo(
 
 export interface CustodianLockArgs {
   owner_lock_hash: Hash;
-  deposition_block_hash: Hash;
-  deposition_block_number: HexNumber;
+  deposit_block_hash: Hash;
+  deposit_block_number: HexNumber;
 }
 
 export function NormalizeCustodianLockArgs(
@@ -130,8 +130,8 @@ export function NormalizeCustodianLockArgs(
 ) {
   return normalizeObject(debugPath, args, {
     owner_lock_hash: normalizeRawData(32),
-    deposition_block_hash: normalizeRawData(32),
-    deposition_block_number: normalizeHexNumber(8),
+    deposit_block_hash: normalizeRawData(32),
+    deposit_block_number: normalizeHexNumber(8),
   });
 }
 
@@ -233,10 +233,10 @@ export function NormalizeWithdrawalLockArgs(
   { debugPath = "withdrawal_lock_args" } = {}
 ) {
   return normalizeObject(debugPath, withdrawal_lock_args, {
-    // the original deposition info
+    // the original deposit info
     // used for helping programs generate reverted custodian cell
-    deposition_block_hash: normalizeRawData(32),
-    deposition_block_number: normalizeHexNumber(8),
+    deposit_block_hash: normalizeRawData(32),
+    deposit_block_number: normalizeHexNumber(8),
     // the original custodian lock hash
     withdrawal_block_hash: normalizeRawData(32),
     withdrawal_block_number: normalizeHexNumber(8),
