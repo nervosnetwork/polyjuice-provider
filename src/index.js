@@ -30,8 +30,8 @@ class PolyjuiceHttpProvider extends HttpProvider {
                         gas: gas 
                     }
 
-                    const sender_script_hash = this.godwoker.getScriptHashByEthAddress(from);
                     const to_id = this.godwoker.ethAddrToAccountId(to);
+                    const sender_script_hash = this.godwoker.getScriptHashByEthAddress(from);
                     const receiver_script_hash = await this.godwoker.getScriptHashByAccountId(to_id);
 
                     const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
