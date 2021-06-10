@@ -128,7 +128,7 @@ export class Godwoker {
     }
 
     getShortAddressByEoaEthAddress (_address: string): string {
-      return this.getScriptHashByEoaEthAddress(_address).slice(42);
+      return this.getScriptHashByEoaEthAddress(_address).slice(0, 42);
     }
 
     async getNonce (account_id: number): Promise<string> {

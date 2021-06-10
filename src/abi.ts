@@ -6,7 +6,7 @@ export interface MethodIDs {
 }
 
 export interface DecodedMethodParam extends AbiInput {
-  value: string;
+  value: string | string [];
 }
 
 export interface DecodedMethod {
@@ -21,21 +21,21 @@ export class Abi {
 
   constructor(_abi_items: AbiItem[]) {
     this.abi_items = _abi_items;
-    this.interested_methods = this.filter_interested_methods();
+    this.interested_methods = this.filter_interested_methods(this.abi_items);
     this.interested_method_ids = this.get_method_ids(this.interested_methods);
   }
 
   get_method_ids(_abi_items: AbiItem[]) {
     const method_ids: MethodIDs = {};
     for (let item of _abi_items) {
-      const id = Web3EthAbi.encodeFunctionSignature(item.name);
+      const id = Web3EthAbi.encodeFunctionSignature(item).slice(2);
       method_ids[id] = item;
     }
     return method_ids;
   }
 
-  filter_interested_methods(): AbiItem[] {
-    return this.abi_items.filter(
+  filter_interested_methods(_abi_items: AbiItem[]): AbiItem[] {
+    return _abi_items.filter(
       (item) =>
         item.type === "function" &&
         this.filter_interested_inputs(item).length > 0 // at least one param is eth-address
@@ -43,7 +43,7 @@ export class Abi {
   }
 
   filter_interested_inputs(_abiItem: AbiItem): AbiInput[] {
-    return _abiItem.inputs.filter((input) => input.type === "address");
+    return _abiItem.inputs.filter((input) => input.type === "address" || input.type === "address[]");
   }
 
   get_interested_methods() {
@@ -58,8 +58,7 @@ export class Abi {
     const method_id = data.slice(2, 10);
     const abiItem = this.interested_method_ids[method_id];
     if (abiItem) {
-      let decoded = Web3EthAbi.decodeParameters(abiItem.inputs, data.slice(10));
-
+      let decoded = Web3EthAbi.decodeParameters(abiItem.inputs, '0x'+data.slice(10));
       let retData: DecodedMethod = {
         name: abiItem.name,
         params: [],
@@ -113,20 +112,18 @@ export class Abi {
     if (!abi_item) return data;
 
     const decode_data = this.decode_method(data);
-    console.log(`decode_data: ${JSON.stringify(decode_data, null, 2)} `);
     const new_decode_data = decode_data.params.map((p) => {
-      if (p.type === "address") {
-        p.value = calculate_short_address(p.value);
+      if (p.type === "address" || p.type === "address[]") {
+        p.value = Array.isArray(p.value) ? p.value.map(v => calculate_short_address(v)) : calculate_short_address(p.value);
         return p;
       } else {
         return p;
       }
     });
-    console.log(`replace eth-address with short-address: ${JSON.stringify(new_decode_data, null, 2)} `);
     const new_data = Web3EthAbi.encodeFunctionCall(abi_item, new_decode_data.map( p => p.value));
     return new_data;
   }
 
-  // todo: provide an url path, and read the abi json from it
+  // todo: support user providing an url path, and read the abi json from it
   read_abi_from_json_file() {}
 }
