@@ -10,10 +10,15 @@ import { Reader } from "ckb-js-toolkit";
 
 const jaysonBrowserClient = require('jayson/lib/client/browser');
 
+const U128_MIN = BigInt(0);
+const U128_MAX = BigInt(2) ** BigInt(128) - BigInt(1);
+const EMPTY_ETH_ADDRESS = '0x' + '00'.repeat(20);
+
 export type EthTransaction = {
     from: HexString 
     to: HexString
     gas?: HexNumber
+    gasPrice?: HexNumber
     value: HexNumber
     data: HexString
     nonce?: HexNumber
@@ -66,7 +71,7 @@ export class Godwoker {
       return signature;
     }
 
-    getScriptHashByEthAddress(eth_address: string): string{
+    getScriptHashByEoaEthAddress(eth_address: string): string{
       const layer2_lock: Script = {
         code_hash: this.eth_account_lock.code_hash,
         hash_type: this.eth_account_lock.hash_type as "type" | "data",
@@ -78,7 +83,7 @@ export class Godwoker {
 
     async getScriptHashByAccountId(account_id: number): Promise<string>{
       return new Promise(resolve => {
-        this.client.request("eth_gw_getScriptHashByAccountId", [`${account_id.toString(16)}`], (err: any, res: any) => {
+        this.client.request("gw_get_script_hash", [`${account_id.toString(16)}`], (err: any, res: any) => {
             if(err) throw err;
             if(res.result === undefined || res.result === null) throw Error(`unable to fetch account script hash from ${account_id}`);
             resolve(res.result);
@@ -86,7 +91,17 @@ export class Godwoker {
       })
     }
 
-    async getAccountId (eth_address: string): Promise<string> {
+    async getAccountIdByScriptHash(script_hash: string): Promise<string>{
+      return new Promise(resolve => {
+        this.client.request("gw_get_account_id", [script_hash], (err: any, res: any) => {
+            if(err) throw err;
+            if(res.result === undefined || res.result === null) throw Error(`unable to fetch account id from script hash ${script_hash}`);
+            resolve(res.result);
+        });
+      }) 
+    }
+
+    async getAccountIdByEoaEthAddress (eth_address: string): Promise<string> {
         const layer2_lock: Script = {
             code_hash: this.eth_account_lock.code_hash,
             hash_type: this.eth_account_lock.hash_type as "type" | "data",
@@ -94,7 +109,7 @@ export class Godwoker {
         }
         const lock_hash = utils.computeScriptHash(layer2_lock);
         return new Promise(resolve => {
-            this.client.request("eth_gw_getAccountIdByScriptHash", [lock_hash], (err: any, res: any) => {
+            this.client.request("gw_get_account_id_by_script_hash", [lock_hash], (err: any, res: any) => {
                 if(err) throw err;
                 if(res.result === undefined || res.result === null) throw Error(`unable to fetch account id from ${eth_address}, lock_hash is ${lock_hash}`);
                 resolve(res.result);
@@ -102,9 +117,19 @@ export class Godwoker {
         })
     }
 
+    async getScriptHashByShortAddress (_address: string): Promise<string> {
+      return new Promise(resolve => {
+        this.client.request("gw_get_script_hash_by_prefix", [_address], (err: any, res: any) => {
+            if(err) throw err;
+            if(res.result === undefined || res.result === null) throw Error(`unable to fetch script hash from short address: ${_address}`);
+            resolve(res.result);
+        });
+    })
+    }
+
     async getNonce (account_id: number): Promise<string> {
       return new Promise(resolve => {
-          this.client.request("eth_gw_getNonce", [`0x${account_id.toString(16)}`], (err: any, res: any) => {
+          this.client.request("gw_get_nonce", [`0x${account_id.toString(16)}`], (err: any, res: any) => {
               if(err) throw err;
               if(res.result === undefined || res.result === null) throw Error(`unable to fetch nonce, account_id:${account_id}, ${JSON.stringify(res)}`);
               resolve(res.result);
@@ -113,15 +138,10 @@ export class Godwoker {
     }
 
     async assembleRawL2Transaction (eth_tx: EthTransaction): Promise<RawL2Transaction> {
-        const from = await this.getAccountId(eth_tx.from); 
-        const to = await this.extractTo(eth_tx.to);
+        const from = await this.getAccountIdByEoaEthAddress(eth_tx.from); 
+        const to = await this.allTypeEthAddressToAccountId(eth_tx.to);
         const nonce = await this.getNonce(parseInt(from));
-        const args: L2TransactionArgs = {
-            to_id: parseInt(to, 16),
-            data: eth_tx.data,
-            value: BigInt(eth_tx.value)
-        }
-        const encodedArgs = this.encodeArgs(args);
+        const encodedArgs = this.encodeArgs(eth_tx);
         const tx: RawL2Transaction = {
             from_id: '0x' + BigInt(from).toString(16),
             to_id: '0x' + BigInt(to).toString(16),
@@ -148,7 +168,7 @@ export class Godwoker {
       console.log(JSON.stringify(l2_tx, null, 2));
       const serialize_tx = this.serializeL2Transaction(l2_tx); 
       return new Promise(resolve => {
-        this.client.request("eth_gw_executeL2Tranaction", [serialize_tx], (err: any, res: any) => {
+        this.client.request("gw_execute_l2_tranaction", [serialize_tx], (err: any, res: any) => {
             if(err) throw err;
             if(res.result === undefined || res.result === null) throw Error(`failed to send gw_executeL2Tranaction rpc, ${JSON.stringify(res)}`);
             resolve(res.result);
@@ -160,7 +180,7 @@ export class Godwoker {
       const l2_tx = {raw: raw_tx, signature: signature};
       const serialize_tx = this.serializeL2Transaction(l2_tx); 
       return new Promise(resolve => {
-        this.client.request("eth_gw_submitL2Transaction", [serialize_tx], (err: any, res: any) => {
+        this.client.request("gw_submit_l2_transaction", [serialize_tx], (err: any, res: any) => {
             if(err) throw err;
             if(res.result === undefined || res.result === null) throw Error(`failed to send gw_submitL2Transaction rpc, ${JSON.stringify(res)}`);
             resolve(res.result);
@@ -170,7 +190,7 @@ export class Godwoker {
 
     async gw_getTransactionReceipt (tx_hash: Hash) {
       return new Promise(resolve => {
-        this.client.request("eth_gw_getTransactionReceipt", [tx_hash], (err: any, res: any) => {
+        this.client.request("gw_get_transaction_receipt", [tx_hash], (err: any, res: any) => {
             if(err) throw err;
             //if(res.result === undefined || res.result === null) throw Error(`failed to send gw_getTransactionReceipt rpc, ${JSON.stringify(res)}`);
             resolve(res.result);
@@ -197,90 +217,108 @@ export class Godwoker {
       return new Promise((r) => setTimeout(r, ms));
     }
 
-    async extractTo (address: HexString) {
-      if(address.slice(2).substring(8, 40) === '0'.repeat(32) ) { // contract address, encoded with polyuice method: see accountIdToEthAddr and ethAddrToAccountId 
-        return this.ethAddrToAccountId(address);
-      }
-
-      // account address, fetch id from rpc
-      const account_id = await this.getAccountId(address);
-      return account_id;
-    }
-
-    /* 
-       polyjuice account_id vs eth_address convert rule.
-       see: https://github.com/nervosnetwork/godwoken-polyjuice/blob/v0.1.4/polyjuice-tests/src/helper.rs#L70-L88
-    */
-    accountIdToEthAddr (_id: HexNumber, _ethabi?: boolean): HexString{
-      const ethabi = _ethabi === true ? _ethabi : false;
-      const offset = ethabi ? 12 : 0;
-      var data = new Uint8Array(offset + 20);
-      const id_u32 = new Uint32(this.numberToArrayBuffer(parseInt(_id, 16), 4))
-      var id = Buffer.from(this.numberToArrayBuffer(id_u32.toLittleEndianUint32(), 4));
-
-      data[offset] = id[0];
-      data[offset+1] = id[1];
-      data[offset+2] = id[2];
-      data[offset+3] = id[3];       
-      
-      return '0x' + Buffer.from(data).toString('hex');
-    }
-
-    ethAddrToAccountId (_address: HexString): HexNumber {
+    async allTypeEthAddressToAccountId (_address: HexString): Promise<HexNumber> {
       const address = Buffer.from(_address.slice(2), "hex");
       if( address.byteLength !== 20 )
         throw new Error(`Invalid eth address length: ${address.byteLength}`);
-      if( !address.slice(4, 20).equals(Buffer.from(Array(16).fill(0))) ) 
-        throw new Error(`Invalid eth address data: ${JSON.stringify(address.slice(4,20))}, ${JSON.stringify(Buffer.from(Array(16).fill(0)))}`);
 
-      const _id = new Uint32(this.numberToArrayBuffer(parseInt(address.slice(0, 4).toString('hex'), 16), 4)).toLittleEndianUint32();
-      const id = Buffer.from(this.numberToArrayBuffer(_id, 4));
-      return '0x' + parseInt(id.toString('hex'), 16).toString(16);
-    }
+      if( address.equals(Buffer.from(Array(20).fill(0))) ) 
+        // special-case: meta-contract address
+        return '0x0';
 
-    numberToArrayBuffer(value: number, length: number) {
-      const view = new DataView(new ArrayBuffer(length))
-      for (var index = length - 1; index >= 0; --index) {
-        view.setUint8(index, value % 256)
-        value = value >> 8;
+      try {
+        const script_hash = this.getScriptHashByEoaEthAddress(_address);
+        const accountId = await this.getAccountIdByScriptHash(script_hash);
+        return accountId;
+      } catch (error) {
+        if(!JSON.stringify(error).includes('unable to fetch account id from script hash'))
+          throw error;
+         
+        // is normal contract address (short address)
+        // todo: check if contract address is (1. normal contract address (2. create2 contract address
+        const script_hash =  await this.getScriptHashByShortAddress(_address);
+        return await this.getAccountIdByScriptHash(script_hash);
       }
-      return view.buffer;
+    } 
+
+    encodeArgs( _tx: EthTransaction) {
+      const { to, gasPrice, gas: gasLimit, value, data } = _tx;
+
+      // header
+      const args_0_7 =
+        '0x' +
+        Buffer.from('FFFFFF', 'hex').toString('hex') +
+        Buffer.from('POLY', 'utf8').toString('hex');
+       
+       // gas limit
+      const args_8_16 = this.UInt64ToLeBytes(BigInt(gasLimit));
+      // gas price
+      const args_16_32 = this.UInt128ToLeBytes(
+        gasPrice === '0x' ? BigInt(0) : BigInt(gasPrice)
+      );
+      // value
+      const args_32_48 = this.UInt128ToLeBytes(
+        value === '0x' ? BigInt(0) : BigInt(value)
+      );
+
+      const dataByteLength = Buffer.from(data.slice(2), 'hex').length;
+      // data length
+      const args_48_52 = this.UInt32ToLeBytes(dataByteLength);
+      // data
+      const args_data = data;
+      // todo: transfer eth-address to short address in data(if it is related)
+
+      let args_7 = '';
+      if (to === EMPTY_ETH_ADDRESS || to === '0x' || to === '0x0') {
+        args_7 = '0x03';
+      } else {
+        args_7 = '0x00';
+      }
+
+      const args =
+        '0x' +
+        args_0_7.slice(2) +
+        args_7.slice(2) +
+        args_8_16.slice(2) +
+        args_16_32.slice(2) +
+        args_32_48.slice(2) +
+        args_48_52.slice(2) +
+        args_data.slice(2);
+
+      return args;
     }
 
-    // {gas_limit: u64, gas_price: u128, value: u128}
-    encodeArgs( args: L2TransactionArgs) {
-      const {to_id, value, data}  = args;
-      const gas_limit = 21000000n; // todo remove: hard-code
-      const gas_price = 50n; // todo remove: hard-code
-      const call_kind = to_id > 0 ? 0 : 3;
-      const data_buf = Buffer.from(data.slice(2), "hex");
-    
-      const gas_limit_buf = Buffer.alloc(8);
-      gas_limit_buf.writeBigUInt64LE(gas_limit);
-    
-      const gas_price_buf = Buffer.alloc(16);
-      gas_price_buf.writeBigUInt64LE(gas_price & BigInt("0xFFFFFFFFFFFFFFFF"), 0);
-      gas_price_buf.writeBigUInt64LE(gas_price >> BigInt(64), 8);
-    
-      const value_buf = Buffer.alloc(32);
-      value_buf.writeBigUInt64BE(value & BigInt("0xFFFFFFFFFFFFFFFF"), 24);
-      value_buf.writeBigUInt64BE(value >> BigInt(64), 16);
-    
-      const data_size_buf = Buffer.alloc(4);
-      data_size_buf.writeUInt32LE(data_buf.length);
-      const total_size = 62 + data_buf.length;
-    
-      const buf = Buffer.alloc(total_size);
-    
-      buf[0] = call_kind;
-      // not static call
-      buf[1] = 0;
-      gas_limit_buf.copy(buf, 2);
-      gas_price_buf.copy(buf, 10);
-      value_buf.copy(buf, 26);
-      data_size_buf.copy(buf, 58);
-      data_buf.copy(buf, 62);
-      return `0x${buf.toString("hex")}`;
+    // todo: move to another file
+    UInt32ToLeBytes(num: number): HexString {
+      const buf = Buffer.allocUnsafe(4);
+      buf.writeUInt32LE(+num, 0);
+      return '0x' + buf.toString('hex');
     }
+
+    UInt64ToLeBytes(num: bigint): HexString {
+      num = BigInt(num);
+      const buf = Buffer.alloc(8);
+      buf.writeBigUInt64LE(num);
+      return `0x${buf.toString('hex')}`;
+    }
+
+    UInt128ToLeBytes(u128: bigint): HexString {
+      if (u128 < U128_MIN) {
+        throw new Error(`u128 ${u128} too small`);
+      }
+      if (u128 > U128_MAX) {
+        throw new Error(`u128 ${u128} too large`);
+      }
+      const buf = Buffer.alloc(16);
+      buf.writeBigUInt64LE(u128 & BigInt('0xFFFFFFFFFFFFFFFF'), 0);
+      buf.writeBigUInt64LE(u128 >> BigInt(64), 8);
+      return '0x' + buf.toString('hex');
+    }
+
+    LeBytesToUInt32(hex: HexString): number {
+      const buf = Buffer.from(hex.slice(2), 'hex');
+      return buf.readUInt32LE();
+    }
+    
     
 }

@@ -21,17 +21,18 @@ class PolyjuiceHttpProvider extends HttpProvider {
                 }
 
                 try {
-                    const { from, gas, value, data, to } = params[0];
+                    const { from, gas, gasPrice, value, data, to } = params[0];
                     const t = {
                         from: from || window.ethereum.selectedAddress,
                         to: to,
                         value: value || 0,
                         data: data || '',
-                        gas: gas 
+                        gas: gas,
+                        gasPrice: gasPrice
                     }
 
-                    const to_id = this.godwoker.ethAddrToAccountId(to);
-                    const sender_script_hash = this.godwoker.getScriptHashByEthAddress(from);
+                    const to_id = this.godwoker.allTypeEthAddressToAccountId(to);
+                    const sender_script_hash = this.godwoker.getScriptHashByEoaEthAddress(from);
                     const receiver_script_hash = await this.godwoker.getScriptHashByAccountId(to_id);
 
                     const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
