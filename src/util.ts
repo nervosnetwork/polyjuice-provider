@@ -124,7 +124,11 @@ export class Godwoker {
             if(res.result === undefined || res.result === null) throw Error(`unable to fetch script hash from short address: ${_address}`);
             resolve(res.result);
         });
-    })
+      })
+    }
+
+    getShortAddressByEoaEthAddress (_address: string): string {
+      return this.getScriptHashByEoaEthAddress(_address).slice(42);
     }
 
     async getNonce (account_id: number): Promise<string> {

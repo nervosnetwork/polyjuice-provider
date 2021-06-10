@@ -1,11 +1,13 @@
 const HttpProvider = require('web3-providers-http');
 const { Godwoker } = require('./util');
+const { Abi } = require('./abi');
 
 class PolyjuiceHttpProvider extends HttpProvider {
     
-    constructor (host, godwoken_config, option) {
+    constructor (host, godwoken_config, abi_items, option) {
         super(host, option);
         this.godwoker = new Godwoker(host, godwoken_config);
+        this.abi = new Abi(abi_items);
     }
 
     async send (payload, callback) {
@@ -22,11 +24,13 @@ class PolyjuiceHttpProvider extends HttpProvider {
 
                 try {
                     const { from, gas, gasPrice, value, data, to } = params[0];
+                    // todo: replace getShortAddressByEoaEthAddress with getShortAddressByAllTypeEthaddres 
+                    const data_with_short_address = this.abi.refactor_data_with_short_address(data, this.godwoker.getShortAddressByEoaEthAddress);
                     const t = {
                         from: from || window.ethereum.selectedAddress,
                         to: to,
                         value: value || 0,
-                        data: data || '',
+                        data: data_with_short_address || '',
                         gas: gas,
                         gasPrice: gasPrice
                     }
