@@ -1,5 +1,3 @@
-
-const { utils } = require("@ckb-lumos/base");
 const test = require("ava");
 const PolyjuiceHttpProvider = require("../lib/node/polyjuice_provider.js");
 
@@ -89,27 +87,20 @@ test.serial("decode method", (t) => {
     "0x53d9d9100000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000a6d9c5f7d4de3cef51ad3b7235d79ccc95114de5000000000000000000000000a6d9c5f7d4de3cef51ad3b7235d79ccc95114daa";
   const decodedData = abi.decode_method(testData);
   t.deepEqual(decodedData.params[0].value, [
-	"0xa6d9c5f7d4de3cef51ad3b7235d79ccc95114de5",
-	"0xa6d9c5f7d4de3cef51ad3b7235d79ccc95114daa",
+    "0xa6d9c5f7d4de3cef51ad3b7235d79ccc95114de5",
+    "0xa6d9c5f7d4de3cef51ad3b7235d79ccc95114daa",
   ]);
 });
 
 test.serial("refactor eth-address", (t) => {
-	const testData =
+  const testData =
     "0x53d9d9100000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000a6d9c5f7d4de3cef51ad3b7235d79ccc95114de5000000000000000000000000a6d9c5f7d4de3cef51ad3b7235d79ccc95114daa";
-    const decodedData = abi.decode_method(testData);   
-    
-    const callback = (eth_address) => {
-	const layer2_lock = {
-	  code_hash: godwoker.eth_account_lock.code_hash,
-	  hash_type: godwoker.eth_account_lock.hash_type,
-	  args:  godwoker.rollup_type_hash + eth_address.slice(2)
-	}
-	const lock_hash = utils.computeScriptHash(layer2_lock); 
-	return lock_hash.slice(0, 42);
-    }
-    const newTestData = abi.refactor_data_with_short_address(testData, callback);
-    const newDecodedData = abi.decode_method(newTestData);   
-    t.not(testData, newTestData);
-    t.notDeepEqual(decodedData, newDecodedData);
+  const decodedData = abi.decode_method(testData);
+  const newTestData = abi.refactor_data_with_short_address(
+    testData,
+    godwoker.getShortAddressByEoaEthAddress.bind(godwoker)
+  );
+  const newDecodedData = abi.decode_method(newTestData);
+  t.not(testData, newTestData);
+  t.notDeepEqual(decodedData, newDecodedData);
 });
