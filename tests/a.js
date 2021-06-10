@@ -1,4 +1,3 @@
-const test = require("ava");
 const PolyjuiceHttpProvider = require("../lib/node/polyjuice_provider.js");
 
 const TEST_ABI_ITEMS = [
@@ -54,9 +53,7 @@ const TEST_ABI_ITEMS = [
 var abi;
 var godwoker;
 
-test.before((t) => {
-  // init provider and web3
-  const godwoken_rpc_url = "http://127.0.0.1:8119";
+const godwoken_rpc_url = "http://127.0.0.1:8119";
   const provider_config = {
     godwoken: {
       rollup_type_hash:
@@ -74,26 +71,12 @@ test.before((t) => {
     TEST_ABI_ITEMS
   );
   abi = provider.abi;
-  godwoker = provider.godwoker;
-});
+  godwoker = provider.godwoker;;
 
-test.serial("get_interested_methods", (t) => {
-  const methods = abi.get_interested_methods();
-  t.is(methods.length, 4);
-});
 
-test.serial("decode method", (t) => {
-  const testData =
-    "0x53d9d9100000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000a6d9c5f7d4de3cef51ad3b7235d79ccc95114de5000000000000000000000000a6d9c5f7d4de3cef51ad3b7235d79ccc95114daa";
-  const decodedData = abi.decode_method(testData);
-  t.deepEqual(decodedData.params[0].value, [
-    "0xa6d9c5f7d4de3cef51ad3b7235d79ccc95114de5",
-    "0xa6d9c5f7d4de3cef51ad3b7235d79ccc95114daa",
-  ]);
-});
 
-test.serial("refactor eth-address in inputs", async (t) => {
-  const testData =
+async function test(){
+	const testData =
     "0x53d9d9100000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000a6d9c5f7d4de3cef51ad3b7235d79ccc95114de5000000000000000000000000a6d9c5f7d4de3cef51ad3b7235d79ccc95114daa";
   const decodedData = abi.decode_method(testData);
   const newTestData = await abi.refactor_data_with_short_address(
@@ -101,6 +84,6 @@ test.serial("refactor eth-address in inputs", async (t) => {
     godwoker.getShortAddressByAllTypeEthAddress.bind(godwoker)
   );
   const newDecodedData = abi.decode_method(newTestData);
-  t.not(testData, newTestData);
-  t.notDeepEqual(decodedData, newDecodedData);
-});
+}
+
+test();
