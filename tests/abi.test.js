@@ -107,22 +107,32 @@ test.serial("refactor eth-address in inputs", async (t) => {
 });
 
 test.serial("refactor eth-address in outputs", async (t) => {
-	const abi_item = {
-		inputs: [
-		  { type: "address[]", name: "_owners" },
-		  { type: "uint256", name: "_required" },
-		  { type: "uint256", name: "_dailyLimit" },
-		],
-		constant: false,
-		name: "create",
-		payable: false,
-		outputs: [{ type: "address", name: "wallet" }],
-		type: "function",
-	      };
+  const abi_item = {
+    inputs: [
+      { type: "address[]", name: "_owners" },
+      { type: "uint256", name: "_required" },
+      { type: "uint256", name: "_dailyLimit" },
+    ],
+    constant: false,
+    name: "create",
+    payable: false,
+    outputs: [{ type: "address", name: "wallet" }],
+    type: "function",
+  };
 
-	const test_values = Web3EthAbi.encodeParameters(['address'], ['0xFb2C72d3ffe10Ef7c9960272859a23D24db9e04A']);
-	const output_value_types = abi_item.outputs.map(item => item.type);
-	const decoded_values = Web3EthAbi.decodeParameters(output_value_types, test_values);
-	const new_decoded_value = await abi.refactor_return_value_with_short_address(test_values, abi_item, godwoker.getShortAddressByAllTypeEthAddress.bind(godwoker));
-	t.not(decoded_values[0], new_decoded_value[0]);
+  const test_values = Web3EthAbi.encodeParameters(
+    ["address"],
+    ["0xFb2C72d3ffe10Ef7c9960272859a23D24db9e04A"]
+  );
+  const output_value_types = abi_item.outputs.map((item) => item.type);
+  const decoded_values = Web3EthAbi.decodeParameters(
+    output_value_types,
+    test_values
+  );
+  const new_decoded_value = await abi.refactor_return_value_with_short_address(
+    test_values,
+    abi_item,
+    godwoker.getShortAddressByAllTypeEthAddress.bind(godwoker)
+  );
+  t.not(decoded_values[0], new_decoded_value[0]);
 });

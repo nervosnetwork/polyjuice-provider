@@ -108,7 +108,7 @@ export class Abi {
     }
   }
 
-  // decode method data, if it is related with address type in inputs, 
+  // decode method data, if it is related with address type in inputs,
   // replace the address params with godwoken_short_address
   async refactor_data_with_short_address(
     data: string,
@@ -140,26 +140,36 @@ export class Abi {
 
   // decode the run_result return value, and check:
   // 	if it is related with address type, replace godwoken_short_address with eth_address.
-  // 
+  //
   // known-issue:
   // 	- when the return value is EOA address and when it haven't create account on godowken,
   //	  then we have no idea what the original eth_address is. we are not able to recover original address.
   //	 thus we do not support return address type which is not exist here
-  async refactor_return_value_with_short_address(return_value: string, abi_item: AbiItem, calculate_short_address: (addr: string) => Promise<string>){
-	const output_value_types = abi_item.outputs.map(item => item.type);
-	var decoded_values: object = Web3EthAbi.decodeParameters(output_value_types, return_value);
-	const interested_value_indexs = output_value_types.map((t, index) => {
-		if (t === 'address' || t === 'address[]'){
-			return index;
-		}
-	});
-	for await (const index of interested_value_indexs) {
-		decoded_values[index+''] = Array.isArray(decoded_values[index+'']) ? await Promise.all(
-			decoded_values[index+''].map(async (v) => await calculate_short_address(v))
-		      )
-		    : await calculate_short_address(decoded_values[index+'']);
-	}
-	return decoded_values;
+  async refactor_return_value_with_short_address(
+    return_value: string,
+    abi_item: AbiItem,
+    calculate_short_address: (addr: string) => Promise<string>
+  ) {
+    const output_value_types = abi_item.outputs.map((item) => item.type);
+    var decoded_values: object = Web3EthAbi.decodeParameters(
+      output_value_types,
+      return_value
+    );
+    const interested_value_indexs = output_value_types.map((t, index) => {
+      if (t === "address" || t === "address[]") {
+        return index;
+      }
+    });
+    for await (const index of interested_value_indexs) {
+      decoded_values[index + ""] = Array.isArray(decoded_values[index + ""])
+        ? await Promise.all(
+            decoded_values[index + ""].map(
+              async (v) => await calculate_short_address(v)
+            )
+          )
+        : await calculate_short_address(decoded_values[index + ""]);
+    }
+    return decoded_values;
   }
 
   // todo: support user providing an url path, and read the abi json from it
