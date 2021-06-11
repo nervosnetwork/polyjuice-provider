@@ -6,7 +6,7 @@ export interface MethodIDs {
 }
 
 export interface DecodedMethodParam extends AbiInput {
-  value: string | string [];
+  value: string | string[];
 }
 
 export interface DecodedMethod {
@@ -43,7 +43,9 @@ export class Abi {
   }
 
   filter_interested_inputs(_abiItem: AbiItem): AbiInput[] {
-    return _abiItem.inputs.filter((input) => input.type === "address" || input.type === "address[]");
+    return _abiItem.inputs.filter(
+      (input) => input.type === "address" || input.type === "address[]"
+    );
   }
 
   get_interested_methods() {
@@ -58,7 +60,10 @@ export class Abi {
     const method_id = data.slice(2, 10);
     const abiItem = this.interested_method_ids[method_id];
     if (abiItem) {
-      let decoded = Web3EthAbi.decodeParameters(abiItem.inputs, '0x'+data.slice(10));
+      let decoded = Web3EthAbi.decodeParameters(
+        abiItem.inputs,
+        "0x" + data.slice(10)
+      );
       let retData: DecodedMethod = {
         name: abiItem.name,
         params: [],
@@ -114,13 +119,20 @@ export class Abi {
     const decode_data = this.decode_method(data);
     const new_decode_data = decode_data.params.map(async (p) => {
       if (p.type === "address" || p.type === "address[]") {
-        p.value = Array.isArray(p.value) ? await Promise.all(p.value.map(async v => await calculate_short_address(v))) : await calculate_short_address(p.value);
+        p.value = Array.isArray(p.value)
+          ? await Promise.all(
+              p.value.map(async (v) => await calculate_short_address(v))
+            )
+          : await calculate_short_address(p.value);
         return p;
       } else {
         return p;
       }
     });
-    const new_data = Web3EthAbi.encodeFunctionCall(abi_item, await Promise.all(new_decode_data.map( async p => (await p).value)));
+    const new_data = Web3EthAbi.encodeFunctionCall(
+      abi_item,
+      await Promise.all(new_decode_data.map(async (p) => (await p).value))
+    );
     return new_data;
   }
 

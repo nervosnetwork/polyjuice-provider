@@ -1,347 +1,445 @@
-import '@babel/polyfill';
+import "@babel/polyfill";
 
 import { Script, Hash, utils, HexNumber, HexString } from "@ckb-lumos/base";
 
 import { GodwokenUtils, RawL2Transaction, L2Transaction } from "./godwoken";
 import { SerializeL2Transaction, Uint32 } from "./godwoken/schemas";
-import { NormalizeL2Transaction} from "./godwoken/normalizer";
+import { NormalizeL2Transaction } from "./godwoken/normalizer";
 import { Reader } from "ckb-js-toolkit";
 
-const jaysonBrowserClient = require('jayson/lib/client/browser');
+const jaysonBrowserClient = require("jayson/lib/client/browser");
 
 const U128_MIN = BigInt(0);
 const U128_MAX = BigInt(2) ** BigInt(128) - BigInt(1);
-const EMPTY_ETH_ADDRESS = '0x' + '00'.repeat(20);
+const EMPTY_ETH_ADDRESS = "0x" + "00".repeat(20);
 
 export type EthTransaction = {
-    from: HexString 
-    to: HexString
-    gas?: HexNumber
-    gasPrice?: HexNumber
-    value: HexNumber
-    data: HexString
-    nonce?: HexNumber
-}
+  from: HexString;
+  to: HexString;
+  gas?: HexNumber;
+  gasPrice?: HexNumber;
+  value: HexNumber;
+  data: HexString;
+  nonce?: HexNumber;
+};
 
 export type L2TransactionArgs = {
-    to_id: number,
-    value: bigint,
-    data: HexString
-}
+  to_id: number;
+  value: bigint;
+  data: HexString;
+};
 
 export type GodwokerOption = {
   godwoken: {
-    rollup_type_hash: Hash
-    eth_account_lock: Omit<Script, 'args'> 
-  }
-  request_option?: object
-}
+    rollup_type_hash: Hash;
+    eth_account_lock: Omit<Script, "args">;
+  };
+  request_option?: object;
+};
 
 export type RequestRpcResult = {
-  err: any,
-  data?: string
-}
+  err: any;
+  data?: string;
+};
 
 export class Godwoker {
-    private eth_account_lock: Omit<Script, 'args'>;
-    private rollup_type_hash: string;
-    private client: any;
-    private godwkenUtils: GodwokenUtils;
+  private eth_account_lock: Omit<Script, "args">;
+  private rollup_type_hash: string;
+  private client: any;
+  private godwkenUtils: GodwokenUtils;
 
-    constructor (host: string, option: GodwokerOption) {
-        const callServer = function(request: any, callback: any) {
-            const opt = option.request_option || {
-              method: 'POST',
-              body: request,
-              headers: {
-                'Content-Type': 'application/json',
-              }
-            };
-            fetch(host, opt)
-              .then(function(res) { return res.text(); })
-              .then(function(text) { callback(null, text); })
-              .catch(function(err) { callback(err); });
-        };
-        this.client = jaysonBrowserClient(callServer);
-        this.godwkenUtils = new GodwokenUtils(option.godwoken.rollup_type_hash);
-        this.eth_account_lock = option.godwoken.eth_account_lock;
-        this.rollup_type_hash = option.godwoken.rollup_type_hash;
-    }
-
-    packSignature(_signature: Hash): Hash{
-      let v = Number.parseInt(_signature.slice(-2), 16);
-      if (v >= 27) v -= 27;
-      const signature = _signature.slice(0, -2) + v.toString(16).padStart(2, "0");
-      return signature;
-    }
-
-    getScriptHashByEoaEthAddress(eth_address: string): string{
-      const layer2_lock: Script = {
-        code_hash: this.eth_account_lock.code_hash,
-        hash_type: this.eth_account_lock.hash_type as "type" | "data",
-        args:  this.rollup_type_hash + eth_address.slice(2)
-      }
-      const lock_hash = utils.computeScriptHash(layer2_lock); 
-      return lock_hash;
-    }
-
-    async getScriptHashByAccountId(account_id: number): Promise<string>{
-      return new Promise((resolve, reject) => {
-        this.client.request("gw_get_script_hash", [`${account_id.toString(16)}`], (err: any, res: any) => {
-            if(err) return reject(err);
-            if(!res || res.result === undefined || res.result === null) return reject(new Error(`unable to fetch account script hash from ${account_id}`));
-            return resolve(res.result);
-        });
-      })
-    }
-
-    async getAccountIdByScriptHash(script_hash: string): Promise<string>{
-      return new Promise((resolve, reject) => {
-        this.client.request("gw_get_account_id", [script_hash], (err: any, res: any) => {
-            if(err) return reject(err);
-            if(!res || res.result === undefined || res.result === null) return reject(new Error(`unable to fetch account id from script hash ${script_hash}`));
-            return resolve(res.result);
-        });
-      }) 
-    }
-
-    async getAccountIdByEoaEthAddress (eth_address: string): Promise<string> {
-        const layer2_lock: Script = {
-            code_hash: this.eth_account_lock.code_hash,
-            hash_type: this.eth_account_lock.hash_type as "type" | "data",
-            args:  this.rollup_type_hash + eth_address.slice(2)
-        }
-        const lock_hash = utils.computeScriptHash(layer2_lock);
-        return new Promise((resolve, reject) => {
-            this.client.request("gw_get_account_id_by_script_hash", [lock_hash], (err: any, res: any) => {
-                if(err) return reject(err);
-                if(!res || res.result === undefined || res.result === null) return reject(new Error(`unable to fetch account id from ${eth_address}, lock_hash is ${lock_hash}`));
-                return resolve(res.result);
-            });
+  constructor(host: string, option: GodwokerOption) {
+    const callServer = function (request: any, callback: any) {
+      const opt = option.request_option || {
+        method: "POST",
+        body: request,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      };
+      fetch(host, opt)
+        .then(function (res) {
+          return res.text();
         })
-    }
-
-    async getScriptHashByShortAddress (_address: string): Promise<string> {
-      return new Promise((resolve, reject) => {
-        this.client.request("gw_get_script_hash_by_prefix", [_address], (err: any, res: any) => {
-            if(err) return reject(err);
-            if(!res || !res || res.result === undefined || res.result === null) return reject(new Error(`unable to fetch script hash from short address: ${_address}`));
-            return resolve(res.result);
+        .then(function (text) {
+          callback(null, text);
+        })
+        .catch(function (err) {
+          callback(err);
         });
-      })
-    }
+    };
+    this.client = jaysonBrowserClient(callServer);
+    this.godwkenUtils = new GodwokenUtils(option.godwoken.rollup_type_hash);
+    this.eth_account_lock = option.godwoken.eth_account_lock;
+    this.rollup_type_hash = option.godwoken.rollup_type_hash;
+  }
 
-    getShortAddressByEoaEthAddress (_address: string): string {
-      return this.getScriptHashByEoaEthAddress(_address).slice(0, 42);
-    }
+  packSignature(_signature: Hash): Hash {
+    let v = Number.parseInt(_signature.slice(-2), 16);
+    if (v >= 27) v -= 27;
+    const signature = _signature.slice(0, -2) + v.toString(16).padStart(2, "0");
+    return signature;
+  }
 
-    async getShortAddressByAllTypeEthAddress (_address: string): Promise<string> {
-      try {
-        // assume it is an contract address (already an short address)
-        await this.getScriptHashByShortAddress(_address);
-        return _address;
-      } catch (error) {
-        console.log(`script hash not exist with short address, assume it is EOA address..`);
-        try {
-          return this.getScriptHashByEoaEthAddress(_address).slice(0, 42); 
-        } catch (error) {
-          throw error;
+  getScriptHashByEoaEthAddress(eth_address: string): string {
+    const layer2_lock: Script = {
+      code_hash: this.eth_account_lock.code_hash,
+      hash_type: this.eth_account_lock.hash_type as "type" | "data",
+      args: this.rollup_type_hash + eth_address.slice(2),
+    };
+    const lock_hash = utils.computeScriptHash(layer2_lock);
+    return lock_hash;
+  }
+
+  async getScriptHashByAccountId(account_id: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "gw_get_script_hash",
+        [`${account_id.toString(16)}`],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          if (!res || res.result === undefined || res.result === null)
+            return reject(
+              new Error(
+                `unable to fetch account script hash from ${account_id}`
+              )
+            );
+          return resolve(res.result);
         }
-      } 
-    }
+      );
+    });
+  }
 
-    async getNonce (account_id: number): Promise<string> {
-      return new Promise((resolve, reject) => {
-          this.client.request("gw_get_nonce", [`0x${account_id.toString(16)}`], (err: any, res: any) => {
-              if(err) return reject(err);
-              if(!res || res.result === undefined || res.result === null) return reject(new Error(`unable to fetch nonce, account_id:${account_id}, ${JSON.stringify(res)}`));
-              return resolve(res.result);
-          });
-      })
-    }
-
-    async assembleRawL2Transaction (eth_tx: EthTransaction): Promise<RawL2Transaction> {
-        const from = await this.getAccountIdByEoaEthAddress(eth_tx.from); 
-        const to = await this.allTypeEthAddressToAccountId(eth_tx.to);
-        const nonce = await this.getNonce(parseInt(from));
-        const encodedArgs = this.encodeArgs(eth_tx);
-        const tx: RawL2Transaction = {
-            from_id: '0x' + BigInt(from).toString(16),
-            to_id: '0x' + BigInt(to).toString(16),
-            args: encodedArgs,
-            nonce: '0x' + BigInt(nonce).toString(16),
-        };
-        return tx;
-    }
-
-    generateTransactionMessageToSign (tx: RawL2Transaction, sender_script_hash: string, receiver_script_hash: string) {
-      const add_prefix_in_signing_message = false;
-      return this.godwkenUtils.generateTransactionMessageToSign(tx, sender_script_hash, receiver_script_hash, add_prefix_in_signing_message);
-    }
-
-    serializeL2Transaction (tx: L2Transaction) {
-      const _tx = NormalizeL2Transaction(tx);
-      return new Reader(
-        SerializeL2Transaction(_tx)
-      ).serializeJson();
-    }
-
-    async gw_executeL2Tranaction (raw_tx: RawL2Transaction, signature: HexString): Promise<string> {
-      const l2_tx = {raw: raw_tx, signature: signature};
-      console.log(JSON.stringify(l2_tx, null, 2));
-      const serialize_tx = this.serializeL2Transaction(l2_tx); 
-      return new Promise((resolve, reject) => {
-        this.client.request("gw_execute_l2_tranaction", [serialize_tx], (err: any, res: any) => {
-            if(err) return reject(err);
-            if(!res || res.result === undefined || res.result === null) return reject(new Error(`failed to send gw_executeL2Tranaction rpc, ${JSON.stringify(res)}`));
-            return resolve(res.result);
-        });
-      }) 
-    }
-
-    async gw_submitL2Transaction (raw_tx: RawL2Transaction, signature: HexString): Promise<string> {
-      const l2_tx = {raw: raw_tx, signature: signature};
-      const serialize_tx = this.serializeL2Transaction(l2_tx); 
-      return new Promise((resolve, reject) => {
-        this.client.request("gw_submit_l2_transaction", [serialize_tx], (err: any, res: any) => {
-            if(err) return reject(err);
-            if(!res || res.result === undefined || res.result === null) return reject(new Error(`failed to send gw_submitL2Transaction rpc, ${JSON.stringify(res)}`));
-            return resolve(res.result);
-        });
-      }) 
-    }
-
-    async gw_getTransactionReceipt (tx_hash: Hash): Promise<string>  {
-      return new Promise((resolve, reject) => {
-        this.client.request("gw_get_transaction_receipt", [tx_hash], (err: any, res: any) => {
-            if(err) return reject(err);
-            //if(!res || res.result === undefined || res.result === null) resolve( Error(`failed to send gw_getTransactionReceipt rpc, ${JSON.stringify(res)}`);
-            return resolve(res.result);
-        });
-      }) 
-    }
-
-    async waitForTransactionReceipt(tx_hash: Hash){
-      while (true) {
-        await this.asyncSleep(3000);
-        const tx_receipt = await this.gw_getTransactionReceipt(
-          tx_hash
-        );
-        console.log(`keep waitting for tx_receipt: ${JSON.stringify(tx_receipt)}`);
-  
-        if (tx_receipt) {
-          break;
+  async getAccountIdByScriptHash(script_hash: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "gw_get_account_id",
+        [script_hash],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          if (!res || res.result === undefined || res.result === null)
+            return reject(
+              new Error(
+                `unable to fetch account id from script hash ${script_hash}`
+              )
+            );
+          return resolve(res.result);
         }
-      }
-      return;
-    }
+      );
+    });
+  }
 
-    asyncSleep(ms = 0) {
-      return new Promise((r) => setTimeout(r, ms));
-    }
+  async getAccountIdByEoaEthAddress(eth_address: string): Promise<string> {
+    const layer2_lock: Script = {
+      code_hash: this.eth_account_lock.code_hash,
+      hash_type: this.eth_account_lock.hash_type as "type" | "data",
+      args: this.rollup_type_hash + eth_address.slice(2),
+    };
+    const lock_hash = utils.computeScriptHash(layer2_lock);
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "gw_get_account_id_by_script_hash",
+        [lock_hash],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          if (!res || res.result === undefined || res.result === null)
+            return reject(
+              new Error(
+                `unable to fetch account id from ${eth_address}, lock_hash is ${lock_hash}`
+              )
+            );
+          return resolve(res.result);
+        }
+      );
+    });
+  }
 
-    async allTypeEthAddressToAccountId (_address: HexString): Promise<HexNumber> {
-      const address = Buffer.from(_address.slice(2), "hex");
-      if( address.byteLength !== 20 )
-        throw new Error(`Invalid eth address length: ${address.byteLength}`);
+  async getScriptHashByShortAddress(_address: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "gw_get_script_hash_by_prefix",
+        [_address],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          if (!res || !res || res.result === undefined || res.result === null)
+            return reject(
+              new Error(
+                `unable to fetch script hash from short address: ${_address}`
+              )
+            );
+          return resolve(res.result);
+        }
+      );
+    });
+  }
 
-      if( address.equals(Buffer.from(Array(20).fill(0))) ) 
-        // special-case: meta-contract address
-        return '0x0';
+  getShortAddressByEoaEthAddress(_address: string): string {
+    return this.getScriptHashByEoaEthAddress(_address).slice(0, 42);
+  }
 
+  async getShortAddressByAllTypeEthAddress(_address: string): Promise<string> {
+    try {
+      // assume it is an contract address (already an short address)
+      await this.getScriptHashByShortAddress(_address);
+      return _address;
+    } catch (error) {
+      console.log(
+        `script hash not exist with short address, assume it is EOA address..`
+      );
       try {
-        const script_hash = this.getScriptHashByEoaEthAddress(_address);
-        const accountId = await this.getAccountIdByScriptHash(script_hash);
-        return accountId;
+        return this.getScriptHashByEoaEthAddress(_address).slice(0, 42);
       } catch (error) {
-        if(!JSON.stringify(error).includes('unable to fetch account id from script hash'))
-          throw error;
-         
-        // is contract address
-        // note: it doesn't matter if it is normal contract or create2-contract
-        // both are short-address
-        const script_hash =  await this.getScriptHashByShortAddress(_address);
-        return await this.getAccountIdByScriptHash(script_hash);
+        throw error;
       }
-    } 
+    }
+  }
 
-    encodeArgs( _tx: EthTransaction) {
-      const { to, gasPrice, gas: gasLimit, value, data } = _tx;
-
-      // header
-      const args_0_7 =
-        '0x' +
-        Buffer.from('FFFFFF', 'hex').toString('hex') +
-        Buffer.from('POLY', 'utf8').toString('hex');
-       
-       // gas limit
-      const args_8_16 = this.UInt64ToLeBytes(BigInt(gasLimit));
-      // gas price
-      const args_16_32 = this.UInt128ToLeBytes(
-        gasPrice === '0x' ? BigInt(0) : BigInt(gasPrice)
+  async getNonce(account_id: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "gw_get_nonce",
+        [`0x${account_id.toString(16)}`],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          if (!res || res.result === undefined || res.result === null)
+            return reject(
+              new Error(
+                `unable to fetch nonce, account_id:${account_id}, ${JSON.stringify(
+                  res
+                )}`
+              )
+            );
+          return resolve(res.result);
+        }
       );
-      // value
-      const args_32_48 = this.UInt128ToLeBytes(
-        value === '0x' ? BigInt(0) : BigInt(value)
+    });
+  }
+
+  async assembleRawL2Transaction(
+    eth_tx: EthTransaction
+  ): Promise<RawL2Transaction> {
+    const from = await this.getAccountIdByEoaEthAddress(eth_tx.from);
+    const to = await this.allTypeEthAddressToAccountId(eth_tx.to);
+    const nonce = await this.getNonce(parseInt(from));
+    const encodedArgs = this.encodeArgs(eth_tx);
+    const tx: RawL2Transaction = {
+      from_id: "0x" + BigInt(from).toString(16),
+      to_id: "0x" + BigInt(to).toString(16),
+      args: encodedArgs,
+      nonce: "0x" + BigInt(nonce).toString(16),
+    };
+    return tx;
+  }
+
+  generateTransactionMessageToSign(
+    tx: RawL2Transaction,
+    sender_script_hash: string,
+    receiver_script_hash: string
+  ) {
+    const add_prefix_in_signing_message = false;
+    return this.godwkenUtils.generateTransactionMessageToSign(
+      tx,
+      sender_script_hash,
+      receiver_script_hash,
+      add_prefix_in_signing_message
+    );
+  }
+
+  serializeL2Transaction(tx: L2Transaction) {
+    const _tx = NormalizeL2Transaction(tx);
+    return new Reader(SerializeL2Transaction(_tx)).serializeJson();
+  }
+
+  async gw_executeL2Tranaction(
+    raw_tx: RawL2Transaction,
+    signature: HexString
+  ): Promise<string> {
+    const l2_tx = { raw: raw_tx, signature: signature };
+    console.log(JSON.stringify(l2_tx, null, 2));
+    const serialize_tx = this.serializeL2Transaction(l2_tx);
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "gw_execute_l2_tranaction",
+        [serialize_tx],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          if (!res || res.result === undefined || res.result === null)
+            return reject(
+              new Error(
+                `failed to send gw_executeL2Tranaction rpc, ${JSON.stringify(
+                  res
+                )}`
+              )
+            );
+          return resolve(res.result);
+        }
+      );
+    });
+  }
+
+  async gw_submitL2Transaction(
+    raw_tx: RawL2Transaction,
+    signature: HexString
+  ): Promise<string> {
+    const l2_tx = { raw: raw_tx, signature: signature };
+    const serialize_tx = this.serializeL2Transaction(l2_tx);
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "gw_submit_l2_transaction",
+        [serialize_tx],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          if (!res || res.result === undefined || res.result === null)
+            return reject(
+              new Error(
+                `failed to send gw_submitL2Transaction rpc, ${JSON.stringify(
+                  res
+                )}`
+              )
+            );
+          return resolve(res.result);
+        }
+      );
+    });
+  }
+
+  async gw_getTransactionReceipt(tx_hash: Hash): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "gw_get_transaction_receipt",
+        [tx_hash],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          //if(!res || res.result === undefined || res.result === null) resolve( Error(`failed to send gw_getTransactionReceipt rpc, ${JSON.stringify(res)}`);
+          return resolve(res.result);
+        }
+      );
+    });
+  }
+
+  async waitForTransactionReceipt(tx_hash: Hash) {
+    while (true) {
+      await this.asyncSleep(3000);
+      const tx_receipt = await this.gw_getTransactionReceipt(tx_hash);
+      console.log(
+        `keep waitting for tx_receipt: ${JSON.stringify(tx_receipt)}`
       );
 
-      const dataByteLength = Buffer.from(data.slice(2), 'hex').length;
-      // data length
-      const args_48_52 = this.UInt32ToLeBytes(dataByteLength);
-      // data
-      const args_data = data;
-
-      let args_7 = '';
-      if (to === EMPTY_ETH_ADDRESS || to === '0x' || to === '0x0') {
-        args_7 = '0x03';
-      } else {
-        args_7 = '0x00';
+      if (tx_receipt) {
+        break;
       }
+    }
+    return;
+  }
 
-      const args =
-        '0x' +
-        args_0_7.slice(2) +
-        args_7.slice(2) +
-        args_8_16.slice(2) +
-        args_16_32.slice(2) +
-        args_32_48.slice(2) +
-        args_48_52.slice(2) +
-        args_data.slice(2);
+  asyncSleep(ms = 0) {
+    return new Promise((r) => setTimeout(r, ms));
+  }
 
-      return args;
+  async allTypeEthAddressToAccountId(_address: HexString): Promise<HexNumber> {
+    const address = Buffer.from(_address.slice(2), "hex");
+    if (address.byteLength !== 20)
+      throw new Error(`Invalid eth address length: ${address.byteLength}`);
+
+    if (address.equals(Buffer.from(Array(20).fill(0))))
+      // special-case: meta-contract address
+      return "0x0";
+
+    try {
+      const script_hash = this.getScriptHashByEoaEthAddress(_address);
+      const accountId = await this.getAccountIdByScriptHash(script_hash);
+      return accountId;
+    } catch (error) {
+      if (
+        !JSON.stringify(error).includes(
+          "unable to fetch account id from script hash"
+        )
+      )
+        throw error;
+
+      // is contract address
+      // note: it doesn't matter if it is normal contract or create2-contract
+      // both are short-address
+      const script_hash = await this.getScriptHashByShortAddress(_address);
+      return await this.getAccountIdByScriptHash(script_hash);
+    }
+  }
+
+  encodeArgs(_tx: EthTransaction) {
+    const { to, gasPrice, gas: gasLimit, value, data } = _tx;
+
+    // header
+    const args_0_7 =
+      "0x" +
+      Buffer.from("FFFFFF", "hex").toString("hex") +
+      Buffer.from("POLY", "utf8").toString("hex");
+
+    // gas limit
+    const args_8_16 = this.UInt64ToLeBytes(BigInt(gasLimit));
+    // gas price
+    const args_16_32 = this.UInt128ToLeBytes(
+      gasPrice === "0x" ? BigInt(0) : BigInt(gasPrice)
+    );
+    // value
+    const args_32_48 = this.UInt128ToLeBytes(
+      value === "0x" ? BigInt(0) : BigInt(value)
+    );
+
+    const dataByteLength = Buffer.from(data.slice(2), "hex").length;
+    // data length
+    const args_48_52 = this.UInt32ToLeBytes(dataByteLength);
+    // data
+    const args_data = data;
+
+    let args_7 = "";
+    if (to === EMPTY_ETH_ADDRESS || to === "0x" || to === "0x0") {
+      args_7 = "0x03";
+    } else {
+      args_7 = "0x00";
     }
 
-    // todo: move to another file
-    UInt32ToLeBytes(num: number): HexString {
-      const buf = Buffer.allocUnsafe(4);
-      buf.writeUInt32LE(+num, 0);
-      return '0x' + buf.toString('hex');
-    }
+    const args =
+      "0x" +
+      args_0_7.slice(2) +
+      args_7.slice(2) +
+      args_8_16.slice(2) +
+      args_16_32.slice(2) +
+      args_32_48.slice(2) +
+      args_48_52.slice(2) +
+      args_data.slice(2);
 
-    UInt64ToLeBytes(num: bigint): HexString {
-      num = BigInt(num);
-      const buf = Buffer.alloc(8);
-      buf.writeBigUInt64LE(num);
-      return `0x${buf.toString('hex')}`;
-    }
+    return args;
+  }
 
-    UInt128ToLeBytes(u128: bigint): HexString {
-      if (u128 < U128_MIN) {
-        throw new Error(`u128 ${u128} too small`);
-      }
-      if (u128 > U128_MAX) {
-        throw new Error(`u128 ${u128} too large`);
-      }
-      const buf = Buffer.alloc(16);
-      buf.writeBigUInt64LE(u128 & BigInt('0xFFFFFFFFFFFFFFFF'), 0);
-      buf.writeBigUInt64LE(u128 >> BigInt(64), 8);
-      return '0x' + buf.toString('hex');
-    }
+  // todo: move to another file
+  UInt32ToLeBytes(num: number): HexString {
+    const buf = Buffer.allocUnsafe(4);
+    buf.writeUInt32LE(+num, 0);
+    return "0x" + buf.toString("hex");
+  }
 
-    LeBytesToUInt32(hex: HexString): number {
-      const buf = Buffer.from(hex.slice(2), 'hex');
-      return buf.readUInt32LE();
+  UInt64ToLeBytes(num: bigint): HexString {
+    num = BigInt(num);
+    const buf = Buffer.alloc(8);
+    buf.writeBigUInt64LE(num);
+    return `0x${buf.toString("hex")}`;
+  }
+
+  UInt128ToLeBytes(u128: bigint): HexString {
+    if (u128 < U128_MIN) {
+      throw new Error(`u128 ${u128} too small`);
     }
-    
-    
+    if (u128 > U128_MAX) {
+      throw new Error(`u128 ${u128} too large`);
+    }
+    const buf = Buffer.alloc(16);
+    buf.writeBigUInt64LE(u128 & BigInt("0xFFFFFFFFFFFFFFFF"), 0);
+    buf.writeBigUInt64LE(u128 >> BigInt(64), 8);
+    return "0x" + buf.toString("hex");
+  }
+
+  LeBytesToUInt32(hex: HexString): number {
+    const buf = Buffer.from(hex.slice(2), "hex");
+    return buf.readUInt32LE();
+  }
 }

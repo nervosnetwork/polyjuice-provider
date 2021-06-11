@@ -69,7 +69,6 @@ class Godwoken {
 
   async getBlockHash(block_number) {
     return await this.rpc.get_block_hash(block_number);
-    
   }
 
   async getBlock(block_hash) {
@@ -94,8 +93,11 @@ class Godwoken {
   }
   async getBalance(sudt_id, account_id) {
     // TODO: maybe swap params later?
-    console.log('0x'+account_id.toString(16), '0x'+sudt_id.toString(16));
-    const hex = await this.rpc.get_balance('0x'+account_id.toString(16), '0x'+sudt_id.toString(16));
+    console.log("0x" + account_id.toString(16), "0x" + sudt_id.toString(16));
+    const hex = await this.rpc.get_balance(
+      "0x" + account_id.toString(16),
+      "0x" + sudt_id.toString(16)
+    );
     return BigInt(hex);
   }
   async getStorageAt(account_id, key) {
@@ -105,14 +107,14 @@ class Godwoken {
     return await this.rpc.get_account_id_by_script_hash(script_hash);
   }
   async getNonce(account_id) {
-    console.log(account_id.toString(16))
-    return await this.rpc.get_nonce('0x'+account_id.toString(16));
+    console.log(account_id.toString(16));
+    return await this.rpc.get_nonce("0x" + account_id.toString(16));
   }
   async getScript(script_hash) {
     return await this.rpc.get_script(script_hash);
   }
   async getScriptHash(account_id) {
-    return await this.rpc.get_script_hash('0x'+account_id.toString(16));
+    return await this.rpc.get_script_hash("0x" + account_id.toString(16));
   }
   async getData(data_hash) {
     return await this.rpc.get_data(data_hash);
@@ -124,24 +126,37 @@ class GodwokenUtils {
     this.rollup_type_hash = rollup_type_hash;
   }
 
-  generateTransactionMessageToSign(raw_l2tx, _sender_scirpt_hash, _receiver_script_hash, add_prefix = true) {
+  generateTransactionMessageToSign(
+    raw_l2tx,
+    _sender_scirpt_hash,
+    _receiver_script_hash,
+    add_prefix = true
+  ) {
     const raw_tx_data = core.SerializeRawL2Transaction(
       NormalizeRawL2Transaction(raw_l2tx)
     );
     const rollup_type_hash = Buffer.from(this.rollup_type_hash.slice(2), "hex");
-    const sender_scirpt_hash = Buffer.from(_sender_scirpt_hash.slice(2), "hex"); 
-    const receiver_script_hash = Buffer.from(_receiver_script_hash.slice(2), "hex");
+    const sender_scirpt_hash = Buffer.from(_sender_scirpt_hash.slice(2), "hex");
+    const receiver_script_hash = Buffer.from(
+      _receiver_script_hash.slice(2),
+      "hex"
+    );
 
     const data = toArrayBuffer(
-      Buffer.concat([rollup_type_hash, sender_scirpt_hash, receiver_script_hash, toBuffer(raw_tx_data)])
+      Buffer.concat([
+        rollup_type_hash,
+        sender_scirpt_hash,
+        receiver_script_hash,
+        toBuffer(raw_tx_data),
+      ])
     );
     const message = utils.ckbHash(data).serializeJson();
-    
-    if(add_prefix === false){ 
+
+    if (add_prefix === false) {
       // do not add `\x19Ethereum Signed Message:\n32` prefix when generating message
-      // set true when you want to pass message for metamask signing, 
+      // set true when you want to pass message for metamask signing,
       // metamask will add this automattically.
-      
+
       return message;
     }
 
@@ -152,7 +167,7 @@ class GodwokenUtils {
     ]);
     return `0x${keccak256(buf).toString("hex")}`;
   }
-  
+
   generateWithdrawalMessageToSign(raw_request) {
     const raw_request_data = core.SerializeRawWithdrawalRequest(
       NormalizeRawWithdrawalRequest(raw_request)
@@ -169,7 +184,7 @@ class GodwokenUtils {
     ]);
     return `0x${keccak256(buf).toString("hex")}`;
   }
-  
+
   static createAccountRawL2Transaction(from_id, nonce, script) {
     const create_account = { script };
     const enum_tag = "0x00000000";
