@@ -38,13 +38,20 @@ export class Abi {
     return _abi_items.filter(
       (item) =>
         item.type === "function" &&
-        this.filter_interested_inputs(item).length > 0 // at least one param is eth-address
+        (this.filter_interested_inputs(item).length > 0 || // at least one param is eth-address
+          this.filter_interested_outputs(item).length > 0) // at least one output return type is eth-address
     );
   }
 
   filter_interested_inputs(_abiItem: AbiItem): AbiInput[] {
     return _abiItem.inputs.filter(
       (input) => input.type === "address" || input.type === "address[]"
+    );
+  }
+
+  filter_interested_outputs(_abiItem: AbiItem): AbiOutput[] {
+    return _abiItem.outputs.filter(
+      (output) => output.type === "address" || output.type === "address[]"
     );
   }
 
@@ -106,6 +113,14 @@ export class Abi {
 
       return retData;
     }
+  }
+
+  // todo: use this func to remove all repeated code.
+  // params: <data: eth tx's encode input data>
+  get_intereted_abi_item_by_encoded_data(data: string) {
+    const method_id = data.slice(2, 10);
+    const abi_item = this.interested_method_ids[method_id];
+    return abi_item;
   }
 
   // decode method data, if it is related with address type in inputs,

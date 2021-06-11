@@ -3,8 +3,14 @@ import "@babel/polyfill";
 import { Script, Hash, utils, HexNumber, HexString } from "@ckb-lumos/base";
 
 import { GodwokenUtils, RawL2Transaction, L2Transaction } from "./godwoken";
-import { SerializeL2Transaction, Uint32 } from "./godwoken/schemas";
-import { NormalizeL2Transaction } from "./godwoken/normalizer";
+import {
+  SerializeL2Transaction,
+  SerializeRawL2Transaction,
+} from "./godwoken/schemas";
+import {
+  NormalizeL2Transaction,
+  NormalizeRawL2Transaction,
+} from "./godwoken/normalizer";
 import { Reader } from "ckb-js-toolkit";
 
 const jaysonBrowserClient = require("jayson/lib/client/browser");
@@ -250,6 +256,11 @@ export class Godwoker {
     return new Reader(SerializeL2Transaction(_tx)).serializeJson();
   }
 
+  serializeRawL2Transaction(tx: RawL2Transaction) {
+    const _tx = NormalizeRawL2Transaction(tx);
+    return new Reader(SerializeRawL2Transaction(_tx)).serializeJson();
+  }
+
   async gw_executeL2Tranaction(
     raw_tx: RawL2Transaction,
     signature: HexString
@@ -267,6 +278,29 @@ export class Godwoker {
             return reject(
               new Error(
                 `failed to send gw_executeL2Tranaction rpc, ${JSON.stringify(
+                  res
+                )}`
+              )
+            );
+          return resolve(res.result);
+        }
+      );
+    });
+  }
+
+  async gw_excuteRawL2Transaction(raw_tx: RawL2Transaction): Promise<string> {
+    console.log(JSON.stringify(raw_tx, null, 2));
+    const serialize_tx = this.serializeRawL2Transaction(raw_tx);
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "gw_execute_raw_l2_tranaction",
+        [serialize_tx],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          if (!res || res.result === undefined || res.result === null)
+            return reject(
+              new Error(
+                `failed to send gw_executeRawL2Tranaction rpc, ${JSON.stringify(
                   res
                 )}`
               )
@@ -357,9 +391,7 @@ export class Godwoker {
       )
         throw error;
 
-      // is contract address
-      // note: it doesn't matter if it is normal contract or create2-contract
-      // both are short-address
+      // is normal contract address, thus an godwoken-short-address
       const script_hash = await this.getScriptHashByShortAddress(_address);
       return await this.getAccountIdByScriptHash(script_hash);
     }
