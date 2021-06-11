@@ -40,6 +40,9 @@ module.exports = {
       }),
       new webpack.ProvidePlugin({
         transformruntime: 'process/browser',
+      }),
+      new webpack.ProvidePlugin({
+        fetch: 'whatwg-fetch/fetch'
       })
   ],
   optimization: {

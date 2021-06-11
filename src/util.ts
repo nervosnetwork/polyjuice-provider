@@ -6,7 +6,6 @@ import { GodwokenUtils, RawL2Transaction, L2Transaction } from "./godwoken";
 import { SerializeL2Transaction, Uint32 } from "./godwoken/schemas";
 import { NormalizeL2Transaction} from "./godwoken/normalizer";
 import { Reader } from "ckb-js-toolkit";
-import fetch from 'node-fetch';
 
 const jaysonBrowserClient = require('jayson/lib/client/browser');
 
