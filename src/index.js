@@ -48,9 +48,8 @@ class PolyjuiceHttpProvider extends HttpProvider {
                     });
                     const signature = this.godwoker.packSignature(_signature);
                     const tx_hash = await this.godwoker.gw_submitL2Transaction(polyjuice_tx, signature);
-                    await this.godwoker.waitForTransactionReceipt(tx_hash);
-                    const run_result = await this.godwoker.gw_getTransactionReceipt(tx_hash);
-                    console.log(`runResult: ${JSON.stringify(run_result, null, 2)}`);
+                    console.log(`provider just proxy an eth_sendTransaction rpc call, tx_hash: ${tx_hash}`);
+                    callback(null, tx_hash);
                     break;
                 } catch (error) {
                     this.connected = false;
