@@ -103,24 +103,24 @@ export class Abi {
     }
   }
 
-  refactor_data_with_short_address(
+  async refactor_data_with_short_address(
     data: string,
-    calculate_short_address: (addr: string) => string
+    calculate_short_address: (addr: string) => Promise<string>
   ) {
     const method_id = data.slice(2, 10);
     const abi_item = this.interested_method_ids[method_id];
     if (!abi_item) return data;
 
     const decode_data = this.decode_method(data);
-    const new_decode_data = decode_data.params.map((p) => {
+    const new_decode_data = decode_data.params.map(async (p) => {
       if (p.type === "address" || p.type === "address[]") {
-        p.value = Array.isArray(p.value) ? p.value.map(v => calculate_short_address(v)) : calculate_short_address(p.value);
+        p.value = Array.isArray(p.value) ? await Promise.all(p.value.map(async v => await calculate_short_address(v))) : await calculate_short_address(p.value);
         return p;
       } else {
         return p;
       }
     });
-    const new_data = Web3EthAbi.encodeFunctionCall(abi_item, new_decode_data.map( p => p.value));
+    const new_data = Web3EthAbi.encodeFunctionCall(abi_item, await Promise.all(new_decode_data.map( async p => (await p).value)));
     return new_data;
   }
 

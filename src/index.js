@@ -24,8 +24,9 @@ class PolyjuiceHttpProvider extends HttpProvider {
 
                 try {
                     const { from, gas, gasPrice, value, data, to } = params[0];
-                    // todo: replace getShortAddressByEoaEthAddress with getShortAddressByAllTypeEthaddres 
-                    const data_with_short_address = this.abi.refactor_data_with_short_address(data, this.godwoker.getShortAddressByEoaEthAddress);
+
+                    const data_with_short_address = this.abi.refactor_data_with_short_address(data, this.godwoker.getShortAddressByAllTypeEthAddress.bind(this.godwoker));
+
                     const t = {
                         from: from || window.ethereum.selectedAddress,
                         to: to,

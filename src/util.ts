@@ -5,8 +5,8 @@ import { Script, Hash, utils, HexNumber, HexString } from "@ckb-lumos/base";
 import { GodwokenUtils, RawL2Transaction, L2Transaction } from "./godwoken";
 import { SerializeL2Transaction, Uint32 } from "./godwoken/schemas";
 import { NormalizeL2Transaction} from "./godwoken/normalizer";
-
 import { Reader } from "ckb-js-toolkit";
+import fetch from 'node-fetch';
 
 const jaysonBrowserClient = require('jayson/lib/client/browser');
 
@@ -36,6 +36,11 @@ export type GodwokerOption = {
     eth_account_lock: Omit<Script, 'args'> 
   }
   request_option?: object
+}
+
+export type RequestRpcResult = {
+  err: any,
+  data?: string
 }
 
 export class Godwoker {
@@ -82,21 +87,21 @@ export class Godwoker {
     }
 
     async getScriptHashByAccountId(account_id: number): Promise<string>{
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         this.client.request("gw_get_script_hash", [`${account_id.toString(16)}`], (err: any, res: any) => {
-            if(err) throw err;
-            if(res.result === undefined || res.result === null) throw Error(`unable to fetch account script hash from ${account_id}`);
-            resolve(res.result);
+            if(err) return reject(err);
+            if(!res || res.result === undefined || res.result === null) return reject(new Error(`unable to fetch account script hash from ${account_id}`));
+            return resolve(res.result);
         });
       })
     }
 
     async getAccountIdByScriptHash(script_hash: string): Promise<string>{
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         this.client.request("gw_get_account_id", [script_hash], (err: any, res: any) => {
-            if(err) throw err;
-            if(res.result === undefined || res.result === null) throw Error(`unable to fetch account id from script hash ${script_hash}`);
-            resolve(res.result);
+            if(err) return reject(err);
+            if(!res || res.result === undefined || res.result === null) return reject(new Error(`unable to fetch account id from script hash ${script_hash}`));
+            return resolve(res.result);
         });
       }) 
     }
@@ -108,21 +113,21 @@ export class Godwoker {
             args:  this.rollup_type_hash + eth_address.slice(2)
         }
         const lock_hash = utils.computeScriptHash(layer2_lock);
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             this.client.request("gw_get_account_id_by_script_hash", [lock_hash], (err: any, res: any) => {
-                if(err) throw err;
-                if(res.result === undefined || res.result === null) throw Error(`unable to fetch account id from ${eth_address}, lock_hash is ${lock_hash}`);
-                resolve(res.result);
+                if(err) return reject(err);
+                if(!res || res.result === undefined || res.result === null) return reject(new Error(`unable to fetch account id from ${eth_address}, lock_hash is ${lock_hash}`));
+                return resolve(res.result);
             });
         })
     }
 
     async getScriptHashByShortAddress (_address: string): Promise<string> {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         this.client.request("gw_get_script_hash_by_prefix", [_address], (err: any, res: any) => {
-            if(err) throw err;
-            if(res.result === undefined || res.result === null) throw Error(`unable to fetch script hash from short address: ${_address}`);
-            resolve(res.result);
+            if(err) return reject(err);
+            if(!res || !res || res.result === undefined || res.result === null) return reject(new Error(`unable to fetch script hash from short address: ${_address}`));
+            return resolve(res.result);
         });
       })
     }
@@ -131,12 +136,27 @@ export class Godwoker {
       return this.getScriptHashByEoaEthAddress(_address).slice(0, 42);
     }
 
+    async getShortAddressByAllTypeEthAddress (_address: string): Promise<string> {
+      try {
+        // assume it is an contract address (already an short address)
+        await this.getScriptHashByShortAddress(_address);
+        return _address;
+      } catch (error) {
+        console.log(`script hash not exist with short address, assume it is EOA address..`);
+        try {
+          return this.getScriptHashByEoaEthAddress(_address).slice(0, 42); 
+        } catch (error) {
+          throw error;
+        }
+      } 
+    }
+
     async getNonce (account_id: number): Promise<string> {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
           this.client.request("gw_get_nonce", [`0x${account_id.toString(16)}`], (err: any, res: any) => {
-              if(err) throw err;
-              if(res.result === undefined || res.result === null) throw Error(`unable to fetch nonce, account_id:${account_id}, ${JSON.stringify(res)}`);
-              resolve(res.result);
+              if(err) return reject(err);
+              if(!res || res.result === undefined || res.result === null) return reject(new Error(`unable to fetch nonce, account_id:${account_id}, ${JSON.stringify(res)}`));
+              return resolve(res.result);
           });
       })
     }
@@ -167,37 +187,37 @@ export class Godwoker {
       ).serializeJson();
     }
 
-    async gw_executeL2Tranaction (raw_tx: RawL2Transaction, signature: HexString) {
+    async gw_executeL2Tranaction (raw_tx: RawL2Transaction, signature: HexString): Promise<string> {
       const l2_tx = {raw: raw_tx, signature: signature};
       console.log(JSON.stringify(l2_tx, null, 2));
       const serialize_tx = this.serializeL2Transaction(l2_tx); 
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         this.client.request("gw_execute_l2_tranaction", [serialize_tx], (err: any, res: any) => {
-            if(err) throw err;
-            if(res.result === undefined || res.result === null) throw Error(`failed to send gw_executeL2Tranaction rpc, ${JSON.stringify(res)}`);
-            resolve(res.result);
+            if(err) return reject(err);
+            if(!res || res.result === undefined || res.result === null) return reject(new Error(`failed to send gw_executeL2Tranaction rpc, ${JSON.stringify(res)}`));
+            return resolve(res.result);
         });
       }) 
     }
 
-    async gw_submitL2Transaction (raw_tx: RawL2Transaction, signature: HexString) {
+    async gw_submitL2Transaction (raw_tx: RawL2Transaction, signature: HexString): Promise<string> {
       const l2_tx = {raw: raw_tx, signature: signature};
       const serialize_tx = this.serializeL2Transaction(l2_tx); 
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         this.client.request("gw_submit_l2_transaction", [serialize_tx], (err: any, res: any) => {
-            if(err) throw err;
-            if(res.result === undefined || res.result === null) throw Error(`failed to send gw_submitL2Transaction rpc, ${JSON.stringify(res)}`);
-            resolve(res.result);
+            if(err) return reject(err);
+            if(!res || res.result === undefined || res.result === null) return reject(new Error(`failed to send gw_submitL2Transaction rpc, ${JSON.stringify(res)}`));
+            return resolve(res.result);
         });
       }) 
     }
 
-    async gw_getTransactionReceipt (tx_hash: Hash) {
-      return new Promise(resolve => {
+    async gw_getTransactionReceipt (tx_hash: Hash): Promise<string>  {
+      return new Promise((resolve, reject) => {
         this.client.request("gw_get_transaction_receipt", [tx_hash], (err: any, res: any) => {
-            if(err) throw err;
-            //if(res.result === undefined || res.result === null) throw Error(`failed to send gw_getTransactionReceipt rpc, ${JSON.stringify(res)}`);
-            resolve(res.result);
+            if(err) return reject(err);
+            //if(!res || res.result === undefined || res.result === null) resolve( Error(`failed to send gw_getTransactionReceipt rpc, ${JSON.stringify(res)}`);
+            return resolve(res.result);
         });
       }) 
     }
@@ -238,8 +258,9 @@ export class Godwoker {
         if(!JSON.stringify(error).includes('unable to fetch account id from script hash'))
           throw error;
          
-        // is normal contract address (short address)
-        // todo: check if contract address is (1. normal contract address (2. create2 contract address
+        // is contract address
+        // note: it doesn't matter if it is normal contract or create2-contract
+        // both are short-address
         const script_hash =  await this.getScriptHashByShortAddress(_address);
         return await this.getAccountIdByScriptHash(script_hash);
       }
@@ -270,7 +291,6 @@ export class Godwoker {
       const args_48_52 = this.UInt32ToLeBytes(dataByteLength);
       // data
       const args_data = data;
-      // todo: transfer eth-address to short address in data(if it is related)
 
       let args_7 = '';
       if (to === EMPTY_ETH_ADDRESS || to === '0x' || to === '0x0') {

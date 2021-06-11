@@ -3653,7 +3653,7 @@ node-addon-api@^2.0.0:
   resolved "https://registry.nlark.com/node-addon-api/download/node-addon-api-2.0.2.tgz?cache=0&other_urls=https%3A%2F%2Fregistry.nlark.com%2Fnode-addon-api%2Fdownload%2Fnode-addon-api-2.0.2.tgz#432cfa82962ce494b132e9d72a15b29f71ff5d32"
   integrity sha1-Qyz6gpYs5JSxMunXKhWyn3H/XTI=
 
-node-fetch@2.6.1:
+node-fetch@2.6.1, node-fetch@^2.6.1:
   version "2.6.1"
   resolved "https://registry.nlark.com/node-fetch/download/node-fetch-2.6.1.tgz?cache=0&other_urls=https%3A%2F%2Fregistry.nlark.com%2Fnode-fetch%2Fdownload%2Fnode-fetch-2.6.1.tgz#045bd323631f76ed2e2b55573394416b639a0052"
   integrity sha1-BFvTI2Mfdu0uK1VXM5RBa2OaAFI=
