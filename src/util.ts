@@ -200,6 +200,31 @@ export class Godwoker {
     }
   }
 
+  async getEthAddressByAllTypeShortAddress(_short_address: string) {
+    try {
+      // asume it is  eoa address
+      const eth_address = await this.queryEthAddressByShortAddress(_short_address);
+      if ( this.checkEthAddressIsEoa(eth_address, _short_address) ){
+        return eth_address;
+      }else{
+        throw Error(`query result of eoa address ${_short_address} with ${_short_address} is not match!`);
+      } 
+    } catch (error) {
+      // asume it is contact address
+      // just return the short-address
+      return _short_address;
+    }
+  }
+  checkEthAddressIsEoa(eth_address: string, _short_address: string): boolean {
+    // todo: Method not impl
+    return true;
+  }
+
+  async queryEthAddressByShortAddress(_short_address: string): Promise<string> {
+    // todo: Method not implemented 
+    return '';
+  }
+
   async getNonce(account_id: number): Promise<string> {
     return new Promise((resolve, reject) => {
       this.client.request(

@@ -119,7 +119,7 @@ class PolyjuiceHttpProvider extends HttpProvider {
               this.abi.refactor_return_value_with_short_address(
                 run_result.return_data,
                 abi_item,
-                this.godwoker.getShortAddressByAllTypeEthAddress.bind(
+                this.godwoker.getEthAddressByAllTypeShortAddress.bind(
                   this.godwoker
                 )
               );
