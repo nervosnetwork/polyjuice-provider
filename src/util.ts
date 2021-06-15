@@ -184,19 +184,14 @@ export class Godwoker {
   }
 
   async getShortAddressByAllTypeEthAddress(_address: string): Promise<string> {
+    // todo: support create2 address in such case that it haven't create real contract yet.
     try {
-      // assume it is an contract address (already an short address)
+      // assume it is an contract address (thus already an short address)
       await this.getScriptHashByShortAddress(_address);
       return _address;
     } catch (error) {
-      console.log(
-        `script hash not exist with short address, assume it is EOA address..`
-      );
-      try {
-        return this.getScriptHashByEoaEthAddress(_address).slice(0, 42);
-      } catch (error) {
-        throw error;
-      }
+      // script hash not exist with short address, assume it is EOA address..
+      return this.getScriptHashByEoaEthAddress(_address).slice(0, 42);
     }
   }
 
@@ -400,6 +395,7 @@ export class Godwoker {
   }
 
   async allTypeEthAddressToAccountId(_address: HexString): Promise<HexNumber> {
+    // todo: support create2 address in such case that it haven't create real contract yet.
     const address = Buffer.from(_address.slice(2), "hex");
     if (address.byteLength !== 20)
       throw new Error(`Invalid eth address length: ${address.byteLength}`);
@@ -409,20 +405,21 @@ export class Godwoker {
       return "0x0";
 
     try {
-      const script_hash = this.getScriptHashByEoaEthAddress(_address);
-      const accountId = await this.getAccountIdByScriptHash(script_hash);
-      return accountId;
+      // assume it is normal contract address, thus an godwoken-short-address
+      const script_hash = await this.getScriptHashByShortAddress(_address);
+      return await this.getAccountIdByScriptHash(script_hash);
     } catch (error) {
       if (
         !JSON.stringify(error).includes(
-          "unable to fetch account id from script hash"
+          "unable to fetch script hash from short address"
         )
       )
         throw error;
 
-      // is normal contract address, thus an godwoken-short-address
-      const script_hash = await this.getScriptHashByShortAddress(_address);
-      return await this.getAccountIdByScriptHash(script_hash);
+      // otherwise, assume it is EOA address
+      const script_hash = this.getScriptHashByEoaEthAddress(_address);
+      const accountId = await this.getAccountIdByScriptHash(script_hash);
+      return accountId;
     }
   }
 
