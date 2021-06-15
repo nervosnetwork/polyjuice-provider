@@ -278,7 +278,7 @@ export class Godwoker {
   ): Promise<string> {
     return new Promise((resolve, reject) => {
       this.client.request(
-        "poly_get_eth_address_by_godwoken_short_address",
+        "poly_getEthAddressByGodwokenShortAddress",
         [_short_address],
         (err: any, res: any) => {
           if (err) return reject(err);
@@ -299,7 +299,7 @@ export class Godwoker {
   ) {
     return new Promise((resolve, reject) => {
       this.client.request(
-        "poly_save_eth_address_godwoken_short_address_mapping",
+        "poly_saveEthAddressGodwokenShortAddressMapping",
         [_eth_address, _short_address],
         (err: any, res: any) => {
           if (err) return reject(err);
