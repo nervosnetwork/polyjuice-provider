@@ -229,7 +229,7 @@ export class Godwoker {
       // remember to save the script and eoa address mapping with default or user-specific callback
       const write_callback = this.saveEthAddressShortAddressMapping
         ? this.saveEthAddressShortAddressMapping
-        : this.saveEthAddressShortAddressMapping;
+        : this.defaultSaveEthAddressShortAddressMapping;
       return this.computeShortAddressByEoaEthAddress(_address, write_callback);
     }
   }
@@ -276,13 +276,43 @@ export class Godwoker {
   async defaultQueryEthAddressByShortAddress(
     _short_address: string
   ): Promise<string> {
-    // todo: Method not implemented
-    return "";
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "poly_get_eth_address_by_godwoken_short_address",
+        [_short_address],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          if (!res || res.result === undefined || res.result === null)
+            return reject(
+              new Error(`unable to fetch eth address from ${_short_address}`)
+            );
+          return resolve(res.result);
+        }
+      );
+    });
   }
 
   // default method
-  async defaultSaveEthAddressShortAddressMapping(_short_address: string) {
-    // todo: Method not implemented
+  async defaultSaveEthAddressShortAddressMapping(
+    _eth_address: string,
+    _short_address: string
+  ) {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "poly_save_eth_address_godwoken_short_address_mapping",
+        [_eth_address, _short_address],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          if (!res || res.result !== "ok")
+            return reject(
+              new Error(
+                `unable to save eth address and short address in web3 server. `
+              )
+            );
+          return resolve(res.result);
+        }
+      );
+    });
   }
 
   async getNonce(account_id: number): Promise<string> {
