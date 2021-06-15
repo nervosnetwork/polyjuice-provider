@@ -43,7 +43,7 @@ class PolyjuiceHttpProvider extends HttpProvider {
 
           const to_id = this.godwoker.allTypeEthAddressToAccountId(to);
           const sender_script_hash =
-            this.godwoker.getScriptHashByEoaEthAddress(from);
+            this.godwoker.computeScriptHashByEoaEthAddress(from);
           const receiver_script_hash =
             await this.godwoker.getScriptHashByAccountId(to_id);
 

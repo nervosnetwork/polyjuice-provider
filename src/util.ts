@@ -40,6 +40,11 @@ export type GodwokerOption = {
     rollup_type_hash: Hash;
     eth_account_lock: Omit<Script, "args">;
   };
+  queryEthAddressByShortAddress?: (short_address: string) => string;
+  saveEthAddressShortAddressMapping?: (
+    eth_address: string,
+    short_address: string
+  ) => void;
   request_option?: object;
 };
 
@@ -53,6 +58,8 @@ export class Godwoker {
   private rollup_type_hash: string;
   private client: any;
   private godwkenUtils: GodwokenUtils;
+  private queryEthAddressByShortAddress;
+  private saveEthAddressShortAddressMapping;
 
   constructor(host: string, option: GodwokerOption) {
     const callServer = function (request: any, callback: any) {
@@ -78,6 +85,9 @@ export class Godwoker {
     this.godwkenUtils = new GodwokenUtils(option.godwoken.rollup_type_hash);
     this.eth_account_lock = option.godwoken.eth_account_lock;
     this.rollup_type_hash = option.godwoken.rollup_type_hash;
+    this.queryEthAddressByShortAddress = option.queryEthAddressByShortAddress;
+    this.saveEthAddressShortAddressMapping =
+      option.saveEthAddressShortAddressMapping;
   }
 
   packSignature(_signature: Hash): Hash {
@@ -87,7 +97,7 @@ export class Godwoker {
     return signature;
   }
 
-  getScriptHashByEoaEthAddress(eth_address: string): string {
+  computeScriptHashByEoaEthAddress(eth_address: string): string {
     const layer2_lock: Script = {
       code_hash: this.eth_account_lock.code_hash,
       hash_type: this.eth_account_lock.hash_type as "type" | "data",
@@ -95,6 +105,23 @@ export class Godwoker {
     };
     const lock_hash = utils.computeScriptHash(layer2_lock);
     return lock_hash;
+  }
+
+  async getScriptByScriptHash(_script_hash: string): Promise<Script> {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "gw_get_script",
+        [_script_hash],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          if (!res || res.result === undefined || res.result === null)
+            return reject(
+              new Error(`unable to fetch script from ${_script_hash}`)
+            );
+          return resolve(res.result);
+        }
+      );
+    });
   }
 
   async getScriptHashByAccountId(account_id: number): Promise<string> {
@@ -179,8 +206,16 @@ export class Godwoker {
     });
   }
 
-  getShortAddressByEoaEthAddress(_address: string): string {
-    return this.getScriptHashByEoaEthAddress(_address).slice(0, 42);
+  computeShortAddressByEoaEthAddress(
+    _address: string,
+    write_callback?: (eth_address: string, short_address: string) => void
+  ): string {
+    const short_address = this.computeScriptHashByEoaEthAddress(_address).slice(
+      0,
+      42
+    );
+    write_callback ? write_callback(_address, short_address) : {};
+    return short_address;
   }
 
   async getShortAddressByAllTypeEthAddress(_address: string): Promise<string> {
@@ -191,16 +226,31 @@ export class Godwoker {
       return _address;
     } catch (error) {
       // script hash not exist with short address, assume it is EOA address..
-      return this.getScriptHashByEoaEthAddress(_address).slice(0, 42);
+      // remember to save the script and eoa address mapping with default or user-specific callback
+      const write_callback = this.saveEthAddressShortAddressMapping
+        ? this.saveEthAddressShortAddressMapping
+        : this.saveEthAddressShortAddressMapping;
+      return this.computeShortAddressByEoaEthAddress(_address, write_callback);
     }
   }
 
   async getEthAddressByAllTypeShortAddress(_short_address: string) {
+    // todo: support create2 address in such case which it haven't create real contract yet.
     try {
-      // asume it is  eoa address
-      const eth_address = await this.queryEthAddressByShortAddress(
+      // first, query on-chain
+      const script_hash = await this.getScriptHashByShortAddress(
         _short_address
       );
+      const script = await this.getScriptByScriptHash(script_hash);
+      return script.args;
+    } catch (error) {
+      // not on-chain, asume it is  eoa address
+      // which haven't create account on godwoken yet
+      const query_callback = this.queryEthAddressByShortAddress
+        ? this.queryEthAddressByShortAddress
+        : this.defaultQueryEthAddressByShortAddress;
+      const eth_address = await query_callback(_short_address);
+      // check address and short_address indeed matched.
       if (this.checkEthAddressIsEoa(eth_address, _short_address)) {
         return eth_address;
       } else {
@@ -208,20 +258,31 @@ export class Godwoker {
           `query result of eoa address ${_short_address} with ${_short_address} is not match!`
         );
       }
-    } catch (error) {
-      // asume it is contact address
-      // just return the short-address
-      return _short_address;
     }
   }
-  checkEthAddressIsEoa(eth_address: string, _short_address: string): boolean {
-    // todo: Method not impl
-    return true;
+
+  // re-compute the eth address with code_hash info to make sure
+  // it indeed match with short_address
+  checkEthAddressIsEoa(
+    eth_address: string,
+    _target_short_address: string
+  ): boolean {
+    const source_short_address =
+      this.computeShortAddressByEoaEthAddress(eth_address);
+    return source_short_address === _target_short_address;
   }
 
-  async queryEthAddressByShortAddress(_short_address: string): Promise<string> {
+  // default method
+  async defaultQueryEthAddressByShortAddress(
+    _short_address: string
+  ): Promise<string> {
     // todo: Method not implemented
     return "";
+  }
+
+  // default method
+  async defaultSaveEthAddressShortAddressMapping(_short_address: string) {
+    // todo: Method not implemented
   }
 
   async getNonce(account_id: number): Promise<string> {
@@ -417,7 +478,7 @@ export class Godwoker {
         throw error;
 
       // otherwise, assume it is EOA address
-      const script_hash = this.getScriptHashByEoaEthAddress(_address);
+      const script_hash = this.computeScriptHashByEoaEthAddress(_address);
       const accountId = await this.getAccountIdByScriptHash(script_hash);
       return accountId;
     }
