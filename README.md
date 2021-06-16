@@ -11,7 +11,7 @@ Before:
 ```js
 import Web3 from 'web3';
 
-var web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+var web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8024'));
 ```
 
 Now:
@@ -20,8 +20,10 @@ Now:
 import Web3 from 'web3';
 import PolyjuiceHttpProvider from './PolyjuiceHttpProvider';
 
-var web3 = new Web3(new PolyjuiceHttpProvider('http://localhost:8545', GodwokenOption));
+var web3 = new Web3(new PolyjuiceHttpProvider('http://localhost:8024', GodwokenOption, ['your abi items array']));
 ```
+
+for ```GodwokenOption```: see [here](/src/util.ts#L38-L49).
 
 ## init contract instance
 
@@ -30,7 +32,7 @@ Before:
 ```js
 import Web3 from 'web3';
 
-var provider = new Web3.providers.HttpProvider('http://localhost:8545');
+var provider = new Web3.providers.HttpProvider('http://localhost:8024');
 var web3 = new Web3(provider);
 
 var contract = web3.eth.Contract(abi, contract_address);
@@ -42,13 +44,11 @@ Now:
 import Web3 from 'web3';
 import PolyjuiceHttpProvider from './PolyjuiceHttpProvider';
 
-var provider = new PolyjuiceHttpProvider('http://localhost:8545', GodwokenOption);
+var provider = new PolyjuiceHttpProvider('http://localhost:8024', GodwokenOption, ['your abi items array']);
 var web3 = new Web3(provider);
 
 var contract = web3.eth.Contract(abi, contract_address);
 ```
-
-for ```GodwokenOption```: see [here](/src/util.ts#L30-L36).
 
 basically, PolyjuiceHttpProvider is just a extended class of [[web3-providers-http](https://github.com/ChainSafe/web3.js/tree/1.x/packages/web3-providers-http)]
 
