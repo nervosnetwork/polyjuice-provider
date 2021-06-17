@@ -3,7 +3,7 @@ const { Godwoker } = require("./util");
 const { Abi } = require("./abi");
 
 class PolyjuiceHttpProvider extends HttpProvider {
-  constructor(host, godwoken_config, abi_items, option) {
+  constructor(host, godwoken_config, abi_items = [], option) {
     super(host, option);
     this.godwoker = new Godwoker(host, godwoken_config);
     this.abi = new Abi(abi_items);
