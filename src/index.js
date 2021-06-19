@@ -67,14 +67,20 @@ class PolyjuiceHttpProvider extends HttpProvider {
           );
           // todo: tx_hash should be eth_tx_hash not godwoken_tx_hash!
           await this.godwoker.waitForTransactionReceipt(tx_hash);
-          super.send(payload, function(err, result){
+          super.send(payload, function (err, result) {
             console.log(err, result);
             const res = {
-              "jsonrpc": result.jsonrpc,
-              "id": result.id,
-            } 
-            const new_res = {...res, ...{result: tx_hash}};
-            console.log(`eth_sendTransaction, new_res: ${JSON.stringify(new_res, null, 2)}`);
+              jsonrpc: result.jsonrpc,
+              id: result.id,
+            };
+            const new_res = { ...res, ...{ result: tx_hash } };
+            console.log(
+              `eth_sendTransaction, new_res: ${JSON.stringify(
+                new_res,
+                null,
+                2
+              )}`
+            );
             callback(null, new_res);
           });
           break;
@@ -110,22 +116,22 @@ class PolyjuiceHttpProvider extends HttpProvider {
             polyjuice_tx
           );
 
-          console.log(
-            `provider just proxy an eth_call rpc call.`
-          );
+          console.log(`provider just proxy an eth_call rpc call.`);
 
           console.log(`runResult: ${JSON.stringify(run_result, null, 2)}`);
           const abi_item =
             this.abi.get_intereted_abi_item_by_encoded_data(data);
           if (!abi_item) {
-            super.send(payload, function(err, result){
+            super.send(payload, function (err, result) {
               console.log(err, result);
               const res = {
-                "jsonrpc": result.jsonrpc,
-                "id": result.id,
-              } 
-              const new_res = {...res, ...{result: run_result.return_data}};
-              console.log(`no abi, new_res: ${JSON.stringify(new_res, null, 2)}`);
+                jsonrpc: result.jsonrpc,
+                id: result.id,
+              };
+              const new_res = { ...res, ...{ result: run_result.return_data } };
+              console.log(
+                `no abi, new_res: ${JSON.stringify(new_res, null, 2)}`
+              );
               callback(null, new_res);
             });
           } else {
@@ -136,14 +142,17 @@ class PolyjuiceHttpProvider extends HttpProvider {
                 this.godwoker.getEthAddressByAllTypeShortAddress.bind(
                   this.godwoker
                 )
-            );
-            super.send(payload, function(err, result){
+              );
+            super.send(payload, function (err, result) {
               console.log(err, result);
               const res = {
-                "jsonrpc": result.jsonrpc,
-                "id": result.id,
-              } 
-              const new_res = {...res, ...{result: return_value_with_short_address}};
+                jsonrpc: result.jsonrpc,
+                id: result.id,
+              };
+              const new_res = {
+                ...res,
+                ...{ result: return_value_with_short_address },
+              };
               callback(null, new_res);
             });
           }
@@ -190,4 +199,4 @@ class PolyjuiceHttpProvider extends HttpProvider {
   }
 }
 
-module.exports = PolyjuiceHttpProvider; 
+module.exports = PolyjuiceHttpProvider;

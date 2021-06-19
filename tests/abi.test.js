@@ -92,7 +92,7 @@ test.serial("get_interested_methods", (t) => {
 //     "0xa6d9c5f7d4de3cef51ad3b7235d79ccc95114daa",
 //   ]);
 // });
-// 
+//
 // test.serial("refactor eth-address in inputs", async (t) => {
 //   const testData =
 //     "0x53d9d9100000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000a6d9c5f7d4de3cef51ad3b7235d79ccc95114de5000000000000000000000000a6d9c5f7d4de3cef51ad3b7235d79ccc95114daa";
@@ -105,7 +105,7 @@ test.serial("get_interested_methods", (t) => {
 //   t.not(testData, newTestData);
 //   t.notDeepEqual(decodedData, newDecodedData);
 // });
-// 
+//
 // test.serial("refactor eth-address in outputs", async (t) => {
 //   const abi_item = {
 //     inputs: [
@@ -119,7 +119,7 @@ test.serial("get_interested_methods", (t) => {
 //     outputs: [{ type: "address", name: "wallet" }],
 //     type: "function",
 //   };
-// 
+//
 //   const test_values = Web3EthAbi.encodeParameters(
 //     ["address"],
 //     ["0xFb2C72d3ffe10Ef7c9960272859a23D24db9e04A"]

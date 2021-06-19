@@ -215,10 +215,10 @@ export class Godwoker {
       42
     );
 
-    if (write_callback){
+    if (write_callback) {
       write_callback(_address, short_address);
     }
-    
+
     return short_address;
   }
 
@@ -309,7 +309,9 @@ export class Godwoker {
           if (err) return reject(err);
           if (!res || res.result !== "ok")
             return reject(
-              new Error(`unable to save eth address and short address in web3 server.`)
+              new Error(
+                `unable to save eth address and short address in web3 server.`
+              )
             );
           return resolve(res.result);
         }

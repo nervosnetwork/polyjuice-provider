@@ -546,9 +546,7 @@
     {
       "type": "union",
       "name": "MetaContractArgs",
-      "items": [
-        "CreateAccount"
-      ]
+      "items": ["CreateAccount"]
     },
     {
       "type": "table",
@@ -563,10 +561,7 @@
     {
       "type": "union",
       "name": "SUDTArgs",
-      "items": [
-        "SUDTQuery",
-        "SUDTTransfer"
-      ]
+      "items": ["SUDTQuery", "SUDTTransfer"]
     },
     {
       "type": "table",
