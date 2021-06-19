@@ -246,8 +246,8 @@ export class Godwoker {
         _short_address
       );
       const script = await this.getScriptByScriptHash(script_hash);
-      if(script.code_hash === this.eth_account_lock.code_hash){
-        return '0x' + script.args.slice(66, 106);
+      if (script.code_hash === this.eth_account_lock.code_hash) {
+        return "0x" + script.args.slice(66, 106);
       }
       // assume it is normal contract address.
       return _short_address;
@@ -277,8 +277,10 @@ export class Godwoker {
   ): boolean {
     const source_short_address =
       this.computeShortAddressByEoaEthAddress(eth_address);
-      console.log(source_short_address, _target_short_address)
-      return source_short_address.toLowerCase() === _target_short_address.toLowerCase();
+    console.log(source_short_address, _target_short_address);
+    return (
+      source_short_address.toLowerCase() === _target_short_address.toLowerCase()
+    );
   }
 
   // default method
