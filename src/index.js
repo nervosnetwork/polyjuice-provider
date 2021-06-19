@@ -32,6 +32,8 @@ class PolyjuiceHttpProvider extends HttpProvider {
               )
             );
 
+          console.log(data, data_with_short_address);
+
           const t = {
             from: from || window.ethereum.selectedAddress,
             to: to,
@@ -65,7 +67,6 @@ class PolyjuiceHttpProvider extends HttpProvider {
           console.log(
             `provider just proxy an eth_sendTransaction rpc call, tx_hash: ${tx_hash}`
           );
-          // todo: tx_hash should be eth_tx_hash not godwoken_tx_hash!
           await this.godwoker.waitForTransactionReceipt(tx_hash);
           super.send(payload, function (err, result) {
             console.log(err, result);

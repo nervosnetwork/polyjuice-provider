@@ -233,7 +233,7 @@ export class Godwoker {
       // remember to save the script and eoa address mapping with default or user-specific callback
       const write_callback = this.saveEthAddressShortAddressMapping
         ? this.saveEthAddressShortAddressMapping
-        : this.defaultSaveEthAddressShortAddressMapping;
+        : this.defaultSaveEthAddressShortAddressMapping.bind(this);
       return this.computeShortAddressByEoaEthAddress(_address, write_callback);
     }
   }
@@ -246,13 +246,17 @@ export class Godwoker {
         _short_address
       );
       const script = await this.getScriptByScriptHash(script_hash);
-      return script.args;
+      if(script.code_hash === this.eth_account_lock.code_hash){
+        return '0x' + script.args.slice(66, 106);
+      }
+      // assume it is normal contract address.
+      return _short_address;
     } catch (error) {
       // not on-chain, asume it is  eoa address
       // which haven't create account on godwoken yet
       const query_callback = this.queryEthAddressByShortAddress
         ? this.queryEthAddressByShortAddress
-        : this.defaultQueryEthAddressByShortAddress;
+        : this.defaultQueryEthAddressByShortAddress.bind(this);
       const eth_address = await query_callback(_short_address);
       // check address and short_address indeed matched.
       if (this.checkEthAddressIsEoa(eth_address, _short_address)) {
@@ -273,7 +277,8 @@ export class Godwoker {
   ): boolean {
     const source_short_address =
       this.computeShortAddressByEoaEthAddress(eth_address);
-    return source_short_address === _target_short_address;
+      console.log(source_short_address, _target_short_address)
+      return source_short_address.toLowerCase() === _target_short_address.toLowerCase();
   }
 
   // default method
@@ -470,10 +475,24 @@ export class Godwoker {
     });
   }
 
+  async eth_getTransactionReceipt(tx_hash: Hash): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "eth_getTransactionReceipt",
+        [tx_hash],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          //if(!res || res.result === undefined || res.result === null) resolve( Error(`failed to send gw_getTransactionReceipt rpc, ${JSON.stringify(res)}`);
+          return resolve(res.result);
+        }
+      );
+    });
+  }
+
   async waitForTransactionReceipt(tx_hash: Hash) {
     while (true) {
       await this.asyncSleep(3000);
-      const tx_receipt = await this.gw_getTransactionReceipt(tx_hash);
+      const tx_receipt = await this.eth_getTransactionReceipt(tx_hash);
       console.log(
         `keep waitting for tx_receipt: ${JSON.stringify(tx_receipt)}`
       );

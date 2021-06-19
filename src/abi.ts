@@ -184,7 +184,10 @@ export class Abi {
           )
         : await calculate_short_address(decoded_values[index + ""]);
     }
-    return decoded_values;
+    let decode_values_with_refactor = Object.values(decoded_values);
+    decode_values_with_refactor = decode_values_with_refactor.slice(0, decode_values_with_refactor.length - 1);
+    console.log(decode_values_with_refactor);
+    return Web3EthAbi.encodeParameters(output_value_types, decode_values_with_refactor);
   }
 
   // todo: support user providing an url path, and read the abi json from it
