@@ -66,10 +66,22 @@ build browser version:
     yarn build
 ```
 
+useage:
+
+```html
+<script src="../lib/polyjuice_provider.min.js"></script>
+```
+
 build node version:
 
 ```sh
     yarn build:node
+```
+
+useage:
+
+```js
+const PolyjuiceHttpProvider = require('../lib/polyjuice_provider.min.js');
 ```
 
 test:
