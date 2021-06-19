@@ -13,34 +13,6 @@ export interface UnionType {
   value: any;
 }
 
-export function SerializeByte32Opt(
-  value: CanCastToArrayBuffer | null
-): ArrayBuffer;
-export class Byte32Opt {
-  constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
-  validate(compatible?: boolean): void;
-  value(): Byte32;
-  hasValue(): boolean;
-}
-
-export function SerializeByte20(value: CanCastToArrayBuffer): ArrayBuffer;
-export class Byte20 {
-  constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
-  validate(compatible?: boolean): void;
-  indexAt(i: number): number;
-  raw(): ArrayBuffer;
-  static size(): Number;
-}
-
-export function SerializeSignature(value: CanCastToArrayBuffer): ArrayBuffer;
-export class Signature {
-  constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
-  validate(compatible?: boolean): void;
-  indexAt(i: number): number;
-  raw(): ArrayBuffer;
-  static size(): Number;
-}
-
 export function SerializeBlockMerkleState(value: object): ArrayBuffer;
 export class BlockMerkleState {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
@@ -88,7 +60,6 @@ export class RollupConfig {
   getRequiredStakingCapacity(): Uint64;
   getChallengeMaturityBlocks(): Uint64;
   getFinalityBlocks(): Uint64;
-  getCompatibleChainId(): Uint32;
   getRewardBurnRate(): number;
   getAllowedEoaTypeHashes(): Byte32Vec;
   getAllowedContractTypeHashes(): Byte32Vec;
@@ -109,7 +80,7 @@ export class L2Transaction {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
   getRaw(): RawL2Transaction;
-  getSignature(): Signature;
+  getSignature(): Bytes;
 }
 
 export function SerializeL2TransactionVec(value: Array<object>): ArrayBuffer;
@@ -208,9 +179,7 @@ export class RawWithdrawalRequest {
   getPaymentLockHash(): Byte32;
 }
 
-export function SerializeWithdrawalRequestVec(
-  value: Array<object>
-): ArrayBuffer;
+export function SerializeWithdrawalRequestVec(value: Array<object>): ArrayBuffer;
 export class WithdrawalRequestVec {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -222,9 +191,8 @@ export function SerializeWithdrawalRequest(value: object): ArrayBuffer;
 export class WithdrawalRequest {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
-  static size(): Number;
   getRaw(): RawWithdrawalRequest;
-  getSignature(): Signature;
+  getSignature(): Bytes;
 }
 
 export function SerializeKVPair(value: object): ArrayBuffer;
@@ -271,9 +239,7 @@ export class CustodianLockArgs {
   getDepositBlockNumber(): Uint64;
 }
 
-export function SerializeUnlockCustodianViaRevertWitness(
-  value: object
-): ArrayBuffer;
+export function SerializeUnlockCustodianViaRevertWitness(value: object): ArrayBuffer;
 export class UnlockCustodianViaRevertWitness {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -304,9 +270,7 @@ export class UnlockWithdrawalWitness {
   value(): any;
 }
 
-export function SerializeUnlockWithdrawalViaFinalize(
-  value: object
-): ArrayBuffer;
+export function SerializeUnlockWithdrawalViaFinalize(value: object): ArrayBuffer;
 export class UnlockWithdrawalViaFinalize {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -363,16 +327,14 @@ export function SerializeSUDTQuery(value: object): ArrayBuffer;
 export class SUDTQuery {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
-  static size(): Number;
-  getAccountId(): Uint32;
+  getShortAddress(): Bytes;
 }
 
 export function SerializeSUDTTransfer(value: object): ArrayBuffer;
 export class SUDTTransfer {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
-  static size(): Number;
-  getTo(): Uint32;
+  getTo(): Bytes;
   getAmount(): Uint128;
   getFee(): Uint128;
 }
@@ -451,8 +413,8 @@ export class VerifyTransactionWitness {
   getContext(): VerifyTransactionContext;
 }
 
-export function SerializeVerifySignatureContext(value: object): ArrayBuffer;
-export class VerifySignatureContext {
+export function SerializeVerifyTransactionSignatureContext(value: object): ArrayBuffer;
+export class VerifyTransactionSignatureContext {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
   getAccountCount(): Uint32;
@@ -460,18 +422,15 @@ export class VerifySignatureContext {
   getScripts(): ScriptVec;
 }
 
-export function SerializeVerifyTransactionSignatureWitness(
-  value: object
-): ArrayBuffer;
+export function SerializeVerifyTransactionSignatureWitness(value: object): ArrayBuffer;
 export class VerifyTransactionSignatureWitness {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
-  getL2Tx(): L2Transaction;
   getRawL2Block(): RawL2Block;
+  getL2Tx(): L2Transaction;
   getTxProof(): Bytes;
   getKvStateProof(): Bytes;
-  getBlockHashesProof(): Bytes;
-  getContext(): VerifySignatureContext;
+  getContext(): VerifyTransactionSignatureContext;
 }
 
 export function SerializeVerifyWithdrawalWitness(value: object): ArrayBuffer;
@@ -479,10 +438,8 @@ export class VerifyWithdrawalWitness {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
   getRawL2Block(): RawL2Block;
-  getKvStateProof(): Bytes;
   getWithdrawalRequest(): WithdrawalRequest;
   getWithdrawalProof(): Bytes;
-  getContext(): VerifySignatureContext;
 }
 
 export function SerializeRollupSubmitBlock(value: object): ArrayBuffer;
@@ -552,8 +509,8 @@ export class Uint64 {
   validate(compatible?: boolean): void;
   indexAt(i: number): number;
   raw(): ArrayBuffer;
-  toBigEndianBigUint64(): bigint;
-  toLittleEndianBigUint64(): bigint;
+  toBigEndianUint64(): BigInt;
+  toLittleEndianUint64(): BigInt;
   static size(): Number;
 }
 
@@ -593,9 +550,7 @@ export class Bytes {
   length(): number;
 }
 
-export function SerializeBytesOpt(
-  value: CanCastToArrayBuffer | null
-): ArrayBuffer;
+export function SerializeBytesOpt(value: CanCastToArrayBuffer | null): ArrayBuffer;
 export class BytesOpt {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -603,9 +558,7 @@ export class BytesOpt {
   hasValue(): boolean;
 }
 
-export function SerializeBytesVec(
-  value: Array<CanCastToArrayBuffer>
-): ArrayBuffer;
+export function SerializeBytesVec(value: Array<CanCastToArrayBuffer>): ArrayBuffer;
 export class BytesVec {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -613,9 +566,7 @@ export class BytesVec {
   length(): number;
 }
 
-export function SerializeByte32Vec(
-  value: Array<CanCastToArrayBuffer>
-): ArrayBuffer;
+export function SerializeByte32Vec(value: Array<CanCastToArrayBuffer>): ArrayBuffer;
 export class Byte32Vec {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -631,9 +582,7 @@ export class ScriptOpt {
   hasValue(): boolean;
 }
 
-export function SerializeProposalShortId(
-  value: CanCastToArrayBuffer
-): ArrayBuffer;
+export function SerializeProposalShortId(value: CanCastToArrayBuffer): ArrayBuffer;
 export class ProposalShortId {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -658,9 +607,7 @@ export class TransactionVec {
   length(): number;
 }
 
-export function SerializeProposalShortIdVec(
-  value: Array<CanCastToArrayBuffer>
-): ArrayBuffer;
+export function SerializeProposalShortIdVec(value: Array<CanCastToArrayBuffer>): ArrayBuffer;
 export class ProposalShortIdVec {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -817,3 +764,4 @@ export class WitnessArgs {
   getInputType(): BytesOpt;
   getOutputType(): BytesOpt;
 }
+

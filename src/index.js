@@ -25,7 +25,7 @@ class PolyjuiceHttpProvider extends HttpProvider {
           const { from, gas, gasPrice, value, data, to } = params[0];
 
           const data_with_short_address =
-            this.abi.refactor_data_with_short_address(
+            await this.abi.refactor_data_with_short_address(
               data,
               this.godwoker.getShortAddressByAllTypeEthAddress.bind(
                 this.godwoker
@@ -41,7 +41,7 @@ class PolyjuiceHttpProvider extends HttpProvider {
             gasPrice: gasPrice,
           };
 
-          const to_id = this.godwoker.allTypeEthAddressToAccountId(to);
+          const to_id = await this.godwoker.allTypeEthAddressToAccountId(to);
           const sender_script_hash =
             this.godwoker.computeScriptHashByEoaEthAddress(from);
           const receiver_script_hash =
@@ -66,7 +66,17 @@ class PolyjuiceHttpProvider extends HttpProvider {
             `provider just proxy an eth_sendTransaction rpc call, tx_hash: ${tx_hash}`
           );
           // todo: tx_hash should be eth_tx_hash not godwoken_tx_hash!
-          callback(null, tx_hash);
+          await this.godwoker.waitForTransactionReceipt(tx_hash);
+          super.send(payload, function(err, result){
+            console.log(err, result);
+            const res = {
+              "jsonrpc": result.jsonrpc,
+              "id": result.id,
+            } 
+            const new_res = {...res, ...{result: tx_hash}};
+            console.log(`eth_sendTransaction, new_res: ${JSON.stringify(new_res, null, 2)}`);
+            callback(null, new_res);
+          });
           break;
         } catch (error) {
           this.connected = false;
@@ -78,7 +88,7 @@ class PolyjuiceHttpProvider extends HttpProvider {
           const { from, gas, gasPrice, value, data, to } = params[0];
 
           const data_with_short_address =
-            this.abi.refactor_data_with_short_address(
+            await this.abi.refactor_data_with_short_address(
               data,
               this.godwoker.getShortAddressByAllTypeEthAddress.bind(
                 this.godwoker
@@ -96,34 +106,46 @@ class PolyjuiceHttpProvider extends HttpProvider {
 
           const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
 
-          const tx_hash = await this.godwoker.gw_excuteRawL2Transaction(
-            polyjuice_tx,
-            signature
+          const run_result = await this.godwoker.gw_executeRawL2Transaction(
+            polyjuice_tx
           );
 
           console.log(
-            `provider just proxy an eth_call rpc call, tx_hash: ${tx_hash}`
+            `provider just proxy an eth_call rpc call.`
           );
 
-          await this.godwoker.waitForTransactionReceipt(tx_hash);
-          const run_result = await this.godwoker.gw_getTransactionReceipt(
-            tx_hash
-          );
           console.log(`runResult: ${JSON.stringify(run_result, null, 2)}`);
           const abi_item =
             this.abi.get_intereted_abi_item_by_encoded_data(data);
           if (!abi_item) {
-            callback(null, run_result.return_data);
+            super.send(payload, function(err, result){
+              console.log(err, result);
+              const res = {
+                "jsonrpc": result.jsonrpc,
+                "id": result.id,
+              } 
+              const new_res = {...res, ...{result: run_result.return_data}};
+              console.log(`no abi, new_res: ${JSON.stringify(new_res, null, 2)}`);
+              callback(null, new_res);
+            });
           } else {
             const return_value_with_short_address =
-              this.abi.refactor_return_value_with_short_address(
+              await this.abi.refactor_return_value_with_short_address(
                 run_result.return_data,
                 abi_item,
                 this.godwoker.getEthAddressByAllTypeShortAddress.bind(
                   this.godwoker
                 )
-              );
-            callback(null, return_value_with_short_address);
+            );
+            super.send(payload, function(err, result){
+              console.log(err, result);
+              const res = {
+                "jsonrpc": result.jsonrpc,
+                "id": result.id,
+              } 
+              const new_res = {...res, ...{result: return_value_with_short_address}};
+              callback(null, new_res);
+            });
           }
           break;
         } catch (error) {
@@ -137,7 +159,7 @@ class PolyjuiceHttpProvider extends HttpProvider {
           const { data } = params[0];
 
           const data_with_short_address =
-            this.abi.refactor_data_with_short_address(
+            await this.abi.refactor_data_with_short_address(
               data,
               this.godwoker.getShortAddressByAllTypeEthAddress.bind(
                 this.godwoker
@@ -168,4 +190,4 @@ class PolyjuiceHttpProvider extends HttpProvider {
   }
 }
 
-module.exports = PolyjuiceHttpProvider;
+module.exports = PolyjuiceHttpProvider; 

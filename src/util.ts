@@ -146,7 +146,7 @@ export class Godwoker {
   async getAccountIdByScriptHash(script_hash: string): Promise<string> {
     return new Promise((resolve, reject) => {
       this.client.request(
-        "gw_get_account_id",
+        "gw_get_account_id_by_script_hash",
         [script_hash],
         (err: any, res: any) => {
           if (err) return reject(err);
@@ -190,7 +190,7 @@ export class Godwoker {
   async getScriptHashByShortAddress(_address: string): Promise<string> {
     return new Promise((resolve, reject) => {
       this.client.request(
-        "gw_get_script_hash_by_prefix",
+        "gw_get_script_hash_by_short_address",
         [_address],
         (err: any, res: any) => {
           if (err) return reject(err);
@@ -214,7 +214,11 @@ export class Godwoker {
       0,
       42
     );
-    write_callback ? write_callback(_address, short_address) : {};
+
+    if (write_callback){
+      write_callback(_address, short_address);
+    }
+    
     return short_address;
   }
 
@@ -305,9 +309,7 @@ export class Godwoker {
           if (err) return reject(err);
           if (!res || res.result !== "ok")
             return reject(
-              new Error(
-                `unable to save eth address and short address in web3 server. `
-              )
+              new Error(`unable to save eth address and short address in web3 server.`)
             );
           return resolve(res.result);
         }
@@ -403,12 +405,12 @@ export class Godwoker {
     });
   }
 
-  async gw_excuteRawL2Transaction(raw_tx: RawL2Transaction): Promise<string> {
+  async gw_executeRawL2Transaction(raw_tx: RawL2Transaction): Promise<string> {
     console.log(JSON.stringify(raw_tx, null, 2));
     const serialize_tx = this.serializeRawL2Transaction(raw_tx);
     return new Promise((resolve, reject) => {
       this.client.request(
-        "gw_execute_raw_l2_tranaction",
+        "gw_execute_raw_l2transaction",
         [serialize_tx],
         (err: any, res: any) => {
           if (err) return reject(err);
@@ -434,7 +436,7 @@ export class Godwoker {
     const serialize_tx = this.serializeL2Transaction(l2_tx);
     return new Promise((resolve, reject) => {
       this.client.request(
-        "gw_submit_l2_transaction",
+        "gw_submit_l2transaction",
         [serialize_tx],
         (err: any, res: any) => {
           if (err) return reject(err);
@@ -492,8 +494,8 @@ export class Godwoker {
       throw new Error(`Invalid eth address length: ${address.byteLength}`);
 
     if (address.equals(Buffer.from(Array(20).fill(0))))
-      // special-case: meta-contract address
-      return "0x0";
+      // special-case: meta-contract address should return creator
+      return "0x3";
 
     try {
       // assume it is normal contract address, thus an godwoken-short-address
@@ -517,6 +519,7 @@ export class Godwoker {
   encodeArgs(_tx: EthTransaction) {
     const { to, gasPrice, gas: gasLimit, value, data } = _tx;
 
+    console.log(_tx);
     // header
     const args_0_7 =
       "0x" +

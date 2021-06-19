@@ -9,7 +9,9 @@ module.exports = merge(commonConfig, {
     filename: "polyjuice_provider.min.js",
     path: resolve(__dirname, "./lib"),
     libraryTarget: 'umd',
-    library: 'PolyjuiceHttpProvider'
+    library: 'PolyjuiceHttpProvider',
+//    libraryExport: 'default',
+//    globalObject: 'this',
   },
   devtool: "source-map",
 });
