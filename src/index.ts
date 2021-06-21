@@ -1,15 +1,56 @@
 const HttpProvider = require("web3-providers-http");
-const { Godwoker } = require("./util");
-const { Abi } = require("./abi");
 
-class PolyjuiceHttpProvider extends HttpProvider {
-  constructor(host, godwoken_config, abi_items = [], option) {
+import * as http from "http";
+import * as https from "https";
+import { JsonRpcResponse } from "web3-core-helpers";
+import { AbiItem } from "web3-utils";
+import { Godwoker, GodwokerOption } from "./util";
+import { Abi } from "./abi";
+
+export interface HttpHeader {
+  name: string;
+  value: string;
+}
+
+export interface HttpProviderAgent {
+  baseUrl?: string;
+  http?: http.Agent;
+  https?: https.Agent;
+}
+
+export interface HttpProviderOptions {
+  withCredentials?: boolean;
+  timeout?: number;
+  headers?: HttpHeader[];
+  agent?: HttpProviderAgent;
+  keepAlive?: boolean;
+}
+
+declare global {
+  interface Window {
+    ethereum: any;
+  }
+}
+
+export default class PolyjuiceHttpProvider extends HttpProvider {
+  constructor(
+    host: string,
+    godwoken_config: GodwokerOption,
+    abi_items: AbiItem[] = [],
+    option?: HttpProviderOptions
+  ) {
     super(host, option);
     this.godwoker = new Godwoker(host, godwoken_config);
     this.abi = new Abi(abi_items);
   }
 
-  async send(payload, callback) {
+  async send(
+    payload: any,
+    callback?: (
+      error: Error | null,
+      result: JsonRpcResponse | undefined
+    ) => void
+  ) {
     const { method, params } = payload;
 
     switch (method) {
@@ -199,5 +240,3 @@ class PolyjuiceHttpProvider extends HttpProvider {
     }
   }
 }
-
-module.exports = PolyjuiceHttpProvider;

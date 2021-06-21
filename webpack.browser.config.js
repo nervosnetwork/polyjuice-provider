@@ -10,8 +10,8 @@ module.exports = merge(commonConfig, {
     path: resolve(__dirname, "./lib"),
     libraryTarget: 'umd',
     library: 'PolyjuiceHttpProvider',
-//    libraryExport: 'default',
-//    globalObject: 'this',
+    libraryExport: 'default',
+    globalObject: 'this',
   },
   devtool: "source-map",
 });

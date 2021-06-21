@@ -1,6 +1,6 @@
 const test = require("ava");
 const Web3EthAbi = require("web3-eth-abi");
-const PolyjuiceHttpProvider = require("../lib/node/polyjuice_provider.js");
+const PolyjuiceHttpProvider = require("../lib/polyjuice_provider.min.js");
 
 const TEST_ABI_ITEMS = [
   {
