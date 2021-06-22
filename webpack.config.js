@@ -1,6 +1,8 @@
 // shared config (dev and prod)
 const path = require("path");
 const webpack = require("webpack");
+const nodeExternals = require('webpack-node-externals');
+
 
 const basicConfig = {
   context: path.resolve(__dirname, "./src"),
@@ -15,6 +17,12 @@ const basicConfig = {
     libraryExport: 'default',
     globalObject: 'this',
   },
+//  externals: [
+//    "@ckb-lumos/base", "web3", "webpack", "typescript", "buffer", "encoding", "jayson", "keccak256", "xhr2-cookies", "express"
+//  ],
+// in order to ignore all modules in node_modules folder 
+  externals: [nodeExternals()],
+
   resolve: {
     extensions: [".js", ".ts"],
     fallback: {
