@@ -1,5 +1,3 @@
-import "@babel/polyfill";
-
 import { Script, Hash, utils, HexNumber, HexString } from "@ckb-lumos/base";
 
 import { GodwokenUtils, RawL2Transaction, L2Transaction } from "./godwoken";
@@ -128,13 +126,15 @@ export class Godwoker {
     return new Promise((resolve, reject) => {
       this.client.request(
         "gw_get_script_hash",
-        [`${account_id.toString(16)}`],
+        [`0x${BigInt(account_id).toString(16)}`],
         (err: any, res: any) => {
           if (err) return reject(err);
           if (!res || res.result === undefined || res.result === null)
             return reject(
               new Error(
-                `unable to fetch account script hash from ${account_id}`
+                `unable to fetch account script hash from 0x${BigInt(
+                  account_id
+                ).toString(16)}`
               )
             );
           return resolve(res.result);
@@ -414,7 +414,7 @@ export class Godwoker {
     });
   }
 
-  async gw_executeRawL2Transaction(raw_tx: RawL2Transaction): Promise<string> {
+  async gw_executeRawL2Transaction(raw_tx: RawL2Transaction): Promise<any> {
     console.log(JSON.stringify(raw_tx, null, 2));
     const serialize_tx = this.serializeRawL2Transaction(raw_tx);
     return new Promise((resolve, reject) => {
