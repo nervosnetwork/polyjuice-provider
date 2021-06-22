@@ -23,14 +23,6 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@babel/polyfill@^7.12.1":
-  version "7.12.1"
-  resolved "https://registry.npm.taobao.org/@babel/polyfill/download/@babel/polyfill-7.12.1.tgz#1f2d6371d1261bbd961f3c5d5909150e12d0bd96"
-  integrity sha1-Hy1jcdEmG72WHzxdWQkVDhLQvZY=
-  dependencies:
-    core-js "^2.6.5"
-    regenerator-runtime "^0.13.4"
-
 "@ckb-lumos/base@^0.16.0":
   version "0.16.0"
   resolved "https://registry.nlark.com/@ckb-lumos/base/download/@ckb-lumos/base-0.16.0.tgz#e235bf39840bdc08e29e2ccb875d7761c9cde7bf"
@@ -1168,8 +1160,8 @@ buffer@^5.0.5, buffer@^5.5.0, buffer@^5.6.0:
 
 buffer@^6.0.3:
   version "6.0.3"
-  resolved "https://registry.npm.taobao.org/buffer/download/buffer-6.0.3.tgz#2ace578459cc8fbe2a70aaa8f52ee63b6a74c6c6"
-  integrity sha1-Ks5XhFnMj74qcKqo9S7mO2p0xsY=
+  resolved "https://registry.yarnpkg.com/buffer/-/buffer-6.0.3.tgz#2ace578459cc8fbe2a70aaa8f52ee63b6a74c6c6"
+  integrity sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==
   dependencies:
     base64-js "^1.3.1"
     ieee754 "^1.2.1"
@@ -1571,7 +1563,7 @@ cookiejar@^2.1.1:
   resolved "https://registry.npm.taobao.org/cookiejar/download/cookiejar-2.1.2.tgz#dd8a235530752f988f9a0844f3fc589e3111125c"
   integrity sha1-3YojVTB1L5iPmghE8/xYnjERElw=
 
-core-js@^2.4.0, core-js@^2.6.5:
+core-js@^2.4.0:
   version "2.6.12"
   resolved "https://registry.nlark.com/core-js/download/core-js-2.6.12.tgz?cache=0&sync_timestamp=1622278867523&other_urls=https%3A%2F%2Fregistry.nlark.com%2Fcore-js%2Fdownload%2Fcore-js-2.6.12.tgz#d9333dfa7b065e347cc5682219d6f690859cc2ec"
   integrity sha1-2TM9+nsGXjR8xWgiGdb2kIWcwuw=
@@ -4437,11 +4429,6 @@ regenerator-runtime@^0.11.0:
   resolved "https://registry.nlark.com/regenerator-runtime/download/regenerator-runtime-0.11.1.tgz#be05ad7f9bf7d22e056f9726cee5017fbf19e2e9"
   integrity sha1-vgWtf5v30i4Fb5cmzuUBf78Z4uk=
 
-regenerator-runtime@^0.13.4:
-  version "0.13.7"
-  resolved "https://registry.nlark.com/regenerator-runtime/download/regenerator-runtime-0.13.7.tgz#cac2dacc8a1ea675feaabaeb8ae833898ae46f55"
-  integrity sha1-ysLazIoepnX+qrrriugziYrkb1U=
-
 registry-auth-token@^4.0.0:
   version "4.2.1"
   resolved "https://registry.npm.taobao.org/registry-auth-token/download/registry-auth-token-4.2.1.tgz#6d7b4006441918972ccd5fedcd41dc322c79b250"
@@ -5679,7 +5666,7 @@ web3-net@1.3.6:
     web3-core-method "1.3.6"
     web3-utils "1.3.6"
 
-web3-providers-http@1.3.6, web3-providers-http@^1.3.4:
+web3-providers-http@1.3.6:
   version "1.3.6"
   resolved "https://registry.nlark.com/web3-providers-http/download/web3-providers-http-1.3.6.tgz#36e8724a7424d52827819d53fd75dbf31f5422c2"
   integrity sha1-NuhySnQk1SgngZ1T/XXb8x9UIsI=
@@ -5970,9 +5957,9 @@ xhr-request@^1.0.1, xhr-request@^1.1.0:
     url-set-query "^1.0.0"
     xhr "^2.0.4"
 
-xhr2-cookies@1.1.0:
+xhr2-cookies@1.1.0, xhr2-cookies@^1.1.0:
   version "1.1.0"
-  resolved "https://registry.npm.taobao.org/xhr2-cookies/download/xhr2-cookies-1.1.0.tgz#7d77449d0999197f155cb73b23df72505ed89d48"
+  resolved "https://registry.yarnpkg.com/xhr2-cookies/-/xhr2-cookies-1.1.0.tgz#7d77449d0999197f155cb73b23df72505ed89d48"
   integrity sha1-fXdEnQmZGX8VXLc7I99yUF7YnUg=
   dependencies:
     cookiejar "^2.1.1"

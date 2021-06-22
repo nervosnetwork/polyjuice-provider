@@ -1,7 +1,12 @@
-const HttpProvider = require("web3-providers-http");
+/**
+ * this file is a custom http provider used to proxy ETH rpc call to godwoken-polyjuice chain.
+ * it is fork and based on https://github.com/ChainSafe/web3.js/tree/1.x/packages/web3-providers-http
+ */
 
 import * as http from "http";
 import * as https from "https";
+import { errors } from "web3-core-helpers";
+import { XMLHttpRequest as XHR2 } from "xhr2-cookies";
 import { JsonRpcResponse } from "web3-core-helpers";
 import { AbiItem } from "web3-utils";
 import { Godwoker, GodwokerOption } from "./util";
@@ -32,16 +37,46 @@ declare global {
   }
 }
 
-export default class PolyjuiceHttpProvider extends HttpProvider {
+export default class PolyjuiceHttpProvider {
+  godwoker: Godwoker;
+  abi: Abi;
+  withCredentials: boolean;
+  timeout: number;
+  headers: HttpHeader[];
+  agent: HttpProviderAgent;
+  connected: boolean;
+  host: string;
+  httpsAgent: https.Agent;
+  httpAgent: http.Agent;
+  baseUrl: any;
+
   constructor(
     host: string,
     godwoken_config: GodwokerOption,
     abi_items: AbiItem[] = [],
-    option?: HttpProviderOptions
+    options?: HttpProviderOptions
   ) {
-    super(host, option);
     this.godwoker = new Godwoker(host, godwoken_config);
     this.abi = new Abi(abi_items);
+
+    options = options || {};
+
+    this.withCredentials = options.withCredentials || false;
+    this.timeout = options.timeout || 0;
+    this.headers = options.headers;
+    this.agent = options.agent;
+    this.connected = false;
+
+    // keepAlive is true unless explicitly set to false
+    const keepAlive = options.keepAlive !== false;
+    this.host = host || "http://localhost:8024";
+    if (!this.agent) {
+      if (this.host.substring(0, 5) === "https") {
+        this.httpsAgent = new https.Agent({ keepAlive });
+      } else {
+        this.httpAgent = new http.Agent({ keepAlive });
+      }
+    }
   }
 
   async send(
@@ -88,7 +123,7 @@ export default class PolyjuiceHttpProvider extends HttpProvider {
           const sender_script_hash =
             this.godwoker.computeScriptHashByEoaEthAddress(from);
           const receiver_script_hash =
-            await this.godwoker.getScriptHashByAccountId(to_id);
+            await this.godwoker.getScriptHashByAccountId(parseInt(to_id));
 
           const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
           const message = this.godwoker.generateTransactionMessageToSign(
@@ -109,7 +144,7 @@ export default class PolyjuiceHttpProvider extends HttpProvider {
             `provider just proxy an eth_sendTransaction rpc call, tx_hash: ${tx_hash}`
           );
           await this.godwoker.waitForTransactionReceipt(tx_hash);
-          super.send(payload, function (err, result) {
+          this._send(payload, function (err, result) {
             console.log(err, result);
             const res = {
               jsonrpc: result.jsonrpc,
@@ -148,8 +183,8 @@ export default class PolyjuiceHttpProvider extends HttpProvider {
             to: to,
             value: value || 0,
             data: data_with_short_address || "",
-            gas: gas,
-            gasPrice: gasPrice,
+            gas: gas || 5000000,
+            gasPrice: gasPrice || 0,
           };
 
           const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
@@ -164,7 +199,7 @@ export default class PolyjuiceHttpProvider extends HttpProvider {
           const abi_item =
             this.abi.get_intereted_abi_item_by_encoded_data(data);
           if (!abi_item) {
-            super.send(payload, function (err, result) {
+            this._send(payload, function (err, result) {
               console.log(err, result);
               const res = {
                 jsonrpc: result.jsonrpc,
@@ -185,7 +220,7 @@ export default class PolyjuiceHttpProvider extends HttpProvider {
                   this.godwoker
                 )
               );
-            super.send(payload, function (err, result) {
+            this._send(payload, function (err, result) {
               console.log(err, result);
               const res = {
                 jsonrpc: result.jsonrpc,
@@ -222,7 +257,7 @@ export default class PolyjuiceHttpProvider extends HttpProvider {
           console.log(
             `provider just proxy an eth_estimateGas rpc call, data: ${data_with_short_address}`
           );
-          super.send(new_payload, callback);
+          this._send(new_payload, callback);
           break;
         } catch (error) {
           this.connected = false;
@@ -231,12 +266,103 @@ export default class PolyjuiceHttpProvider extends HttpProvider {
 
       default:
         try {
-          super.send(payload, callback);
+          this._send(payload, callback);
           break;
         } catch (error) {
           this.connected = false;
           throw error;
         }
     }
+  }
+
+  _prepareRequest() {
+    var request;
+
+    // the current runtime is a browser
+    if (typeof XMLHttpRequest !== "undefined") {
+      request = new XMLHttpRequest();
+    } else {
+      request = new XHR2();
+      var agents = {
+        httpsAgent: this.httpsAgent,
+        httpAgent: this.httpAgent,
+        baseUrl: this.baseUrl,
+      };
+
+      if (this.agent) {
+        agents.httpsAgent = this.agent.https;
+        agents.httpAgent = this.agent.http;
+        agents.baseUrl = this.agent.baseUrl;
+      }
+
+      request.nodejsSet(agents);
+    }
+
+    request.open("POST", this.host, true);
+    request.setRequestHeader("Content-Type", "application/json");
+    request.timeout = this.timeout;
+    request.withCredentials = this.withCredentials;
+
+    if (this.headers) {
+      this.headers.forEach(function (header) {
+        request.setRequestHeader(header.name, header.value);
+      });
+    }
+
+    return request;
+  }
+
+  /**
+   * Should be used to make async request
+   *
+   * @method send
+   * @param {Object} payload
+   * @param {Function} callback triggered on end with (err, result)
+   */
+  _send(payload, callback) {
+    var _this = this;
+    var request = this._prepareRequest();
+
+    request.onreadystatechange = function () {
+      if (request.readyState === 4 && request.timeout !== 1) {
+        var result = request.responseText;
+        var error = null;
+
+        try {
+          result = JSON.parse(result);
+        } catch (e) {
+          error = errors.InvalidResponse(request.responseText);
+        }
+
+        _this.connected = true;
+        callback(error, result);
+      }
+    };
+
+    request.ontimeout = function () {
+      _this.connected = false;
+      callback(errors.ConnectionTimeout(this.timeout));
+    };
+
+    try {
+      request.send(JSON.stringify(payload));
+    } catch (error) {
+      this.connected = false;
+      callback(errors.InvalidConnection(this.host));
+    }
+  }
+
+  /**
+   * Returns the desired boolean.
+   *
+   * @method supportsSubscriptions
+   * @returns {boolean}
+   */
+  supportsSubscriptions() {
+    return false;
+  }
+
+  disconnect(): boolean {
+    return this.connected;
   }
 }

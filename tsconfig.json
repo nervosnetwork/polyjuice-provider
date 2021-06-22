@@ -12,6 +12,6 @@
     "resolveJsonModule": true,
     "allowJs": true
   },
-  "exclude": ["node_modules", "tests", "lib"],
+  "exclude": ["node_modules", "tests", "lib", "src/godwoken/schemas"],
   "include": ["src"]
 }

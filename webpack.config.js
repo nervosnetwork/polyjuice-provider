@@ -2,20 +2,19 @@
 const path = require("path");
 const webpack = require("webpack");
 
-module.exports = {
+const basicConfig = {
   context: path.resolve(__dirname, "./src"),
   entry: "./index.ts",
   target: 'node',
   mode: "production",
   output: {
-    filename: "polyjuice_provider.min.js",
+    filename: "index.js",
     path: path.resolve(__dirname, "./lib"),
     libraryTarget: 'umd',
     library: 'PolyjuiceHttpProvider',
     libraryExport: 'default',
     globalObject: 'this',
   },
-  devtool: "source-map",
   resolve: {
     extensions: [".js", ".ts"],
     fallback: {
@@ -24,13 +23,13 @@ module.exports = {
       https: require.resolve("https-browserify"),
       url: require.resolve("url"),
       os: require.resolve("os-browserify/browser"),
-      crypto: require.resolve("crypto-browserify"),
+      crypto: require.resolve("crypto-browserify")
     },
     alias: {
       "./godwoken": path.resolve(__dirname, "src/godwoken"),
       buffer: path.join(__dirname, "./node_modules/buffer"),
       Buffer: path.join(__dirname, "./node_modules/buffer"),
-      process: "process/browser",
+      process: "process/browser"
     },
   },
   module: {
@@ -60,3 +59,19 @@ module.exports = {
     minimize: false,
   },
 };
+
+const serverConfig = {...basicConfig, ...{
+  target: 'node',
+  output: {...basicConfig.output, ...{
+    filename: 'index.node.js',
+  }}
+}};
+
+const clientConfig = {...basicConfig, ...{
+  target: 'web', // <=== can be omitted as default is 'web'
+  output: {...basicConfig.output, ...{
+    filename: 'index.js',
+  }}
+}};
+
+module.exports = [serverConfig, clientConfig];

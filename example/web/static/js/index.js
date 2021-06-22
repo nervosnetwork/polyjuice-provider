@@ -7,65 +7,9 @@
 		exports["PolyjuiceHttpProvider"] = factory();
 	else
 		root["PolyjuiceHttpProvider"] = factory();
-})(self, function() {
+})(this, function() {
 return /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
-
-/***/ 1202:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-__webpack_require__(8391);
-
-var _global = _interopRequireDefault(__webpack_require__(1829));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
-if (_global["default"]._babelPolyfill && typeof console !== "undefined" && console.warn) {
-  console.warn("@babel/polyfill is loaded more than once on this page. This is probably not desirable/intended " + "and may have consequences if different versions of the polyfills are applied sequentially. " + "If you do need to load the polyfill more than once, use @babel/polyfill/noConflict " + "instead to bypass the warning.");
-}
-
-_global["default"]._babelPolyfill = true;
-
-/***/ }),
-
-/***/ 8391:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-__webpack_require__(3048);
-
-__webpack_require__(9247);
-
-__webpack_require__(8128);
-
-__webpack_require__(241);
-
-__webpack_require__(4918);
-
-__webpack_require__(9839);
-
-__webpack_require__(8878);
-
-__webpack_require__(3090);
-
-__webpack_require__(4184);
-
-__webpack_require__(1587);
-
-__webpack_require__(338);
-
-__webpack_require__(49);
-
-__webpack_require__(1497);
-
-__webpack_require__(6248);
-
-/***/ }),
 
 /***/ 2795:
 /***/ (function(__unused_webpack_module, exports) {
@@ -1576,7 +1520,7 @@ module.exports = {
 
 /***/ }),
 
-/***/ 9985:
+/***/ 9766:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 module.exports = {
@@ -2119,6 +2063,3498 @@ module.exports = {
 
 /***/ }),
 
+/***/ 913:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+
+// EXPORTS
+__webpack_require__.d(__webpack_exports__, {
+  "RQ": () => (/* reexport */ AbiCoder),
+  "_R": () => (/* reexport */ fragments_ParamType)
+});
+
+// UNUSED EXPORTS: ConstructorFragment, EventFragment, FormatTypes, Fragment, FunctionFragment, Indexed, Interface, LogDescription, TransactionDescription, checkResultErrors, defaultAbiCoder
+
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/logger/lib.esm/_version.js
+const version = "logger/5.3.0";
+//# sourceMappingURL=_version.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/logger/lib.esm/index.js
+
+let _permanentCensorErrors = false;
+let _censorErrors = false;
+const LogLevels = { debug: 1, "default": 2, info: 2, warning: 3, error: 4, off: 5 };
+let _logLevel = LogLevels["default"];
+
+let _globalLogger = null;
+function _checkNormalize() {
+    try {
+        const missing = [];
+        // Make sure all forms of normalization are supported
+        ["NFD", "NFC", "NFKD", "NFKC"].forEach((form) => {
+            try {
+                if ("test".normalize(form) !== "test") {
+                    throw new Error("bad normalize");
+                }
+                ;
+            }
+            catch (error) {
+                missing.push(form);
+            }
+        });
+        if (missing.length) {
+            throw new Error("missing " + missing.join(", "));
+        }
+        if (String.fromCharCode(0xe9).normalize("NFD") !== String.fromCharCode(0x65, 0x0301)) {
+            throw new Error("broken implementation");
+        }
+    }
+    catch (error) {
+        return error.message;
+    }
+    return null;
+}
+const _normalizeError = _checkNormalize();
+var LogLevel;
+(function (LogLevel) {
+    LogLevel["DEBUG"] = "DEBUG";
+    LogLevel["INFO"] = "INFO";
+    LogLevel["WARNING"] = "WARNING";
+    LogLevel["ERROR"] = "ERROR";
+    LogLevel["OFF"] = "OFF";
+})(LogLevel || (LogLevel = {}));
+var ErrorCode;
+(function (ErrorCode) {
+    ///////////////////
+    // Generic Errors
+    // Unknown Error
+    ErrorCode["UNKNOWN_ERROR"] = "UNKNOWN_ERROR";
+    // Not Implemented
+    ErrorCode["NOT_IMPLEMENTED"] = "NOT_IMPLEMENTED";
+    // Unsupported Operation
+    //   - operation
+    ErrorCode["UNSUPPORTED_OPERATION"] = "UNSUPPORTED_OPERATION";
+    // Network Error (i.e. Ethereum Network, such as an invalid chain ID)
+    //   - event ("noNetwork" is not re-thrown in provider.ready; otherwise thrown)
+    ErrorCode["NETWORK_ERROR"] = "NETWORK_ERROR";
+    // Some sort of bad response from the server
+    ErrorCode["SERVER_ERROR"] = "SERVER_ERROR";
+    // Timeout
+    ErrorCode["TIMEOUT"] = "TIMEOUT";
+    ///////////////////
+    // Operational  Errors
+    // Buffer Overrun
+    ErrorCode["BUFFER_OVERRUN"] = "BUFFER_OVERRUN";
+    // Numeric Fault
+    //   - operation: the operation being executed
+    //   - fault: the reason this faulted
+    ErrorCode["NUMERIC_FAULT"] = "NUMERIC_FAULT";
+    ///////////////////
+    // Argument Errors
+    // Missing new operator to an object
+    //  - name: The name of the class
+    ErrorCode["MISSING_NEW"] = "MISSING_NEW";
+    // Invalid argument (e.g. value is incompatible with type) to a function:
+    //   - argument: The argument name that was invalid
+    //   - value: The value of the argument
+    ErrorCode["INVALID_ARGUMENT"] = "INVALID_ARGUMENT";
+    // Missing argument to a function:
+    //   - count: The number of arguments received
+    //   - expectedCount: The number of arguments expected
+    ErrorCode["MISSING_ARGUMENT"] = "MISSING_ARGUMENT";
+    // Too many arguments
+    //   - count: The number of arguments received
+    //   - expectedCount: The number of arguments expected
+    ErrorCode["UNEXPECTED_ARGUMENT"] = "UNEXPECTED_ARGUMENT";
+    ///////////////////
+    // Blockchain Errors
+    // Call exception
+    //  - transaction: the transaction
+    //  - address?: the contract address
+    //  - args?: The arguments passed into the function
+    //  - method?: The Solidity method signature
+    //  - errorSignature?: The EIP848 error signature
+    //  - errorArgs?: The EIP848 error parameters
+    //  - reason: The reason (only for EIP848 "Error(string)")
+    ErrorCode["CALL_EXCEPTION"] = "CALL_EXCEPTION";
+    // Insufficien funds (< value + gasLimit * gasPrice)
+    //   - transaction: the transaction attempted
+    ErrorCode["INSUFFICIENT_FUNDS"] = "INSUFFICIENT_FUNDS";
+    // Nonce has already been used
+    //   - transaction: the transaction attempted
+    ErrorCode["NONCE_EXPIRED"] = "NONCE_EXPIRED";
+    // The replacement fee for the transaction is too low
+    //   - transaction: the transaction attempted
+    ErrorCode["REPLACEMENT_UNDERPRICED"] = "REPLACEMENT_UNDERPRICED";
+    // The gas limit could not be estimated
+    //   - transaction: the transaction passed to estimateGas
+    ErrorCode["UNPREDICTABLE_GAS_LIMIT"] = "UNPREDICTABLE_GAS_LIMIT";
+    // The transaction was replaced by one with a higher gas price
+    //   - reason: "cancelled", "replaced" or "repriced"
+    //   - cancelled: true if reason == "cancelled" or reason == "replaced")
+    //   - hash: original transaction hash
+    //   - replacement: the full TransactionsResponse for the replacement
+    //   - receipt: the receipt of the replacement
+    ErrorCode["TRANSACTION_REPLACED"] = "TRANSACTION_REPLACED";
+})(ErrorCode || (ErrorCode = {}));
+;
+class lib_esm_Logger {
+    constructor(version) {
+        Object.defineProperty(this, "version", {
+            enumerable: true,
+            value: version,
+            writable: false
+        });
+    }
+    _log(logLevel, args) {
+        const level = logLevel.toLowerCase();
+        if (LogLevels[level] == null) {
+            this.throwArgumentError("invalid log level name", "logLevel", logLevel);
+        }
+        if (_logLevel > LogLevels[level]) {
+            return;
+        }
+        console.log.apply(console, args);
+    }
+    debug(...args) {
+        this._log(lib_esm_Logger.levels.DEBUG, args);
+    }
+    info(...args) {
+        this._log(lib_esm_Logger.levels.INFO, args);
+    }
+    warn(...args) {
+        this._log(lib_esm_Logger.levels.WARNING, args);
+    }
+    makeError(message, code, params) {
+        // Errors are being censored
+        if (_censorErrors) {
+            return this.makeError("censored error", code, {});
+        }
+        if (!code) {
+            code = lib_esm_Logger.errors.UNKNOWN_ERROR;
+        }
+        if (!params) {
+            params = {};
+        }
+        const messageDetails = [];
+        Object.keys(params).forEach((key) => {
+            try {
+                messageDetails.push(key + "=" + JSON.stringify(params[key]));
+            }
+            catch (error) {
+                messageDetails.push(key + "=" + JSON.stringify(params[key].toString()));
+            }
+        });
+        messageDetails.push(`code=${code}`);
+        messageDetails.push(`version=${this.version}`);
+        const reason = message;
+        if (messageDetails.length) {
+            message += " (" + messageDetails.join(", ") + ")";
+        }
+        // @TODO: Any??
+        const error = new Error(message);
+        error.reason = reason;
+        error.code = code;
+        Object.keys(params).forEach(function (key) {
+            error[key] = params[key];
+        });
+        return error;
+    }
+    throwError(message, code, params) {
+        throw this.makeError(message, code, params);
+    }
+    throwArgumentError(message, name, value) {
+        return this.throwError(message, lib_esm_Logger.errors.INVALID_ARGUMENT, {
+            argument: name,
+            value: value
+        });
+    }
+    assert(condition, message, code, params) {
+        if (!!condition) {
+            return;
+        }
+        this.throwError(message, code, params);
+    }
+    assertArgument(condition, message, name, value) {
+        if (!!condition) {
+            return;
+        }
+        this.throwArgumentError(message, name, value);
+    }
+    checkNormalize(message) {
+        if (message == null) {
+            message = "platform missing String.prototype.normalize";
+        }
+        if (_normalizeError) {
+            this.throwError("platform missing String.prototype.normalize", lib_esm_Logger.errors.UNSUPPORTED_OPERATION, {
+                operation: "String.prototype.normalize", form: _normalizeError
+            });
+        }
+    }
+    checkSafeUint53(value, message) {
+        if (typeof (value) !== "number") {
+            return;
+        }
+        if (message == null) {
+            message = "value not safe";
+        }
+        if (value < 0 || value >= 0x1fffffffffffff) {
+            this.throwError(message, lib_esm_Logger.errors.NUMERIC_FAULT, {
+                operation: "checkSafeInteger",
+                fault: "out-of-safe-range",
+                value: value
+            });
+        }
+        if (value % 1) {
+            this.throwError(message, lib_esm_Logger.errors.NUMERIC_FAULT, {
+                operation: "checkSafeInteger",
+                fault: "non-integer",
+                value: value
+            });
+        }
+    }
+    checkArgumentCount(count, expectedCount, message) {
+        if (message) {
+            message = ": " + message;
+        }
+        else {
+            message = "";
+        }
+        if (count < expectedCount) {
+            this.throwError("missing argument" + message, lib_esm_Logger.errors.MISSING_ARGUMENT, {
+                count: count,
+                expectedCount: expectedCount
+            });
+        }
+        if (count > expectedCount) {
+            this.throwError("too many arguments" + message, lib_esm_Logger.errors.UNEXPECTED_ARGUMENT, {
+                count: count,
+                expectedCount: expectedCount
+            });
+        }
+    }
+    checkNew(target, kind) {
+        if (target === Object || target == null) {
+            this.throwError("missing new", lib_esm_Logger.errors.MISSING_NEW, { name: kind.name });
+        }
+    }
+    checkAbstract(target, kind) {
+        if (target === kind) {
+            this.throwError("cannot instantiate abstract class " + JSON.stringify(kind.name) + " directly; use a sub-class", lib_esm_Logger.errors.UNSUPPORTED_OPERATION, { name: target.name, operation: "new" });
+        }
+        else if (target === Object || target == null) {
+            this.throwError("missing new", lib_esm_Logger.errors.MISSING_NEW, { name: kind.name });
+        }
+    }
+    static globalLogger() {
+        if (!_globalLogger) {
+            _globalLogger = new lib_esm_Logger(version);
+        }
+        return _globalLogger;
+    }
+    static setCensorship(censorship, permanent) {
+        if (!censorship && permanent) {
+            this.globalLogger().throwError("cannot permanently disable censorship", lib_esm_Logger.errors.UNSUPPORTED_OPERATION, {
+                operation: "setCensorship"
+            });
+        }
+        if (_permanentCensorErrors) {
+            if (!censorship) {
+                return;
+            }
+            this.globalLogger().throwError("error censorship permanent", lib_esm_Logger.errors.UNSUPPORTED_OPERATION, {
+                operation: "setCensorship"
+            });
+        }
+        _censorErrors = !!censorship;
+        _permanentCensorErrors = !!permanent;
+    }
+    static setLogLevel(logLevel) {
+        const level = LogLevels[logLevel.toLowerCase()];
+        if (level == null) {
+            lib_esm_Logger.globalLogger().warn("invalid log level - " + logLevel);
+            return;
+        }
+        _logLevel = level;
+    }
+    static from(version) {
+        return new lib_esm_Logger(version);
+    }
+}
+lib_esm_Logger.errors = ErrorCode;
+lib_esm_Logger.levels = LogLevel;
+//# sourceMappingURL=index.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/properties/lib.esm/_version.js
+const _version_version = "properties/5.3.0";
+//# sourceMappingURL=_version.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/properties/lib.esm/index.js
+
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+
+
+const logger = new lib_esm_Logger(_version_version);
+function lib_esm_defineReadOnly(object, name, value) {
+    Object.defineProperty(object, name, {
+        enumerable: true,
+        value: value,
+        writable: false,
+    });
+}
+// Crawl up the constructor chain to find a static method
+function lib_esm_getStatic(ctor, key) {
+    for (let i = 0; i < 32; i++) {
+        if (ctor[key]) {
+            return ctor[key];
+        }
+        if (!ctor.prototype || typeof (ctor.prototype) !== "object") {
+            break;
+        }
+        ctor = Object.getPrototypeOf(ctor.prototype).constructor;
+    }
+    return null;
+}
+function resolveProperties(object) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const promises = Object.keys(object).map((key) => {
+            const value = object[key];
+            return Promise.resolve(value).then((v) => ({ key: key, value: v }));
+        });
+        const results = yield Promise.all(promises);
+        return results.reduce((accum, result) => {
+            accum[(result.key)] = result.value;
+            return accum;
+        }, {});
+    });
+}
+function checkProperties(object, properties) {
+    if (!object || typeof (object) !== "object") {
+        logger.throwArgumentError("invalid object", "object", object);
+    }
+    Object.keys(object).forEach((key) => {
+        if (!properties[key]) {
+            logger.throwArgumentError("invalid object key - " + key, "transaction:" + key, object);
+        }
+    });
+}
+function shallowCopy(object) {
+    const result = {};
+    for (const key in object) {
+        result[key] = object[key];
+    }
+    return result;
+}
+const opaque = { bigint: true, boolean: true, "function": true, number: true, string: true };
+function _isFrozen(object) {
+    // Opaque objects are not mutable, so safe to copy by assignment
+    if (object === undefined || object === null || opaque[typeof (object)]) {
+        return true;
+    }
+    if (Array.isArray(object) || typeof (object) === "object") {
+        if (!Object.isFrozen(object)) {
+            return false;
+        }
+        const keys = Object.keys(object);
+        for (let i = 0; i < keys.length; i++) {
+            if (!_isFrozen(object[keys[i]])) {
+                return false;
+            }
+        }
+        return true;
+    }
+    return logger.throwArgumentError(`Cannot deepCopy ${typeof (object)}`, "object", object);
+}
+// Returns a new copy of object, such that no properties may be replaced.
+// New properties may be added only to objects.
+function _deepCopy(object) {
+    if (_isFrozen(object)) {
+        return object;
+    }
+    // Arrays are mutable, so we need to create a copy
+    if (Array.isArray(object)) {
+        return Object.freeze(object.map((item) => deepCopy(item)));
+    }
+    if (typeof (object) === "object") {
+        const result = {};
+        for (const key in object) {
+            const value = object[key];
+            if (value === undefined) {
+                continue;
+            }
+            lib_esm_defineReadOnly(result, key, deepCopy(value));
+        }
+        return result;
+    }
+    return logger.throwArgumentError(`Cannot deepCopy ${typeof (object)}`, "object", object);
+}
+function deepCopy(object) {
+    return _deepCopy(object);
+}
+class lib_esm_Description {
+    constructor(info) {
+        for (const key in info) {
+            this[key] = deepCopy(info[key]);
+        }
+    }
+}
+//# sourceMappingURL=index.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/_version.js
+const lib_esm_version_version = "abi/5.0.7";
+//# sourceMappingURL=_version.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/fragments.js
+
+
+
+
+
+const fragments_logger = new lib_esm_Logger(lib_esm_version_version);
+;
+const _constructorGuard = {};
+let ModifiersBytes = { calldata: true, memory: true, storage: true };
+let ModifiersNest = { calldata: true, memory: true };
+function checkModifier(type, name) {
+    if (type === "bytes" || type === "string") {
+        if (ModifiersBytes[name]) {
+            return true;
+        }
+    }
+    else if (type === "address") {
+        if (name === "payable") {
+            return true;
+        }
+    }
+    else if (type.indexOf("[") >= 0 || type === "tuple") {
+        if (ModifiersNest[name]) {
+            return true;
+        }
+    }
+    if (ModifiersBytes[name] || name === "payable") {
+        fragments_logger.throwArgumentError("invalid modifier", "name", name);
+    }
+    return false;
+}
+// @TODO: Make sure that children of an indexed tuple are marked with a null indexed
+function parseParamType(param, allowIndexed) {
+    let originalParam = param;
+    function throwError(i) {
+        fragments_logger.throwArgumentError(`unexpected character at position ${i}`, "param", param);
+    }
+    param = param.replace(/\s/g, " ");
+    function newNode(parent) {
+        let node = { type: "", name: "", parent: parent, state: { allowType: true } };
+        if (allowIndexed) {
+            node.indexed = false;
+        }
+        return node;
+    }
+    let parent = { type: "", name: "", state: { allowType: true } };
+    let node = parent;
+    for (let i = 0; i < param.length; i++) {
+        let c = param[i];
+        switch (c) {
+            case "(":
+                if (node.state.allowType && node.type === "") {
+                    node.type = "tuple";
+                }
+                else if (!node.state.allowParams) {
+                    throwError(i);
+                }
+                node.state.allowType = false;
+                node.type = verifyType(node.type);
+                node.components = [newNode(node)];
+                node = node.components[0];
+                break;
+            case ")":
+                delete node.state;
+                if (node.name === "indexed") {
+                    if (!allowIndexed) {
+                        throwError(i);
+                    }
+                    node.indexed = true;
+                    node.name = "";
+                }
+                if (checkModifier(node.type, node.name)) {
+                    node.name = "";
+                }
+                node.type = verifyType(node.type);
+                let child = node;
+                node = node.parent;
+                if (!node) {
+                    throwError(i);
+                }
+                delete child.parent;
+                node.state.allowParams = false;
+                node.state.allowName = true;
+                node.state.allowArray = true;
+                break;
+            case ",":
+                delete node.state;
+                if (node.name === "indexed") {
+                    if (!allowIndexed) {
+                        throwError(i);
+                    }
+                    node.indexed = true;
+                    node.name = "";
+                }
+                if (checkModifier(node.type, node.name)) {
+                    node.name = "";
+                }
+                node.type = verifyType(node.type);
+                let sibling = newNode(node.parent);
+                //{ type: "", name: "", parent: node.parent, state: { allowType: true } };
+                node.parent.components.push(sibling);
+                delete node.parent;
+                node = sibling;
+                break;
+            // Hit a space...
+            case " ":
+                // If reading type, the type is done and may read a param or name
+                if (node.state.allowType) {
+                    if (node.type !== "") {
+                        node.type = verifyType(node.type);
+                        delete node.state.allowType;
+                        node.state.allowName = true;
+                        node.state.allowParams = true;
+                    }
+                }
+                // If reading name, the name is done
+                if (node.state.allowName) {
+                    if (node.name !== "") {
+                        if (node.name === "indexed") {
+                            if (!allowIndexed) {
+                                throwError(i);
+                            }
+                            if (node.indexed) {
+                                throwError(i);
+                            }
+                            node.indexed = true;
+                            node.name = "";
+                        }
+                        else if (checkModifier(node.type, node.name)) {
+                            node.name = "";
+                        }
+                        else {
+                            node.state.allowName = false;
+                        }
+                    }
+                }
+                break;
+            case "[":
+                if (!node.state.allowArray) {
+                    throwError(i);
+                }
+                node.type += c;
+                node.state.allowArray = false;
+                node.state.allowName = false;
+                node.state.readArray = true;
+                break;
+            case "]":
+                if (!node.state.readArray) {
+                    throwError(i);
+                }
+                node.type += c;
+                node.state.readArray = false;
+                node.state.allowArray = true;
+                node.state.allowName = true;
+                break;
+            default:
+                if (node.state.allowType) {
+                    node.type += c;
+                    node.state.allowParams = true;
+                    node.state.allowArray = true;
+                }
+                else if (node.state.allowName) {
+                    node.name += c;
+                    delete node.state.allowArray;
+                }
+                else if (node.state.readArray) {
+                    node.type += c;
+                }
+                else {
+                    throwError(i);
+                }
+        }
+    }
+    if (node.parent) {
+        fragments_logger.throwArgumentError("unexpected eof", "param", param);
+    }
+    delete parent.state;
+    if (node.name === "indexed") {
+        if (!allowIndexed) {
+            throwError(originalParam.length - 7);
+        }
+        if (node.indexed) {
+            throwError(originalParam.length - 7);
+        }
+        node.indexed = true;
+        node.name = "";
+    }
+    else if (checkModifier(node.type, node.name)) {
+        node.name = "";
+    }
+    parent.type = verifyType(parent.type);
+    return parent;
+}
+function populate(object, params) {
+    for (let key in params) {
+        lib_esm_defineReadOnly(object, key, params[key]);
+    }
+}
+const fragments_FormatTypes = Object.freeze({
+    // Bare formatting, as is needed for computing a sighash of an event or function
+    sighash: "sighash",
+    // Human-Readable with Minimal spacing and without names (compact human-readable)
+    minimal: "minimal",
+    // Human-Readble with nice spacing, including all names
+    full: "full",
+    // JSON-format a la Solidity
+    json: "json"
+});
+const paramTypeArray = new RegExp(/^(.*)\[([0-9]*)\]$/);
+class fragments_ParamType {
+    constructor(constructorGuard, params) {
+        if (constructorGuard !== _constructorGuard) {
+            fragments_logger.throwError("use fromString", lib_esm_Logger.errors.UNSUPPORTED_OPERATION, {
+                operation: "new ParamType()"
+            });
+        }
+        populate(this, params);
+        let match = this.type.match(paramTypeArray);
+        if (match) {
+            populate(this, {
+                arrayLength: parseInt(match[2] || "-1"),
+                arrayChildren: fragments_ParamType.fromObject({
+                    type: match[1],
+                    components: this.components
+                }),
+                baseType: "array"
+            });
+        }
+        else {
+            populate(this, {
+                arrayLength: null,
+                arrayChildren: null,
+                baseType: ((this.components != null) ? "tuple" : this.type)
+            });
+        }
+        this._isParamType = true;
+        Object.freeze(this);
+    }
+    // Format the parameter fragment
+    //   - sighash: "(uint256,address)"
+    //   - minimal: "tuple(uint256,address) indexed"
+    //   - full:    "tuple(uint256 foo, addres bar) indexed baz"
+    format(format) {
+        if (!format) {
+            format = fragments_FormatTypes.sighash;
+        }
+        if (!fragments_FormatTypes[format]) {
+            fragments_logger.throwArgumentError("invalid format type", "format", format);
+        }
+        if (format === fragments_FormatTypes.json) {
+            let result = {
+                type: ((this.baseType === "tuple") ? "tuple" : this.type),
+                name: (this.name || undefined)
+            };
+            if (typeof (this.indexed) === "boolean") {
+                result.indexed = this.indexed;
+            }
+            if (this.components) {
+                result.components = this.components.map((comp) => JSON.parse(comp.format(format)));
+            }
+            return JSON.stringify(result);
+        }
+        let result = "";
+        // Array
+        if (this.baseType === "array") {
+            result += this.arrayChildren.format(format);
+            result += "[" + (this.arrayLength < 0 ? "" : String(this.arrayLength)) + "]";
+        }
+        else {
+            if (this.baseType === "tuple") {
+                if (format !== fragments_FormatTypes.sighash) {
+                    result += this.type;
+                }
+                result += "(" + this.components.map((comp) => comp.format(format)).join((format === fragments_FormatTypes.full) ? ", " : ",") + ")";
+            }
+            else {
+                result += this.type;
+            }
+        }
+        if (format !== fragments_FormatTypes.sighash) {
+            if (this.indexed === true) {
+                result += " indexed";
+            }
+            if (format === fragments_FormatTypes.full && this.name) {
+                result += " " + this.name;
+            }
+        }
+        return result;
+    }
+    static from(value, allowIndexed) {
+        if (typeof (value) === "string") {
+            return fragments_ParamType.fromString(value, allowIndexed);
+        }
+        return fragments_ParamType.fromObject(value);
+    }
+    static fromObject(value) {
+        if (fragments_ParamType.isParamType(value)) {
+            return value;
+        }
+        return new fragments_ParamType(_constructorGuard, {
+            name: (value.name || null),
+            type: verifyType(value.type),
+            indexed: ((value.indexed == null) ? null : !!value.indexed),
+            components: (value.components ? value.components.map(fragments_ParamType.fromObject) : null)
+        });
+    }
+    static fromString(value, allowIndexed) {
+        function ParamTypify(node) {
+            return fragments_ParamType.fromObject({
+                name: node.name,
+                type: node.type,
+                indexed: node.indexed,
+                components: node.components
+            });
+        }
+        return ParamTypify(parseParamType(value, !!allowIndexed));
+    }
+    static isParamType(value) {
+        return !!(value != null && value._isParamType);
+    }
+}
+;
+function parseParams(value, allowIndex) {
+    return splitNesting(value).map((param) => fragments_ParamType.fromString(param, allowIndex));
+}
+class fragments_Fragment {
+    constructor(constructorGuard, params) {
+        if (constructorGuard !== _constructorGuard) {
+            fragments_logger.throwError("use a static from method", Logger.errors.UNSUPPORTED_OPERATION, {
+                operation: "new Fragment()"
+            });
+        }
+        populate(this, params);
+        this._isFragment = true;
+        Object.freeze(this);
+    }
+    static from(value) {
+        if (fragments_Fragment.isFragment(value)) {
+            return value;
+        }
+        if (typeof (value) === "string") {
+            return fragments_Fragment.fromString(value);
+        }
+        return fragments_Fragment.fromObject(value);
+    }
+    static fromObject(value) {
+        if (fragments_Fragment.isFragment(value)) {
+            return value;
+        }
+        switch (value.type) {
+            case "function":
+                return fragments_FunctionFragment.fromObject(value);
+            case "event":
+                return fragments_EventFragment.fromObject(value);
+            case "constructor":
+                return fragments_ConstructorFragment.fromObject(value);
+            case "fallback":
+            case "receive":
+                // @TODO: Something? Maybe return a FunctionFragment? A custom DefaultFunctionFragment?
+                return null;
+        }
+        return fragments_logger.throwArgumentError("invalid fragment object", "value", value);
+    }
+    static fromString(value) {
+        // Make sure the "returns" is surrounded by a space and all whitespace is exactly one space
+        value = value.replace(/\s/g, " ");
+        value = value.replace(/\(/g, " (").replace(/\)/g, ") ").replace(/\s+/g, " ");
+        value = value.trim();
+        if (value.split(" ")[0] === "event") {
+            return fragments_EventFragment.fromString(value.substring(5).trim());
+        }
+        else if (value.split(" ")[0] === "function") {
+            return fragments_FunctionFragment.fromString(value.substring(8).trim());
+        }
+        else if (value.split("(")[0].trim() === "constructor") {
+            return fragments_ConstructorFragment.fromString(value.trim());
+        }
+        return fragments_logger.throwArgumentError("unsupported fragment", "value", value);
+    }
+    static isFragment(value) {
+        return !!(value && value._isFragment);
+    }
+}
+class fragments_EventFragment extends (/* unused pure expression or super */ null && (fragments_Fragment)) {
+    format(format) {
+        if (!format) {
+            format = fragments_FormatTypes.sighash;
+        }
+        if (!fragments_FormatTypes[format]) {
+            fragments_logger.throwArgumentError("invalid format type", "format", format);
+        }
+        if (format === fragments_FormatTypes.json) {
+            return JSON.stringify({
+                type: "event",
+                anonymous: this.anonymous,
+                name: this.name,
+                inputs: this.inputs.map((input) => JSON.parse(input.format(format)))
+            });
+        }
+        let result = "";
+        if (format !== fragments_FormatTypes.sighash) {
+            result += "event ";
+        }
+        result += this.name + "(" + this.inputs.map((input) => input.format(format)).join((format === fragments_FormatTypes.full) ? ", " : ",") + ") ";
+        if (format !== fragments_FormatTypes.sighash) {
+            if (this.anonymous) {
+                result += "anonymous ";
+            }
+        }
+        return result.trim();
+    }
+    static from(value) {
+        if (typeof (value) === "string") {
+            return fragments_EventFragment.fromString(value);
+        }
+        return fragments_EventFragment.fromObject(value);
+    }
+    static fromObject(value) {
+        if (fragments_EventFragment.isEventFragment(value)) {
+            return value;
+        }
+        if (value.type !== "event") {
+            fragments_logger.throwArgumentError("invalid event object", "value", value);
+        }
+        const params = {
+            name: verifyIdentifier(value.name),
+            anonymous: value.anonymous,
+            inputs: (value.inputs ? value.inputs.map(fragments_ParamType.fromObject) : []),
+            type: "event"
+        };
+        return new fragments_EventFragment(_constructorGuard, params);
+    }
+    static fromString(value) {
+        let match = value.match(regexParen);
+        if (!match) {
+            fragments_logger.throwArgumentError("invalid event string", "value", value);
+        }
+        let anonymous = false;
+        match[3].split(" ").forEach((modifier) => {
+            switch (modifier.trim()) {
+                case "anonymous":
+                    anonymous = true;
+                    break;
+                case "":
+                    break;
+                default:
+                    fragments_logger.warn("unknown modifier: " + modifier);
+            }
+        });
+        return fragments_EventFragment.fromObject({
+            name: match[1].trim(),
+            anonymous: anonymous,
+            inputs: parseParams(match[2], true),
+            type: "event"
+        });
+    }
+    static isEventFragment(value) {
+        return (value && value._isFragment && value.type === "event");
+    }
+}
+function parseGas(value, params) {
+    params.gas = null;
+    let comps = value.split("@");
+    if (comps.length !== 1) {
+        if (comps.length > 2) {
+            fragments_logger.throwArgumentError("invalid human-readable ABI signature", "value", value);
+        }
+        if (!comps[1].match(/^[0-9]+$/)) {
+            fragments_logger.throwArgumentError("invalid human-readable ABI signature gas", "value", value);
+        }
+        params.gas = BigNumber.from(comps[1]);
+        return comps[0];
+    }
+    return value;
+}
+function parseModifiers(value, params) {
+    params.constant = false;
+    params.payable = false;
+    params.stateMutability = "nonpayable";
+    value.split(" ").forEach((modifier) => {
+        switch (modifier.trim()) {
+            case "constant":
+                params.constant = true;
+                break;
+            case "payable":
+                params.payable = true;
+                params.stateMutability = "payable";
+                break;
+            case "nonpayable":
+                params.payable = false;
+                params.stateMutability = "nonpayable";
+                break;
+            case "pure":
+                params.constant = true;
+                params.stateMutability = "pure";
+                break;
+            case "view":
+                params.constant = true;
+                params.stateMutability = "view";
+                break;
+            case "external":
+            case "public":
+            case "":
+                break;
+            default:
+                console.log("unknown modifier: " + modifier);
+        }
+    });
+}
+function verifyState(value) {
+    let result = {
+        constant: false,
+        payable: true,
+        stateMutability: "payable"
+    };
+    if (value.stateMutability != null) {
+        result.stateMutability = value.stateMutability;
+        // Set (and check things are consistent) the constant property
+        result.constant = (result.stateMutability === "view" || result.stateMutability === "pure");
+        if (value.constant != null) {
+            if ((!!value.constant) !== result.constant) {
+                fragments_logger.throwArgumentError("cannot have constant function with mutability " + result.stateMutability, "value", value);
+            }
+        }
+        // Set (and check things are consistent) the payable property
+        result.payable = (result.stateMutability === "payable");
+        if (value.payable != null) {
+            if ((!!value.payable) !== result.payable) {
+                fragments_logger.throwArgumentError("cannot have payable function with mutability " + result.stateMutability, "value", value);
+            }
+        }
+    }
+    else if (value.payable != null) {
+        result.payable = !!value.payable;
+        // If payable we can assume non-constant; otherwise we can't assume
+        if (value.constant == null && !result.payable && value.type !== "constructor") {
+            fragments_logger.throwArgumentError("unable to determine stateMutability", "value", value);
+        }
+        result.constant = !!value.constant;
+        if (result.constant) {
+            result.stateMutability = "view";
+        }
+        else {
+            result.stateMutability = (result.payable ? "payable" : "nonpayable");
+        }
+        if (result.payable && result.constant) {
+            fragments_logger.throwArgumentError("cannot have constant payable function", "value", value);
+        }
+    }
+    else if (value.constant != null) {
+        result.constant = !!value.constant;
+        result.payable = !result.constant;
+        result.stateMutability = (result.constant ? "view" : "payable");
+    }
+    else if (value.type !== "constructor") {
+        fragments_logger.throwArgumentError("unable to determine stateMutability", "value", value);
+    }
+    return result;
+}
+class fragments_ConstructorFragment extends (/* unused pure expression or super */ null && (fragments_Fragment)) {
+    format(format) {
+        if (!format) {
+            format = fragments_FormatTypes.sighash;
+        }
+        if (!fragments_FormatTypes[format]) {
+            fragments_logger.throwArgumentError("invalid format type", "format", format);
+        }
+        if (format === fragments_FormatTypes.json) {
+            return JSON.stringify({
+                type: "constructor",
+                stateMutability: ((this.stateMutability !== "nonpayable") ? this.stateMutability : undefined),
+                payble: this.payable,
+                gas: (this.gas ? this.gas.toNumber() : undefined),
+                inputs: this.inputs.map((input) => JSON.parse(input.format(format)))
+            });
+        }
+        if (format === fragments_FormatTypes.sighash) {
+            fragments_logger.throwError("cannot format a constructor for sighash", Logger.errors.UNSUPPORTED_OPERATION, {
+                operation: "format(sighash)"
+            });
+        }
+        let result = "constructor(" + this.inputs.map((input) => input.format(format)).join((format === fragments_FormatTypes.full) ? ", " : ",") + ") ";
+        if (this.stateMutability && this.stateMutability !== "nonpayable") {
+            result += this.stateMutability + " ";
+        }
+        return result.trim();
+    }
+    static from(value) {
+        if (typeof (value) === "string") {
+            return fragments_ConstructorFragment.fromString(value);
+        }
+        return fragments_ConstructorFragment.fromObject(value);
+    }
+    static fromObject(value) {
+        if (fragments_ConstructorFragment.isConstructorFragment(value)) {
+            return value;
+        }
+        if (value.type !== "constructor") {
+            fragments_logger.throwArgumentError("invalid constructor object", "value", value);
+        }
+        let state = verifyState(value);
+        if (state.constant) {
+            fragments_logger.throwArgumentError("constructor cannot be constant", "value", value);
+        }
+        const params = {
+            name: null,
+            type: value.type,
+            inputs: (value.inputs ? value.inputs.map(fragments_ParamType.fromObject) : []),
+            payable: state.payable,
+            stateMutability: state.stateMutability,
+            gas: (value.gas ? BigNumber.from(value.gas) : null)
+        };
+        return new fragments_ConstructorFragment(_constructorGuard, params);
+    }
+    static fromString(value) {
+        let params = { type: "constructor" };
+        value = parseGas(value, params);
+        let parens = value.match(regexParen);
+        if (!parens || parens[1].trim() !== "constructor") {
+            fragments_logger.throwArgumentError("invalid constructor string", "value", value);
+        }
+        params.inputs = parseParams(parens[2].trim(), false);
+        parseModifiers(parens[3].trim(), params);
+        return fragments_ConstructorFragment.fromObject(params);
+    }
+    static isConstructorFragment(value) {
+        return (value && value._isFragment && value.type === "constructor");
+    }
+}
+class fragments_FunctionFragment extends (/* unused pure expression or super */ null && (fragments_ConstructorFragment)) {
+    format(format) {
+        if (!format) {
+            format = fragments_FormatTypes.sighash;
+        }
+        if (!fragments_FormatTypes[format]) {
+            fragments_logger.throwArgumentError("invalid format type", "format", format);
+        }
+        if (format === fragments_FormatTypes.json) {
+            return JSON.stringify({
+                type: "function",
+                name: this.name,
+                constant: this.constant,
+                stateMutability: ((this.stateMutability !== "nonpayable") ? this.stateMutability : undefined),
+                payble: this.payable,
+                gas: (this.gas ? this.gas.toNumber() : undefined),
+                inputs: this.inputs.map((input) => JSON.parse(input.format(format))),
+                ouputs: this.outputs.map((output) => JSON.parse(output.format(format))),
+            });
+        }
+        let result = "";
+        if (format !== fragments_FormatTypes.sighash) {
+            result += "function ";
+        }
+        result += this.name + "(" + this.inputs.map((input) => input.format(format)).join((format === fragments_FormatTypes.full) ? ", " : ",") + ") ";
+        if (format !== fragments_FormatTypes.sighash) {
+            if (this.stateMutability) {
+                if (this.stateMutability !== "nonpayable") {
+                    result += (this.stateMutability + " ");
+                }
+            }
+            else if (this.constant) {
+                result += "view ";
+            }
+            if (this.outputs && this.outputs.length) {
+                result += "returns (" + this.outputs.map((output) => output.format(format)).join(", ") + ") ";
+            }
+            if (this.gas != null) {
+                result += "@" + this.gas.toString() + " ";
+            }
+        }
+        return result.trim();
+    }
+    static from(value) {
+        if (typeof (value) === "string") {
+            return fragments_FunctionFragment.fromString(value);
+        }
+        return fragments_FunctionFragment.fromObject(value);
+    }
+    static fromObject(value) {
+        if (fragments_FunctionFragment.isFunctionFragment(value)) {
+            return value;
+        }
+        if (value.type !== "function") {
+            fragments_logger.throwArgumentError("invalid function object", "value", value);
+        }
+        let state = verifyState(value);
+        const params = {
+            type: value.type,
+            name: verifyIdentifier(value.name),
+            constant: state.constant,
+            inputs: (value.inputs ? value.inputs.map(fragments_ParamType.fromObject) : []),
+            outputs: (value.outputs ? value.outputs.map(fragments_ParamType.fromObject) : []),
+            payable: state.payable,
+            stateMutability: state.stateMutability,
+            gas: (value.gas ? BigNumber.from(value.gas) : null)
+        };
+        return new fragments_FunctionFragment(_constructorGuard, params);
+    }
+    static fromString(value) {
+        let params = { type: "function" };
+        value = parseGas(value, params);
+        let comps = value.split(" returns ");
+        if (comps.length > 2) {
+            fragments_logger.throwArgumentError("invalid function string", "value", value);
+        }
+        let parens = comps[0].match(regexParen);
+        if (!parens) {
+            fragments_logger.throwArgumentError("invalid function signature", "value", value);
+        }
+        params.name = parens[1].trim();
+        if (params.name) {
+            verifyIdentifier(params.name);
+        }
+        params.inputs = parseParams(parens[2], false);
+        parseModifiers(parens[3].trim(), params);
+        // We have outputs
+        if (comps.length > 1) {
+            let returns = comps[1].match(regexParen);
+            if (returns[1].trim() != "" || returns[3].trim() != "") {
+                fragments_logger.throwArgumentError("unexpected tokens", "value", value);
+            }
+            params.outputs = parseParams(returns[2], false);
+        }
+        else {
+            params.outputs = [];
+        }
+        return fragments_FunctionFragment.fromObject(params);
+    }
+    static isFunctionFragment(value) {
+        return (value && value._isFragment && value.type === "function");
+    }
+}
+//export class ErrorFragment extends Fragment {
+//}
+//export class StructFragment extends Fragment {
+//}
+function verifyType(type) {
+    // These need to be transformed to their full description
+    if (type.match(/^uint($|[^1-9])/)) {
+        type = "uint256" + type.substring(4);
+    }
+    else if (type.match(/^int($|[^1-9])/)) {
+        type = "int256" + type.substring(3);
+    }
+    // @TODO: more verification
+    return type;
+}
+const regexIdentifier = (/* unused pure expression or super */ null && (new RegExp("^[A-Za-z_][A-Za-z0-9_]*$")));
+function verifyIdentifier(value) {
+    if (!value || !value.match(regexIdentifier)) {
+        fragments_logger.throwArgumentError(`invalid identifier "${value}"`, "value", value);
+    }
+    return value;
+}
+const regexParen = (/* unused pure expression or super */ null && (new RegExp("^([^)(]*)\\((.*)\\)([^)(]*)$")));
+function splitNesting(value) {
+    value = value.trim();
+    let result = [];
+    let accum = "";
+    let depth = 0;
+    for (let offset = 0; offset < value.length; offset++) {
+        let c = value[offset];
+        if (c === "," && depth === 0) {
+            result.push(accum);
+            accum = "";
+        }
+        else {
+            accum += c;
+            if (c === "(") {
+                depth++;
+            }
+            else if (c === ")") {
+                depth--;
+                if (depth === -1) {
+                    fragments_logger.throwArgumentError("unbalanced parenthesis", "value", value);
+                }
+            }
+        }
+    }
+    if (accum) {
+        result.push(accum);
+    }
+    return result;
+}
+//# sourceMappingURL=fragments.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/bytes/lib.esm/_version.js
+const bytes_lib_esm_version_version = "bytes/5.3.0";
+//# sourceMappingURL=_version.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/bytes/lib.esm/index.js
+
+
+
+const lib_esm_logger = new lib_esm_Logger(bytes_lib_esm_version_version);
+///////////////////////////////
+function isHexable(value) {
+    return !!(value.toHexString);
+}
+function addSlice(array) {
+    if (array.slice) {
+        return array;
+    }
+    array.slice = function () {
+        const args = Array.prototype.slice.call(arguments);
+        return addSlice(new Uint8Array(Array.prototype.slice.apply(array, args)));
+    };
+    return array;
+}
+function isBytesLike(value) {
+    return ((lib_esm_isHexString(value) && !(value.length % 2)) || lib_esm_isBytes(value));
+}
+function lib_esm_isBytes(value) {
+    if (value == null) {
+        return false;
+    }
+    if (value.constructor === Uint8Array) {
+        return true;
+    }
+    if (typeof (value) === "string") {
+        return false;
+    }
+    if (value.length == null) {
+        return false;
+    }
+    for (let i = 0; i < value.length; i++) {
+        const v = value[i];
+        if (typeof (v) !== "number" || v < 0 || v >= 256 || (v % 1)) {
+            return false;
+        }
+    }
+    return true;
+}
+function lib_esm_arrayify(value, options) {
+    if (!options) {
+        options = {};
+    }
+    if (typeof (value) === "number") {
+        lib_esm_logger.checkSafeUint53(value, "invalid arrayify value");
+        const result = [];
+        while (value) {
+            result.unshift(value & 0xff);
+            value = parseInt(String(value / 256));
+        }
+        if (result.length === 0) {
+            result.push(0);
+        }
+        return addSlice(new Uint8Array(result));
+    }
+    if (options.allowMissingPrefix && typeof (value) === "string" && value.substring(0, 2) !== "0x") {
+        value = "0x" + value;
+    }
+    if (isHexable(value)) {
+        value = value.toHexString();
+    }
+    if (lib_esm_isHexString(value)) {
+        let hex = value.substring(2);
+        if (hex.length % 2) {
+            if (options.hexPad === "left") {
+                hex = "0x0" + hex.substring(2);
+            }
+            else if (options.hexPad === "right") {
+                hex += "0";
+            }
+            else {
+                lib_esm_logger.throwArgumentError("hex data is odd-length", "value", value);
+            }
+        }
+        const result = [];
+        for (let i = 0; i < hex.length; i += 2) {
+            result.push(parseInt(hex.substring(i, i + 2), 16));
+        }
+        return addSlice(new Uint8Array(result));
+    }
+    if (lib_esm_isBytes(value)) {
+        return addSlice(new Uint8Array(value));
+    }
+    return lib_esm_logger.throwArgumentError("invalid arrayify value", "value", value);
+}
+function lib_esm_concat(items) {
+    const objects = items.map(item => lib_esm_arrayify(item));
+    const length = objects.reduce((accum, item) => (accum + item.length), 0);
+    const result = new Uint8Array(length);
+    objects.reduce((offset, object) => {
+        result.set(object, offset);
+        return offset + object.length;
+    }, 0);
+    return addSlice(result);
+}
+function lib_esm_stripZeros(value) {
+    let result = lib_esm_arrayify(value);
+    if (result.length === 0) {
+        return result;
+    }
+    // Find the first non-zero entry
+    let start = 0;
+    while (start < result.length && result[start] === 0) {
+        start++;
+    }
+    // If we started with zeros, strip them
+    if (start) {
+        result = result.slice(start);
+    }
+    return result;
+}
+function zeroPad(value, length) {
+    value = lib_esm_arrayify(value);
+    if (value.length > length) {
+        lib_esm_logger.throwArgumentError("value out of range", "value", arguments[0]);
+    }
+    const result = new Uint8Array(length);
+    result.set(value, length - value.length);
+    return addSlice(result);
+}
+function lib_esm_isHexString(value, length) {
+    if (typeof (value) !== "string" || !value.match(/^0x[0-9A-Fa-f]*$/)) {
+        return false;
+    }
+    if (length && value.length !== 2 + 2 * length) {
+        return false;
+    }
+    return true;
+}
+const HexCharacters = "0123456789abcdef";
+function lib_esm_hexlify(value, options) {
+    if (!options) {
+        options = {};
+    }
+    if (typeof (value) === "number") {
+        lib_esm_logger.checkSafeUint53(value, "invalid hexlify value");
+        let hex = "";
+        while (value) {
+            hex = HexCharacters[value & 0xf] + hex;
+            value = Math.floor(value / 16);
+        }
+        if (hex.length) {
+            if (hex.length % 2) {
+                hex = "0" + hex;
+            }
+            return "0x" + hex;
+        }
+        return "0x00";
+    }
+    if (typeof (value) === "bigint") {
+        value = value.toString(16);
+        if (value.length % 2) {
+            return ("0x0" + value);
+        }
+        return "0x" + value;
+    }
+    if (options.allowMissingPrefix && typeof (value) === "string" && value.substring(0, 2) !== "0x") {
+        value = "0x" + value;
+    }
+    if (isHexable(value)) {
+        return value.toHexString();
+    }
+    if (lib_esm_isHexString(value)) {
+        if (value.length % 2) {
+            if (options.hexPad === "left") {
+                value = "0x0" + value.substring(2);
+            }
+            else if (options.hexPad === "right") {
+                value += "0";
+            }
+            else {
+                lib_esm_logger.throwArgumentError("hex data is odd-length", "value", value);
+            }
+        }
+        return value.toLowerCase();
+    }
+    if (lib_esm_isBytes(value)) {
+        let result = "0x";
+        for (let i = 0; i < value.length; i++) {
+            let v = value[i];
+            result += HexCharacters[(v & 0xf0) >> 4] + HexCharacters[v & 0x0f];
+        }
+        return result;
+    }
+    return lib_esm_logger.throwArgumentError("invalid hexlify value", "value", value);
+}
+/*
+function unoddify(value: BytesLike | Hexable | number): BytesLike | Hexable | number {
+    if (typeof(value) === "string" && value.length % 2 && value.substring(0, 2) === "0x") {
+        return "0x0" + value.substring(2);
+    }
+    return value;
+}
+*/
+function lib_esm_hexDataLength(data) {
+    if (typeof (data) !== "string") {
+        data = lib_esm_hexlify(data);
+    }
+    else if (!lib_esm_isHexString(data) || (data.length % 2)) {
+        return null;
+    }
+    return (data.length - 2) / 2;
+}
+function lib_esm_hexDataSlice(data, offset, endOffset) {
+    if (typeof (data) !== "string") {
+        data = lib_esm_hexlify(data);
+    }
+    else if (!lib_esm_isHexString(data) || (data.length % 2)) {
+        lib_esm_logger.throwArgumentError("invalid hexData", "value", data);
+    }
+    offset = 2 + 2 * offset;
+    if (endOffset != null) {
+        return "0x" + data.substring(offset, 2 + 2 * endOffset);
+    }
+    return "0x" + data.substring(offset);
+}
+function hexConcat(items) {
+    let result = "0x";
+    items.forEach((item) => {
+        result += lib_esm_hexlify(item).substring(2);
+    });
+    return result;
+}
+function hexValue(value) {
+    const trimmed = hexStripZeros(lib_esm_hexlify(value, { hexPad: "left" }));
+    if (trimmed === "0x") {
+        return "0x0";
+    }
+    return trimmed;
+}
+function hexStripZeros(value) {
+    if (typeof (value) !== "string") {
+        value = lib_esm_hexlify(value);
+    }
+    if (!lib_esm_isHexString(value)) {
+        lib_esm_logger.throwArgumentError("invalid hex string", "value", value);
+    }
+    value = value.substring(2);
+    let offset = 0;
+    while (offset < value.length && value[offset] === "0") {
+        offset++;
+    }
+    return "0x" + value.substring(offset);
+}
+function lib_esm_hexZeroPad(value, length) {
+    if (typeof (value) !== "string") {
+        value = lib_esm_hexlify(value);
+    }
+    else if (!lib_esm_isHexString(value)) {
+        lib_esm_logger.throwArgumentError("invalid hex string", "value", value);
+    }
+    if (value.length > 2 * length + 2) {
+        lib_esm_logger.throwArgumentError("value out of range", "value", arguments[1]);
+    }
+    while (value.length < 2 * length + 2) {
+        value = "0x0" + value.substring(2);
+    }
+    return value;
+}
+function splitSignature(signature) {
+    const result = {
+        r: "0x",
+        s: "0x",
+        _vs: "0x",
+        recoveryParam: 0,
+        v: 0
+    };
+    if (isBytesLike(signature)) {
+        const bytes = lib_esm_arrayify(signature);
+        if (bytes.length !== 65) {
+            lib_esm_logger.throwArgumentError("invalid signature string; must be 65 bytes", "signature", signature);
+        }
+        // Get the r, s and v
+        result.r = lib_esm_hexlify(bytes.slice(0, 32));
+        result.s = lib_esm_hexlify(bytes.slice(32, 64));
+        result.v = bytes[64];
+        // Allow a recid to be used as the v
+        if (result.v < 27) {
+            if (result.v === 0 || result.v === 1) {
+                result.v += 27;
+            }
+            else {
+                lib_esm_logger.throwArgumentError("signature invalid v byte", "signature", signature);
+            }
+        }
+        // Compute recoveryParam from v
+        result.recoveryParam = 1 - (result.v % 2);
+        // Compute _vs from recoveryParam and s
+        if (result.recoveryParam) {
+            bytes[32] |= 0x80;
+        }
+        result._vs = lib_esm_hexlify(bytes.slice(32, 64));
+    }
+    else {
+        result.r = signature.r;
+        result.s = signature.s;
+        result.v = signature.v;
+        result.recoveryParam = signature.recoveryParam;
+        result._vs = signature._vs;
+        // If the _vs is available, use it to populate missing s, v and recoveryParam
+        // and verify non-missing s, v and recoveryParam
+        if (result._vs != null) {
+            const vs = zeroPad(lib_esm_arrayify(result._vs), 32);
+            result._vs = lib_esm_hexlify(vs);
+            // Set or check the recid
+            const recoveryParam = ((vs[0] >= 128) ? 1 : 0);
+            if (result.recoveryParam == null) {
+                result.recoveryParam = recoveryParam;
+            }
+            else if (result.recoveryParam !== recoveryParam) {
+                lib_esm_logger.throwArgumentError("signature recoveryParam mismatch _vs", "signature", signature);
+            }
+            // Set or check the s
+            vs[0] &= 0x7f;
+            const s = lib_esm_hexlify(vs);
+            if (result.s == null) {
+                result.s = s;
+            }
+            else if (result.s !== s) {
+                lib_esm_logger.throwArgumentError("signature v mismatch _vs", "signature", signature);
+            }
+        }
+        // Use recid and v to populate each other
+        if (result.recoveryParam == null) {
+            if (result.v == null) {
+                lib_esm_logger.throwArgumentError("signature missing v and recoveryParam", "signature", signature);
+            }
+            else if (result.v === 0 || result.v === 1) {
+                result.recoveryParam = result.v;
+            }
+            else {
+                result.recoveryParam = 1 - (result.v % 2);
+            }
+        }
+        else {
+            if (result.v == null) {
+                result.v = 27 + result.recoveryParam;
+            }
+            else if (result.recoveryParam !== (1 - (result.v % 2))) {
+                lib_esm_logger.throwArgumentError("signature recoveryParam mismatch v", "signature", signature);
+            }
+        }
+        if (result.r == null || !lib_esm_isHexString(result.r)) {
+            lib_esm_logger.throwArgumentError("signature missing or invalid r", "signature", signature);
+        }
+        else {
+            result.r = lib_esm_hexZeroPad(result.r, 32);
+        }
+        if (result.s == null || !lib_esm_isHexString(result.s)) {
+            lib_esm_logger.throwArgumentError("signature missing or invalid s", "signature", signature);
+        }
+        else {
+            result.s = lib_esm_hexZeroPad(result.s, 32);
+        }
+        const vs = lib_esm_arrayify(result.s);
+        if (vs[0] >= 128) {
+            lib_esm_logger.throwArgumentError("signature s out of range", "signature", signature);
+        }
+        if (result.recoveryParam) {
+            vs[0] |= 0x80;
+        }
+        const _vs = lib_esm_hexlify(vs);
+        if (result._vs) {
+            if (!lib_esm_isHexString(result._vs)) {
+                lib_esm_logger.throwArgumentError("signature invalid _vs", "signature", signature);
+            }
+            result._vs = lib_esm_hexZeroPad(result._vs, 32);
+        }
+        // Set or check the _vs
+        if (result._vs == null) {
+            result._vs = _vs;
+        }
+        else if (result._vs !== _vs) {
+            lib_esm_logger.throwArgumentError("signature _vs mismatch v and s", "signature", signature);
+        }
+    }
+    return result;
+}
+function joinSignature(signature) {
+    signature = splitSignature(signature);
+    return lib_esm_hexlify(lib_esm_concat([
+        signature.r,
+        signature.s,
+        (signature.recoveryParam ? "0x1c" : "0x1b")
+    ]));
+}
+//# sourceMappingURL=index.js.map
+// EXTERNAL MODULE: ../node_modules/bn.js/lib/bn.js
+var bn = __webpack_require__(3785);
+var bn_default = /*#__PURE__*/__webpack_require__.n(bn);
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/bignumber/lib.esm/_version.js
+const bignumber_lib_esm_version_version = "bignumber/5.3.0";
+//# sourceMappingURL=_version.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/bignumber/lib.esm/bignumber.js
+
+/**
+ *  BigNumber
+ *
+ *  A wrapper around the BN.js object. We use the BN.js library
+ *  because it is used by elliptic, so it is required regardless.
+ *
+ */
+
+var BN = (bn_default()).BN;
+
+
+
+const bignumber_logger = new lib_esm_Logger(bignumber_lib_esm_version_version);
+const bignumber_constructorGuard = {};
+const MAX_SAFE = 0x1fffffffffffff;
+function isBigNumberish(value) {
+    return (value != null) && (bignumber_BigNumber.isBigNumber(value) ||
+        (typeof (value) === "number" && (value % 1) === 0) ||
+        (typeof (value) === "string" && !!value.match(/^-?[0-9]+$/)) ||
+        isHexString(value) ||
+        (typeof (value) === "bigint") ||
+        isBytes(value));
+}
+// Only warn about passing 10 into radix once
+let _warnedToStringRadix = false;
+class bignumber_BigNumber {
+    constructor(constructorGuard, hex) {
+        bignumber_logger.checkNew(new.target, bignumber_BigNumber);
+        if (constructorGuard !== bignumber_constructorGuard) {
+            bignumber_logger.throwError("cannot call constructor directly; use BigNumber.from", lib_esm_Logger.errors.UNSUPPORTED_OPERATION, {
+                operation: "new (BigNumber)"
+            });
+        }
+        this._hex = hex;
+        this._isBigNumber = true;
+        Object.freeze(this);
+    }
+    fromTwos(value) {
+        return toBigNumber(toBN(this).fromTwos(value));
+    }
+    toTwos(value) {
+        return toBigNumber(toBN(this).toTwos(value));
+    }
+    abs() {
+        if (this._hex[0] === "-") {
+            return bignumber_BigNumber.from(this._hex.substring(1));
+        }
+        return this;
+    }
+    add(other) {
+        return toBigNumber(toBN(this).add(toBN(other)));
+    }
+    sub(other) {
+        return toBigNumber(toBN(this).sub(toBN(other)));
+    }
+    div(other) {
+        const o = bignumber_BigNumber.from(other);
+        if (o.isZero()) {
+            throwFault("division by zero", "div");
+        }
+        return toBigNumber(toBN(this).div(toBN(other)));
+    }
+    mul(other) {
+        return toBigNumber(toBN(this).mul(toBN(other)));
+    }
+    mod(other) {
+        const value = toBN(other);
+        if (value.isNeg()) {
+            throwFault("cannot modulo negative values", "mod");
+        }
+        return toBigNumber(toBN(this).umod(value));
+    }
+    pow(other) {
+        const value = toBN(other);
+        if (value.isNeg()) {
+            throwFault("cannot raise to negative values", "pow");
+        }
+        return toBigNumber(toBN(this).pow(value));
+    }
+    and(other) {
+        const value = toBN(other);
+        if (this.isNegative() || value.isNeg()) {
+            throwFault("cannot 'and' negative values", "and");
+        }
+        return toBigNumber(toBN(this).and(value));
+    }
+    or(other) {
+        const value = toBN(other);
+        if (this.isNegative() || value.isNeg()) {
+            throwFault("cannot 'or' negative values", "or");
+        }
+        return toBigNumber(toBN(this).or(value));
+    }
+    xor(other) {
+        const value = toBN(other);
+        if (this.isNegative() || value.isNeg()) {
+            throwFault("cannot 'xor' negative values", "xor");
+        }
+        return toBigNumber(toBN(this).xor(value));
+    }
+    mask(value) {
+        if (this.isNegative() || value < 0) {
+            throwFault("cannot mask negative values", "mask");
+        }
+        return toBigNumber(toBN(this).maskn(value));
+    }
+    shl(value) {
+        if (this.isNegative() || value < 0) {
+            throwFault("cannot shift negative values", "shl");
+        }
+        return toBigNumber(toBN(this).shln(value));
+    }
+    shr(value) {
+        if (this.isNegative() || value < 0) {
+            throwFault("cannot shift negative values", "shr");
+        }
+        return toBigNumber(toBN(this).shrn(value));
+    }
+    eq(other) {
+        return toBN(this).eq(toBN(other));
+    }
+    lt(other) {
+        return toBN(this).lt(toBN(other));
+    }
+    lte(other) {
+        return toBN(this).lte(toBN(other));
+    }
+    gt(other) {
+        return toBN(this).gt(toBN(other));
+    }
+    gte(other) {
+        return toBN(this).gte(toBN(other));
+    }
+    isNegative() {
+        return (this._hex[0] === "-");
+    }
+    isZero() {
+        return toBN(this).isZero();
+    }
+    toNumber() {
+        try {
+            return toBN(this).toNumber();
+        }
+        catch (error) {
+            throwFault("overflow", "toNumber", this.toString());
+        }
+        return null;
+    }
+    toBigInt() {
+        try {
+            return BigInt(this.toString());
+        }
+        catch (e) { }
+        return bignumber_logger.throwError("this platform does not support BigInt", lib_esm_Logger.errors.UNSUPPORTED_OPERATION, {
+            value: this.toString()
+        });
+    }
+    toString() {
+        // Lots of people expect this, which we do not support, so check (See: #889)
+        if (arguments.length > 0) {
+            if (arguments[0] === 10) {
+                if (!_warnedToStringRadix) {
+                    _warnedToStringRadix = true;
+                    bignumber_logger.warn("BigNumber.toString does not accept any parameters; base-10 is assumed");
+                }
+            }
+            else if (arguments[0] === 16) {
+                bignumber_logger.throwError("BigNumber.toString does not accept any parameters; use bigNumber.toHexString()", lib_esm_Logger.errors.UNEXPECTED_ARGUMENT, {});
+            }
+            else {
+                bignumber_logger.throwError("BigNumber.toString does not accept parameters", lib_esm_Logger.errors.UNEXPECTED_ARGUMENT, {});
+            }
+        }
+        return toBN(this).toString(10);
+    }
+    toHexString() {
+        return this._hex;
+    }
+    toJSON(key) {
+        return { type: "BigNumber", hex: this.toHexString() };
+    }
+    static from(value) {
+        if (value instanceof bignumber_BigNumber) {
+            return value;
+        }
+        if (typeof (value) === "string") {
+            if (value.match(/^-?0x[0-9a-f]+$/i)) {
+                return new bignumber_BigNumber(bignumber_constructorGuard, toHex(value));
+            }
+            if (value.match(/^-?[0-9]+$/)) {
+                return new bignumber_BigNumber(bignumber_constructorGuard, toHex(new BN(value)));
+            }
+            return bignumber_logger.throwArgumentError("invalid BigNumber string", "value", value);
+        }
+        if (typeof (value) === "number") {
+            if (value % 1) {
+                throwFault("underflow", "BigNumber.from", value);
+            }
+            if (value >= MAX_SAFE || value <= -MAX_SAFE) {
+                throwFault("overflow", "BigNumber.from", value);
+            }
+            return bignumber_BigNumber.from(String(value));
+        }
+        const anyValue = value;
+        if (typeof (anyValue) === "bigint") {
+            return bignumber_BigNumber.from(anyValue.toString());
+        }
+        if (lib_esm_isBytes(anyValue)) {
+            return bignumber_BigNumber.from(lib_esm_hexlify(anyValue));
+        }
+        if (anyValue) {
+            // Hexable interface (takes piority)
+            if (anyValue.toHexString) {
+                const hex = anyValue.toHexString();
+                if (typeof (hex) === "string") {
+                    return bignumber_BigNumber.from(hex);
+                }
+            }
+            else {
+                // For now, handle legacy JSON-ified values (goes away in v6)
+                let hex = anyValue._hex;
+                // New-form JSON
+                if (hex == null && anyValue.type === "BigNumber") {
+                    hex = anyValue.hex;
+                }
+                if (typeof (hex) === "string") {
+                    if (lib_esm_isHexString(hex) || (hex[0] === "-" && lib_esm_isHexString(hex.substring(1)))) {
+                        return bignumber_BigNumber.from(hex);
+                    }
+                }
+            }
+        }
+        return bignumber_logger.throwArgumentError("invalid BigNumber value", "value", value);
+    }
+    static isBigNumber(value) {
+        return !!(value && value._isBigNumber);
+    }
+}
+// Normalize the hex string
+function toHex(value) {
+    // For BN, call on the hex string
+    if (typeof (value) !== "string") {
+        return toHex(value.toString(16));
+    }
+    // If negative, prepend the negative sign to the normalized positive value
+    if (value[0] === "-") {
+        // Strip off the negative sign
+        value = value.substring(1);
+        // Cannot have mulitple negative signs (e.g. "--0x04")
+        if (value[0] === "-") {
+            bignumber_logger.throwArgumentError("invalid hex", "value", value);
+        }
+        // Call toHex on the positive component
+        value = toHex(value);
+        // Do not allow "-0x00"
+        if (value === "0x00") {
+            return value;
+        }
+        // Negate the value
+        return "-" + value;
+    }
+    // Add a "0x" prefix if missing
+    if (value.substring(0, 2) !== "0x") {
+        value = "0x" + value;
+    }
+    // Normalize zero
+    if (value === "0x") {
+        return "0x00";
+    }
+    // Make the string even length
+    if (value.length % 2) {
+        value = "0x0" + value.substring(2);
+    }
+    // Trim to smallest even-length string
+    while (value.length > 4 && value.substring(0, 4) === "0x00") {
+        value = "0x" + value.substring(4);
+    }
+    return value;
+}
+function toBigNumber(value) {
+    return bignumber_BigNumber.from(toHex(value));
+}
+function toBN(value) {
+    const hex = bignumber_BigNumber.from(value).toHexString();
+    if (hex[0] === "-") {
+        return (new BN("-" + hex.substring(3), 16));
+    }
+    return new BN(hex.substring(2), 16);
+}
+function throwFault(fault, operation, value) {
+    const params = { fault: fault, operation: operation };
+    if (value != null) {
+        params.value = value;
+    }
+    return bignumber_logger.throwError(fault, lib_esm_Logger.errors.NUMERIC_FAULT, params);
+}
+// value should have no prefix
+function _base36To16(value) {
+    return (new BN(value, 36)).toString(16);
+}
+// value should have no prefix
+function bignumber_base16To36(value) {
+    return (new BN(value, 16)).toString(36);
+}
+//# sourceMappingURL=bignumber.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/coders/abstract-coder.js
+
+
+
+
+
+
+const abstract_coder_logger = new lib_esm_Logger(lib_esm_version_version);
+function checkResultErrors(result) {
+    // Find the first error (if any)
+    const errors = [];
+    const checkErrors = function (path, object) {
+        if (!Array.isArray(object)) {
+            return;
+        }
+        for (let key in object) {
+            const childPath = path.slice();
+            childPath.push(key);
+            try {
+                checkErrors(childPath, object[key]);
+            }
+            catch (error) {
+                errors.push({ path: childPath, error: error });
+            }
+        }
+    };
+    checkErrors([], result);
+    return errors;
+}
+class Coder {
+    constructor(name, type, localName, dynamic) {
+        // @TODO: defineReadOnly these
+        this.name = name;
+        this.type = type;
+        this.localName = localName;
+        this.dynamic = dynamic;
+    }
+    _throwError(message, value) {
+        abstract_coder_logger.throwArgumentError(message, this.localName, value);
+    }
+}
+class Writer {
+    constructor(wordSize) {
+        lib_esm_defineReadOnly(this, "wordSize", wordSize || 32);
+        this._data = [];
+        this._dataLength = 0;
+        this._padding = new Uint8Array(wordSize);
+    }
+    get data() {
+        return hexConcat(this._data);
+    }
+    get length() { return this._dataLength; }
+    _writeData(data) {
+        this._data.push(data);
+        this._dataLength += data.length;
+        return data.length;
+    }
+    appendWriter(writer) {
+        return this._writeData(lib_esm_concat(writer._data));
+    }
+    // Arrayish items; padded on the right to wordSize
+    writeBytes(value) {
+        let bytes = lib_esm_arrayify(value);
+        const paddingOffset = bytes.length % this.wordSize;
+        if (paddingOffset) {
+            bytes = lib_esm_concat([bytes, this._padding.slice(paddingOffset)]);
+        }
+        return this._writeData(bytes);
+    }
+    _getValue(value) {
+        let bytes = lib_esm_arrayify(bignumber_BigNumber.from(value));
+        if (bytes.length > this.wordSize) {
+            abstract_coder_logger.throwError("value out-of-bounds", lib_esm_Logger.errors.BUFFER_OVERRUN, {
+                length: this.wordSize,
+                offset: bytes.length
+            });
+        }
+        if (bytes.length % this.wordSize) {
+            bytes = lib_esm_concat([this._padding.slice(bytes.length % this.wordSize), bytes]);
+        }
+        return bytes;
+    }
+    // BigNumberish items; padded on the left to wordSize
+    writeValue(value) {
+        return this._writeData(this._getValue(value));
+    }
+    writeUpdatableValue() {
+        const offset = this._data.length;
+        this._data.push(this._padding);
+        this._dataLength += this.wordSize;
+        return (value) => {
+            this._data[offset] = this._getValue(value);
+        };
+    }
+}
+class Reader {
+    constructor(data, wordSize, coerceFunc, allowLoose) {
+        lib_esm_defineReadOnly(this, "_data", lib_esm_arrayify(data));
+        lib_esm_defineReadOnly(this, "wordSize", wordSize || 32);
+        lib_esm_defineReadOnly(this, "_coerceFunc", coerceFunc);
+        lib_esm_defineReadOnly(this, "allowLoose", allowLoose);
+        this._offset = 0;
+    }
+    get data() { return lib_esm_hexlify(this._data); }
+    get consumed() { return this._offset; }
+    // The default Coerce function
+    static coerce(name, value) {
+        let match = name.match("^u?int([0-9]+)$");
+        if (match && parseInt(match[1]) <= 48) {
+            value = value.toNumber();
+        }
+        return value;
+    }
+    coerce(name, value) {
+        if (this._coerceFunc) {
+            return this._coerceFunc(name, value);
+        }
+        return Reader.coerce(name, value);
+    }
+    _peekBytes(offset, length, loose) {
+        let alignedLength = Math.ceil(length / this.wordSize) * this.wordSize;
+        if (this._offset + alignedLength > this._data.length) {
+            if (this.allowLoose && loose && this._offset + length <= this._data.length) {
+                alignedLength = length;
+            }
+            else {
+                abstract_coder_logger.throwError("data out-of-bounds", lib_esm_Logger.errors.BUFFER_OVERRUN, {
+                    length: this._data.length,
+                    offset: this._offset + alignedLength
+                });
+            }
+        }
+        return this._data.slice(this._offset, this._offset + alignedLength);
+    }
+    subReader(offset) {
+        return new Reader(this._data.slice(this._offset + offset), this.wordSize, this._coerceFunc, this.allowLoose);
+    }
+    readBytes(length, loose) {
+        let bytes = this._peekBytes(0, length, !!loose);
+        this._offset += bytes.length;
+        // @TODO: Make sure the length..end bytes are all 0?
+        return bytes.slice(0, length);
+    }
+    readValue() {
+        return bignumber_BigNumber.from(this.readBytes(this.wordSize));
+    }
+}
+//# sourceMappingURL=abstract-coder.js.map
+// EXTERNAL MODULE: ../node_modules/js-sha3/src/sha3.js
+var sha3 = __webpack_require__(338);
+var sha3_default = /*#__PURE__*/__webpack_require__.n(sha3);
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/keccak256/lib.esm/index.js
+
+
+
+function lib_esm_keccak256(data) {
+    return '0x' + sha3_default().keccak_256(lib_esm_arrayify(data));
+}
+//# sourceMappingURL=index.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/address/lib.esm/_version.js
+const address_lib_esm_version_version = "address/5.3.0";
+//# sourceMappingURL=_version.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/address/lib.esm/index.js
+
+
+
+
+
+
+
+const address_lib_esm_logger = new lib_esm_Logger(address_lib_esm_version_version);
+function getChecksumAddress(address) {
+    if (!lib_esm_isHexString(address, 20)) {
+        address_lib_esm_logger.throwArgumentError("invalid address", "address", address);
+    }
+    address = address.toLowerCase();
+    const chars = address.substring(2).split("");
+    const expanded = new Uint8Array(40);
+    for (let i = 0; i < 40; i++) {
+        expanded[i] = chars[i].charCodeAt(0);
+    }
+    const hashed = lib_esm_arrayify(lib_esm_keccak256(expanded));
+    for (let i = 0; i < 40; i += 2) {
+        if ((hashed[i >> 1] >> 4) >= 8) {
+            chars[i] = chars[i].toUpperCase();
+        }
+        if ((hashed[i >> 1] & 0x0f) >= 8) {
+            chars[i + 1] = chars[i + 1].toUpperCase();
+        }
+    }
+    return "0x" + chars.join("");
+}
+// Shims for environments that are missing some required constants and functions
+const MAX_SAFE_INTEGER = 0x1fffffffffffff;
+function log10(x) {
+    if (Math.log10) {
+        return Math.log10(x);
+    }
+    return Math.log(x) / Math.LN10;
+}
+// See: https://en.wikipedia.org/wiki/International_Bank_Account_Number
+// Create lookup table
+const ibanLookup = {};
+for (let i = 0; i < 10; i++) {
+    ibanLookup[String(i)] = String(i);
+}
+for (let i = 0; i < 26; i++) {
+    ibanLookup[String.fromCharCode(65 + i)] = String(10 + i);
+}
+// How many decimal digits can we process? (for 64-bit float, this is 15)
+const safeDigits = Math.floor(log10(MAX_SAFE_INTEGER));
+function ibanChecksum(address) {
+    address = address.toUpperCase();
+    address = address.substring(4) + address.substring(0, 2) + "00";
+    let expanded = address.split("").map((c) => { return ibanLookup[c]; }).join("");
+    // Javascript can handle integers safely up to 15 (decimal) digits
+    while (expanded.length >= safeDigits) {
+        let block = expanded.substring(0, safeDigits);
+        expanded = parseInt(block, 10) % 97 + expanded.substring(block.length);
+    }
+    let checksum = String(98 - (parseInt(expanded, 10) % 97));
+    while (checksum.length < 2) {
+        checksum = "0" + checksum;
+    }
+    return checksum;
+}
+;
+function lib_esm_getAddress(address) {
+    let result = null;
+    if (typeof (address) !== "string") {
+        address_lib_esm_logger.throwArgumentError("invalid address", "address", address);
+    }
+    if (address.match(/^(0x)?[0-9a-fA-F]{40}$/)) {
+        // Missing the 0x prefix
+        if (address.substring(0, 2) !== "0x") {
+            address = "0x" + address;
+        }
+        result = getChecksumAddress(address);
+        // It is a checksummed address with a bad checksum
+        if (address.match(/([A-F].*[a-f])|([a-f].*[A-F])/) && result !== address) {
+            address_lib_esm_logger.throwArgumentError("bad address checksum", "address", address);
+        }
+        // Maybe ICAP? (we only support direct mode)
+    }
+    else if (address.match(/^XE[0-9]{2}[0-9A-Za-z]{30,31}$/)) {
+        // It is an ICAP address with a bad checksum
+        if (address.substring(2, 4) !== ibanChecksum(address)) {
+            address_lib_esm_logger.throwArgumentError("bad icap checksum", "address", address);
+        }
+        result = _base36To16(address.substring(4));
+        while (result.length < 40) {
+            result = "0" + result;
+        }
+        result = getChecksumAddress("0x" + result);
+    }
+    else {
+        address_lib_esm_logger.throwArgumentError("invalid address", "address", address);
+    }
+    return result;
+}
+function isAddress(address) {
+    try {
+        lib_esm_getAddress(address);
+        return true;
+    }
+    catch (error) { }
+    return false;
+}
+function getIcapAddress(address) {
+    let base36 = _base16To36(lib_esm_getAddress(address).substring(2)).toUpperCase();
+    while (base36.length < 30) {
+        base36 = "0" + base36;
+    }
+    return "XE" + ibanChecksum("XE00" + base36) + base36;
+}
+// http://ethereum.stackexchange.com/questions/760/how-is-the-address-of-an-ethereum-contract-computed
+function getContractAddress(transaction) {
+    let from = null;
+    try {
+        from = lib_esm_getAddress(transaction.from);
+    }
+    catch (error) {
+        address_lib_esm_logger.throwArgumentError("missing from address", "transaction", transaction);
+    }
+    const nonce = stripZeros(arrayify(BigNumber.from(transaction.nonce).toHexString()));
+    return lib_esm_getAddress(hexDataSlice(keccak256(encode([from, nonce])), 12));
+}
+function getCreate2Address(from, salt, initCodeHash) {
+    if (hexDataLength(salt) !== 32) {
+        address_lib_esm_logger.throwArgumentError("salt must be 32 bytes", "salt", salt);
+    }
+    if (hexDataLength(initCodeHash) !== 32) {
+        address_lib_esm_logger.throwArgumentError("initCodeHash must be 32 bytes", "initCodeHash", initCodeHash);
+    }
+    return lib_esm_getAddress(hexDataSlice(keccak256(concat(["0xff", lib_esm_getAddress(from), salt, initCodeHash])), 12));
+}
+//# sourceMappingURL=index.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/coders/address.js
+
+
+
+
+class AddressCoder extends Coder {
+    constructor(localName) {
+        super("address", "address", localName, false);
+    }
+    encode(writer, value) {
+        try {
+            lib_esm_getAddress(value);
+        }
+        catch (error) {
+            this._throwError(error.message, value);
+        }
+        return writer.writeValue(value);
+    }
+    decode(reader) {
+        return lib_esm_getAddress(lib_esm_hexZeroPad(reader.readValue().toHexString(), 20));
+    }
+}
+//# sourceMappingURL=address.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/coders/anonymous.js
+
+
+// Clones the functionality of an existing Coder, but without a localName
+class AnonymousCoder extends Coder {
+    constructor(coder) {
+        super(coder.name, coder.type, undefined, coder.dynamic);
+        this.coder = coder;
+    }
+    encode(writer, value) {
+        return this.coder.encode(writer, value);
+    }
+    decode(reader) {
+        return this.coder.decode(reader);
+    }
+}
+//# sourceMappingURL=anonymous.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/coders/array.js
+
+
+
+const array_logger = new lib_esm_Logger(lib_esm_version_version);
+
+
+function pack(writer, coders, values) {
+    let arrayValues = null;
+    if (Array.isArray(values)) {
+        arrayValues = values;
+    }
+    else if (values && typeof (values) === "object") {
+        let unique = {};
+        arrayValues = coders.map((coder) => {
+            const name = coder.localName;
+            if (!name) {
+                array_logger.throwError("cannot encode object for signature with missing names", lib_esm_Logger.errors.INVALID_ARGUMENT, {
+                    argument: "values",
+                    coder: coder,
+                    value: values
+                });
+            }
+            if (unique[name]) {
+                array_logger.throwError("cannot encode object for signature with duplicate names", lib_esm_Logger.errors.INVALID_ARGUMENT, {
+                    argument: "values",
+                    coder: coder,
+                    value: values
+                });
+            }
+            unique[name] = true;
+            return values[name];
+        });
+    }
+    else {
+        array_logger.throwArgumentError("invalid tuple value", "tuple", values);
+    }
+    if (coders.length !== arrayValues.length) {
+        array_logger.throwArgumentError("types/value length mismatch", "tuple", values);
+    }
+    let staticWriter = new Writer(writer.wordSize);
+    let dynamicWriter = new Writer(writer.wordSize);
+    let updateFuncs = [];
+    coders.forEach((coder, index) => {
+        let value = arrayValues[index];
+        if (coder.dynamic) {
+            // Get current dynamic offset (for the future pointer)
+            let dynamicOffset = dynamicWriter.length;
+            // Encode the dynamic value into the dynamicWriter
+            coder.encode(dynamicWriter, value);
+            // Prepare to populate the correct offset once we are done
+            let updateFunc = staticWriter.writeUpdatableValue();
+            updateFuncs.push((baseOffset) => {
+                updateFunc(baseOffset + dynamicOffset);
+            });
+        }
+        else {
+            coder.encode(staticWriter, value);
+        }
+    });
+    // Backfill all the dynamic offsets, now that we know the static length
+    updateFuncs.forEach((func) => { func(staticWriter.length); });
+    let length = writer.appendWriter(staticWriter);
+    length += writer.appendWriter(dynamicWriter);
+    return length;
+}
+function unpack(reader, coders) {
+    let values = [];
+    // A reader anchored to this base
+    let baseReader = reader.subReader(0);
+    coders.forEach((coder) => {
+        let value = null;
+        if (coder.dynamic) {
+            let offset = reader.readValue();
+            let offsetReader = baseReader.subReader(offset.toNumber());
+            try {
+                value = coder.decode(offsetReader);
+            }
+            catch (error) {
+                // Cannot recover from this
+                if (error.code === lib_esm_Logger.errors.BUFFER_OVERRUN) {
+                    throw error;
+                }
+                value = error;
+                value.baseType = coder.name;
+                value.name = coder.localName;
+                value.type = coder.type;
+            }
+        }
+        else {
+            try {
+                value = coder.decode(reader);
+            }
+            catch (error) {
+                // Cannot recover from this
+                if (error.code === lib_esm_Logger.errors.BUFFER_OVERRUN) {
+                    throw error;
+                }
+                value = error;
+                value.baseType = coder.name;
+                value.name = coder.localName;
+                value.type = coder.type;
+            }
+        }
+        if (value != undefined) {
+            values.push(value);
+        }
+    });
+    // We only output named properties for uniquely named coders
+    const uniqueNames = coders.reduce((accum, coder) => {
+        const name = coder.localName;
+        if (name) {
+            if (!accum[name]) {
+                accum[name] = 0;
+            }
+            accum[name]++;
+        }
+        return accum;
+    }, {});
+    // Add any named parameters (i.e. tuples)
+    coders.forEach((coder, index) => {
+        let name = coder.localName;
+        if (!name || uniqueNames[name] !== 1) {
+            return;
+        }
+        if (name === "length") {
+            name = "_length";
+        }
+        if (values[name] != null) {
+            return;
+        }
+        const value = values[index];
+        if (value instanceof Error) {
+            Object.defineProperty(values, name, {
+                get: () => { throw value; }
+            });
+        }
+        else {
+            values[name] = value;
+        }
+    });
+    for (let i = 0; i < values.length; i++) {
+        const value = values[i];
+        if (value instanceof Error) {
+            Object.defineProperty(values, i, {
+                get: () => { throw value; }
+            });
+        }
+    }
+    return Object.freeze(values);
+}
+class ArrayCoder extends Coder {
+    constructor(coder, length, localName) {
+        const type = (coder.type + "[" + (length >= 0 ? length : "") + "]");
+        const dynamic = (length === -1 || coder.dynamic);
+        super("array", type, localName, dynamic);
+        this.coder = coder;
+        this.length = length;
+    }
+    encode(writer, value) {
+        if (!Array.isArray(value)) {
+            this._throwError("expected array value", value);
+        }
+        let count = this.length;
+        if (count === -1) {
+            count = value.length;
+            writer.writeValue(value.length);
+        }
+        array_logger.checkArgumentCount(value.length, count, "coder array" + (this.localName ? (" " + this.localName) : ""));
+        let coders = [];
+        for (let i = 0; i < value.length; i++) {
+            coders.push(this.coder);
+        }
+        return pack(writer, coders, value);
+    }
+    decode(reader) {
+        let count = this.length;
+        if (count === -1) {
+            count = reader.readValue().toNumber();
+        }
+        let coders = [];
+        for (let i = 0; i < count; i++) {
+            coders.push(new AnonymousCoder(this.coder));
+        }
+        return reader.coerce(this.name, unpack(reader, coders));
+    }
+}
+//# sourceMappingURL=array.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/coders/boolean.js
+
+
+class BooleanCoder extends Coder {
+    constructor(localName) {
+        super("bool", "bool", localName, false);
+    }
+    encode(writer, value) {
+        return writer.writeValue(value ? 1 : 0);
+    }
+    decode(reader) {
+        return reader.coerce(this.type, !reader.readValue().isZero());
+    }
+}
+//# sourceMappingURL=boolean.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/coders/bytes.js
+
+
+
+class DynamicBytesCoder extends Coder {
+    constructor(type, localName) {
+        super(type, type, localName, true);
+    }
+    encode(writer, value) {
+        value = lib_esm_arrayify(value);
+        let length = writer.writeValue(value.length);
+        length += writer.writeBytes(value);
+        return length;
+    }
+    decode(reader) {
+        return reader.readBytes(reader.readValue().toNumber(), true);
+    }
+}
+class BytesCoder extends DynamicBytesCoder {
+    constructor(localName) {
+        super("bytes", localName);
+    }
+    decode(reader) {
+        return reader.coerce(this.name, lib_esm_hexlify(super.decode(reader)));
+    }
+}
+//# sourceMappingURL=bytes.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/coders/fixed-bytes.js
+
+
+
+// @TODO: Merge this with bytes
+class FixedBytesCoder extends Coder {
+    constructor(size, localName) {
+        let name = "bytes" + String(size);
+        super(name, name, localName, false);
+        this.size = size;
+    }
+    encode(writer, value) {
+        let data = lib_esm_arrayify(value);
+        if (data.length !== this.size) {
+            this._throwError("incorrect data length", value);
+        }
+        return writer.writeBytes(data);
+    }
+    decode(reader) {
+        return reader.coerce(this.name, lib_esm_hexlify(reader.readBytes(this.size)));
+    }
+}
+//# sourceMappingURL=fixed-bytes.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/coders/null.js
+
+
+class NullCoder extends Coder {
+    constructor(localName) {
+        super("null", "", localName, false);
+    }
+    encode(writer, value) {
+        if (value != null) {
+            this._throwError("not null", value);
+        }
+        return writer.writeBytes([]);
+    }
+    decode(reader) {
+        reader.readBytes(0);
+        return reader.coerce(this.name, null);
+    }
+}
+//# sourceMappingURL=null.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/constants/lib.esm/bignumbers.js
+
+const NegativeOne = ( /*#__PURE__*/bignumber_BigNumber.from(-1));
+const Zero = ( /*#__PURE__*/bignumber_BigNumber.from(0));
+const One = ( /*#__PURE__*/bignumber_BigNumber.from(1));
+const Two = ( /*#__PURE__*/(/* unused pure expression or super */ null && (BigNumber.from(2))));
+const WeiPerEther = ( /*#__PURE__*/(/* unused pure expression or super */ null && (BigNumber.from("1000000000000000000"))));
+const MaxUint256 = ( /*#__PURE__*/bignumber_BigNumber.from("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+const MinInt256 = ( /*#__PURE__*/(/* unused pure expression or super */ null && (BigNumber.from("-0x8000000000000000000000000000000000000000000000000000000000000000"))));
+const MaxInt256 = ( /*#__PURE__*/(/* unused pure expression or super */ null && (BigNumber.from("0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"))));
+
+//# sourceMappingURL=bignumbers.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/coders/number.js
+
+
+
+
+class NumberCoder extends Coder {
+    constructor(size, signed, localName) {
+        const name = ((signed ? "int" : "uint") + (size * 8));
+        super(name, name, localName, false);
+        this.size = size;
+        this.signed = signed;
+    }
+    encode(writer, value) {
+        let v = bignumber_BigNumber.from(value);
+        // Check bounds are safe for encoding
+        let maxUintValue = MaxUint256.mask(writer.wordSize * 8);
+        if (this.signed) {
+            let bounds = maxUintValue.mask(this.size * 8 - 1);
+            if (v.gt(bounds) || v.lt(bounds.add(One).mul(NegativeOne))) {
+                this._throwError("value out-of-bounds", value);
+            }
+        }
+        else if (v.lt(Zero) || v.gt(maxUintValue.mask(this.size * 8))) {
+            this._throwError("value out-of-bounds", value);
+        }
+        v = v.toTwos(this.size * 8).mask(this.size * 8);
+        if (this.signed) {
+            v = v.fromTwos(this.size * 8).toTwos(8 * writer.wordSize);
+        }
+        return writer.writeValue(v);
+    }
+    decode(reader) {
+        let value = reader.readValue().mask(this.size * 8);
+        if (this.signed) {
+            value = value.fromTwos(this.size * 8);
+        }
+        return reader.coerce(this.name, value);
+    }
+}
+//# sourceMappingURL=number.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/strings/lib.esm/_version.js
+const strings_lib_esm_version_version = "strings/5.3.0";
+//# sourceMappingURL=_version.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/strings/lib.esm/utf8.js
+
+
+
+
+const utf8_logger = new lib_esm_Logger(strings_lib_esm_version_version);
+///////////////////////////////
+var UnicodeNormalizationForm;
+(function (UnicodeNormalizationForm) {
+    UnicodeNormalizationForm["current"] = "";
+    UnicodeNormalizationForm["NFC"] = "NFC";
+    UnicodeNormalizationForm["NFD"] = "NFD";
+    UnicodeNormalizationForm["NFKC"] = "NFKC";
+    UnicodeNormalizationForm["NFKD"] = "NFKD";
+})(UnicodeNormalizationForm || (UnicodeNormalizationForm = {}));
+;
+var Utf8ErrorReason;
+(function (Utf8ErrorReason) {
+    // A continuation byte was present where there was nothing to continue
+    // - offset = the index the codepoint began in
+    Utf8ErrorReason["UNEXPECTED_CONTINUE"] = "unexpected continuation byte";
+    // An invalid (non-continuation) byte to start a UTF-8 codepoint was found
+    // - offset = the index the codepoint began in
+    Utf8ErrorReason["BAD_PREFIX"] = "bad codepoint prefix";
+    // The string is too short to process the expected codepoint
+    // - offset = the index the codepoint began in
+    Utf8ErrorReason["OVERRUN"] = "string overrun";
+    // A missing continuation byte was expected but not found
+    // - offset = the index the continuation byte was expected at
+    Utf8ErrorReason["MISSING_CONTINUE"] = "missing continuation byte";
+    // The computed code point is outside the range for UTF-8
+    // - offset       = start of this codepoint
+    // - badCodepoint = the computed codepoint; outside the UTF-8 range
+    Utf8ErrorReason["OUT_OF_RANGE"] = "out of UTF-8 range";
+    // UTF-8 strings may not contain UTF-16 surrogate pairs
+    // - offset       = start of this codepoint
+    // - badCodepoint = the computed codepoint; inside the UTF-16 surrogate range
+    Utf8ErrorReason["UTF16_SURROGATE"] = "UTF-16 surrogate";
+    // The string is an overlong reperesentation
+    // - offset       = start of this codepoint
+    // - badCodepoint = the computed codepoint; already bounds checked
+    Utf8ErrorReason["OVERLONG"] = "overlong representation";
+})(Utf8ErrorReason || (Utf8ErrorReason = {}));
+;
+function errorFunc(reason, offset, bytes, output, badCodepoint) {
+    return utf8_logger.throwArgumentError(`invalid codepoint at offset ${offset}; ${reason}`, "bytes", bytes);
+}
+function ignoreFunc(reason, offset, bytes, output, badCodepoint) {
+    // If there is an invalid prefix (including stray continuation), skip any additional continuation bytes
+    if (reason === Utf8ErrorReason.BAD_PREFIX || reason === Utf8ErrorReason.UNEXPECTED_CONTINUE) {
+        let i = 0;
+        for (let o = offset + 1; o < bytes.length; o++) {
+            if (bytes[o] >> 6 !== 0x02) {
+                break;
+            }
+            i++;
+        }
+        return i;
+    }
+    // This byte runs us past the end of the string, so just jump to the end
+    // (but the first byte was read already read and therefore skipped)
+    if (reason === Utf8ErrorReason.OVERRUN) {
+        return bytes.length - offset - 1;
+    }
+    // Nothing to skip
+    return 0;
+}
+function replaceFunc(reason, offset, bytes, output, badCodepoint) {
+    // Overlong representations are otherwise "valid" code points; just non-deistingtished
+    if (reason === Utf8ErrorReason.OVERLONG) {
+        output.push(badCodepoint);
+        return 0;
+    }
+    // Put the replacement character into the output
+    output.push(0xfffd);
+    // Otherwise, process as if ignoring errors
+    return ignoreFunc(reason, offset, bytes, output, badCodepoint);
+}
+// Common error handing strategies
+const Utf8ErrorFuncs = Object.freeze({
+    error: errorFunc,
+    ignore: ignoreFunc,
+    replace: replaceFunc
+});
+// http://stackoverflow.com/questions/13356493/decode-utf-8-with-javascript#13691499
+function getUtf8CodePoints(bytes, onError) {
+    if (onError == null) {
+        onError = Utf8ErrorFuncs.error;
+    }
+    bytes = lib_esm_arrayify(bytes);
+    const result = [];
+    let i = 0;
+    // Invalid bytes are ignored
+    while (i < bytes.length) {
+        const c = bytes[i++];
+        // 0xxx xxxx
+        if (c >> 7 === 0) {
+            result.push(c);
+            continue;
+        }
+        // Multibyte; how many bytes left for this character?
+        let extraLength = null;
+        let overlongMask = null;
+        // 110x xxxx 10xx xxxx
+        if ((c & 0xe0) === 0xc0) {
+            extraLength = 1;
+            overlongMask = 0x7f;
+            // 1110 xxxx 10xx xxxx 10xx xxxx
+        }
+        else if ((c & 0xf0) === 0xe0) {
+            extraLength = 2;
+            overlongMask = 0x7ff;
+            // 1111 0xxx 10xx xxxx 10xx xxxx 10xx xxxx
+        }
+        else if ((c & 0xf8) === 0xf0) {
+            extraLength = 3;
+            overlongMask = 0xffff;
+        }
+        else {
+            if ((c & 0xc0) === 0x80) {
+                i += onError(Utf8ErrorReason.UNEXPECTED_CONTINUE, i - 1, bytes, result);
+            }
+            else {
+                i += onError(Utf8ErrorReason.BAD_PREFIX, i - 1, bytes, result);
+            }
+            continue;
+        }
+        // Do we have enough bytes in our data?
+        if (i - 1 + extraLength >= bytes.length) {
+            i += onError(Utf8ErrorReason.OVERRUN, i - 1, bytes, result);
+            continue;
+        }
+        // Remove the length prefix from the char
+        let res = c & ((1 << (8 - extraLength - 1)) - 1);
+        for (let j = 0; j < extraLength; j++) {
+            let nextChar = bytes[i];
+            // Invalid continuation byte
+            if ((nextChar & 0xc0) != 0x80) {
+                i += onError(Utf8ErrorReason.MISSING_CONTINUE, i, bytes, result);
+                res = null;
+                break;
+            }
+            ;
+            res = (res << 6) | (nextChar & 0x3f);
+            i++;
+        }
+        // See above loop for invalid contimuation byte
+        if (res === null) {
+            continue;
+        }
+        // Maximum code point
+        if (res > 0x10ffff) {
+            i += onError(Utf8ErrorReason.OUT_OF_RANGE, i - 1 - extraLength, bytes, result, res);
+            continue;
+        }
+        // Reserved for UTF-16 surrogate halves
+        if (res >= 0xd800 && res <= 0xdfff) {
+            i += onError(Utf8ErrorReason.UTF16_SURROGATE, i - 1 - extraLength, bytes, result, res);
+            continue;
+        }
+        // Check for overlong sequences (more bytes than needed)
+        if (res <= overlongMask) {
+            i += onError(Utf8ErrorReason.OVERLONG, i - 1 - extraLength, bytes, result, res);
+            continue;
+        }
+        result.push(res);
+    }
+    return result;
+}
+// http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+function toUtf8Bytes(str, form = UnicodeNormalizationForm.current) {
+    if (form != UnicodeNormalizationForm.current) {
+        utf8_logger.checkNormalize();
+        str = str.normalize(form);
+    }
+    let result = [];
+    for (let i = 0; i < str.length; i++) {
+        const c = str.charCodeAt(i);
+        if (c < 0x80) {
+            result.push(c);
+        }
+        else if (c < 0x800) {
+            result.push((c >> 6) | 0xc0);
+            result.push((c & 0x3f) | 0x80);
+        }
+        else if ((c & 0xfc00) == 0xd800) {
+            i++;
+            const c2 = str.charCodeAt(i);
+            if (i >= str.length || (c2 & 0xfc00) !== 0xdc00) {
+                throw new Error("invalid utf-8 string");
+            }
+            // Surrogate Pair
+            const pair = 0x10000 + ((c & 0x03ff) << 10) + (c2 & 0x03ff);
+            result.push((pair >> 18) | 0xf0);
+            result.push(((pair >> 12) & 0x3f) | 0x80);
+            result.push(((pair >> 6) & 0x3f) | 0x80);
+            result.push((pair & 0x3f) | 0x80);
+        }
+        else {
+            result.push((c >> 12) | 0xe0);
+            result.push(((c >> 6) & 0x3f) | 0x80);
+            result.push((c & 0x3f) | 0x80);
+        }
+    }
+    return lib_esm_arrayify(result);
+}
+;
+function escapeChar(value) {
+    const hex = ("0000" + value.toString(16));
+    return "\\u" + hex.substring(hex.length - 4);
+}
+function _toEscapedUtf8String(bytes, onError) {
+    return '"' + getUtf8CodePoints(bytes, onError).map((codePoint) => {
+        if (codePoint < 256) {
+            switch (codePoint) {
+                case 8: return "\\b";
+                case 9: return "\\t";
+                case 10: return "\\n";
+                case 13: return "\\r";
+                case 34: return "\\\"";
+                case 92: return "\\\\";
+            }
+            if (codePoint >= 32 && codePoint < 127) {
+                return String.fromCharCode(codePoint);
+            }
+        }
+        if (codePoint <= 0xffff) {
+            return escapeChar(codePoint);
+        }
+        codePoint -= 0x10000;
+        return escapeChar(((codePoint >> 10) & 0x3ff) + 0xd800) + escapeChar((codePoint & 0x3ff) + 0xdc00);
+    }).join("") + '"';
+}
+function _toUtf8String(codePoints) {
+    return codePoints.map((codePoint) => {
+        if (codePoint <= 0xffff) {
+            return String.fromCharCode(codePoint);
+        }
+        codePoint -= 0x10000;
+        return String.fromCharCode((((codePoint >> 10) & 0x3ff) + 0xd800), ((codePoint & 0x3ff) + 0xdc00));
+    }).join("");
+}
+function toUtf8String(bytes, onError) {
+    return _toUtf8String(getUtf8CodePoints(bytes, onError));
+}
+function toUtf8CodePoints(str, form = UnicodeNormalizationForm.current) {
+    return getUtf8CodePoints(toUtf8Bytes(str, form));
+}
+//# sourceMappingURL=utf8.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/coders/string.js
+
+
+
+class StringCoder extends DynamicBytesCoder {
+    constructor(localName) {
+        super("string", localName);
+    }
+    encode(writer, value) {
+        return super.encode(writer, toUtf8Bytes(value));
+    }
+    decode(reader) {
+        return toUtf8String(super.decode(reader));
+    }
+}
+//# sourceMappingURL=string.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/coders/tuple.js
+
+
+
+class TupleCoder extends Coder {
+    constructor(coders, localName) {
+        let dynamic = false;
+        const types = [];
+        coders.forEach((coder) => {
+            if (coder.dynamic) {
+                dynamic = true;
+            }
+            types.push(coder.type);
+        });
+        const type = ("tuple(" + types.join(",") + ")");
+        super("tuple", type, localName, dynamic);
+        this.coders = coders;
+    }
+    encode(writer, value) {
+        return pack(writer, this.coders, value);
+    }
+    decode(reader) {
+        return reader.coerce(this.name, unpack(reader, this.coders));
+    }
+}
+//# sourceMappingURL=tuple.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/abi-coder.js
+
+// See: https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI
+
+
+
+
+const abi_coder_logger = new lib_esm_Logger(lib_esm_version_version);
+
+
+
+
+
+
+
+
+
+
+
+const paramTypeBytes = new RegExp(/^bytes([0-9]*)$/);
+const paramTypeNumber = new RegExp(/^(u?int)([0-9]*)$/);
+class AbiCoder {
+    constructor(coerceFunc) {
+        abi_coder_logger.checkNew(new.target, AbiCoder);
+        lib_esm_defineReadOnly(this, "coerceFunc", coerceFunc || null);
+    }
+    _getCoder(param) {
+        switch (param.baseType) {
+            case "address":
+                return new AddressCoder(param.name);
+            case "bool":
+                return new BooleanCoder(param.name);
+            case "string":
+                return new StringCoder(param.name);
+            case "bytes":
+                return new BytesCoder(param.name);
+            case "array":
+                return new ArrayCoder(this._getCoder(param.arrayChildren), param.arrayLength, param.name);
+            case "tuple":
+                return new TupleCoder((param.components || []).map((component) => {
+                    return this._getCoder(component);
+                }), param.name);
+            case "":
+                return new NullCoder(param.name);
+        }
+        // u?int[0-9]*
+        let match = param.type.match(paramTypeNumber);
+        if (match) {
+            let size = parseInt(match[2] || "256");
+            if (size === 0 || size > 256 || (size % 8) !== 0) {
+                abi_coder_logger.throwArgumentError("invalid " + match[1] + " bit length", "param", param);
+            }
+            return new NumberCoder(size / 8, (match[1] === "int"), param.name);
+        }
+        // bytes[0-9]+
+        match = param.type.match(paramTypeBytes);
+        if (match) {
+            let size = parseInt(match[1]);
+            if (size === 0 || size > 32) {
+                abi_coder_logger.throwArgumentError("invalid bytes length", "param", param);
+            }
+            return new FixedBytesCoder(size, param.name);
+        }
+        return abi_coder_logger.throwArgumentError("invalid type", "type", param.type);
+    }
+    _getWordSize() { return 32; }
+    _getReader(data, allowLoose) {
+        return new Reader(data, this._getWordSize(), this.coerceFunc, allowLoose);
+    }
+    _getWriter() {
+        return new Writer(this._getWordSize());
+    }
+    encode(types, values) {
+        if (types.length !== values.length) {
+            abi_coder_logger.throwError("types/values length mismatch", lib_esm_Logger.errors.INVALID_ARGUMENT, {
+                count: { types: types.length, values: values.length },
+                value: { types: types, values: values }
+            });
+        }
+        const coders = types.map((type) => this._getCoder(fragments_ParamType.from(type)));
+        const coder = (new TupleCoder(coders, "_"));
+        const writer = this._getWriter();
+        coder.encode(writer, values);
+        return writer.data;
+    }
+    decode(types, data, loose) {
+        const coders = types.map((type) => this._getCoder(fragments_ParamType.from(type)));
+        const coder = new TupleCoder(coders, "_");
+        return coder.decode(this._getReader(lib_esm_arrayify(data), loose));
+    }
+}
+const abi_coder_defaultAbiCoder = new AbiCoder();
+//# sourceMappingURL=abi-coder.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/interface.js
+
+
+
+
+
+
+
+
+
+
+
+
+const interface_logger = new lib_esm_Logger(lib_esm_version_version);
+
+class LogDescription extends (/* unused pure expression or super */ null && (Description)) {
+}
+class TransactionDescription extends (/* unused pure expression or super */ null && (Description)) {
+}
+class Indexed extends (/* unused pure expression or super */ null && (Description)) {
+    static isIndexed(value) {
+        return !!(value && value._isIndexed);
+    }
+}
+function wrapAccessError(property, error) {
+    const wrap = new Error(`deferred error during ABI decoding triggered accessing ${property}`);
+    wrap.error = error;
+    return wrap;
+}
+/*
+function checkNames(fragment: Fragment, type: "input" | "output", params: Array<ParamType>): void {
+    params.reduce((accum, param) => {
+        if (param.name) {
+            if (accum[param.name]) {
+                logger.throwArgumentError(`duplicate ${ type } parameter ${ JSON.stringify(param.name) } in ${ fragment.format("full") }`, "fragment", fragment);
+            }
+            accum[param.name] = true;
+        }
+        return accum;
+    }, <{ [ name: string ]: boolean }>{ });
+}
+*/
+class Interface {
+    constructor(fragments) {
+        interface_logger.checkNew(new.target, Interface);
+        let abi = [];
+        if (typeof (fragments) === "string") {
+            abi = JSON.parse(fragments);
+        }
+        else {
+            abi = fragments;
+        }
+        defineReadOnly(this, "fragments", abi.map((fragment) => {
+            return Fragment.from(fragment);
+        }).filter((fragment) => (fragment != null)));
+        defineReadOnly(this, "_abiCoder", getStatic((new.target), "getAbiCoder")());
+        defineReadOnly(this, "functions", {});
+        defineReadOnly(this, "errors", {});
+        defineReadOnly(this, "events", {});
+        defineReadOnly(this, "structs", {});
+        // Add all fragments by their signature
+        this.fragments.forEach((fragment) => {
+            let bucket = null;
+            switch (fragment.type) {
+                case "constructor":
+                    if (this.deploy) {
+                        interface_logger.warn("duplicate definition - constructor");
+                        return;
+                    }
+                    //checkNames(fragment, "input", fragment.inputs);
+                    defineReadOnly(this, "deploy", fragment);
+                    return;
+                case "function":
+                    //checkNames(fragment, "input", fragment.inputs);
+                    //checkNames(fragment, "output", (<FunctionFragment>fragment).outputs);
+                    bucket = this.functions;
+                    break;
+                case "event":
+                    //checkNames(fragment, "input", fragment.inputs);
+                    bucket = this.events;
+                    break;
+                default:
+                    return;
+            }
+            let signature = fragment.format();
+            if (bucket[signature]) {
+                interface_logger.warn("duplicate definition - " + signature);
+                return;
+            }
+            bucket[signature] = fragment;
+        });
+        // If we do not have a constructor add a default
+        if (!this.deploy) {
+            defineReadOnly(this, "deploy", ConstructorFragment.from({
+                payable: false,
+                type: "constructor"
+            }));
+        }
+        defineReadOnly(this, "_isInterface", true);
+    }
+    format(format) {
+        if (!format) {
+            format = FormatTypes.full;
+        }
+        if (format === FormatTypes.sighash) {
+            interface_logger.throwArgumentError("interface does not support formatting sighash", "format", format);
+        }
+        const abi = this.fragments.map((fragment) => fragment.format(format));
+        // We need to re-bundle the JSON fragments a bit
+        if (format === FormatTypes.json) {
+            return JSON.stringify(abi.map((j) => JSON.parse(j)));
+        }
+        return abi;
+    }
+    // Sub-classes can override these to handle other blockchains
+    static getAbiCoder() {
+        return defaultAbiCoder;
+    }
+    static getAddress(address) {
+        return getAddress(address);
+    }
+    static getSighash(functionFragment) {
+        return hexDataSlice(id(functionFragment.format()), 0, 4);
+    }
+    static getEventTopic(eventFragment) {
+        return id(eventFragment.format());
+    }
+    // Find a function definition by any means necessary (unless it is ambiguous)
+    getFunction(nameOrSignatureOrSighash) {
+        if (isHexString(nameOrSignatureOrSighash)) {
+            for (const name in this.functions) {
+                if (nameOrSignatureOrSighash === this.getSighash(name)) {
+                    return this.functions[name];
+                }
+            }
+            interface_logger.throwArgumentError("no matching function", "sighash", nameOrSignatureOrSighash);
+        }
+        // It is a bare name, look up the function (will return null if ambiguous)
+        if (nameOrSignatureOrSighash.indexOf("(") === -1) {
+            const name = nameOrSignatureOrSighash.trim();
+            const matching = Object.keys(this.functions).filter((f) => (f.split("(" /* fix:) */)[0] === name));
+            if (matching.length === 0) {
+                interface_logger.throwArgumentError("no matching function", "name", name);
+            }
+            else if (matching.length > 1) {
+                interface_logger.throwArgumentError("multiple matching functions", "name", name);
+            }
+            return this.functions[matching[0]];
+        }
+        // Normlize the signature and lookup the function
+        const result = this.functions[FunctionFragment.fromString(nameOrSignatureOrSighash).format()];
+        if (!result) {
+            interface_logger.throwArgumentError("no matching function", "signature", nameOrSignatureOrSighash);
+        }
+        return result;
+    }
+    // Find an event definition by any means necessary (unless it is ambiguous)
+    getEvent(nameOrSignatureOrTopic) {
+        if (isHexString(nameOrSignatureOrTopic)) {
+            const topichash = nameOrSignatureOrTopic.toLowerCase();
+            for (const name in this.events) {
+                if (topichash === this.getEventTopic(name)) {
+                    return this.events[name];
+                }
+            }
+            interface_logger.throwArgumentError("no matching event", "topichash", topichash);
+        }
+        // It is a bare name, look up the function (will return null if ambiguous)
+        if (nameOrSignatureOrTopic.indexOf("(") === -1) {
+            const name = nameOrSignatureOrTopic.trim();
+            const matching = Object.keys(this.events).filter((f) => (f.split("(" /* fix:) */)[0] === name));
+            if (matching.length === 0) {
+                interface_logger.throwArgumentError("no matching event", "name", name);
+            }
+            else if (matching.length > 1) {
+                interface_logger.throwArgumentError("multiple matching events", "name", name);
+            }
+            return this.events[matching[0]];
+        }
+        // Normlize the signature and lookup the function
+        const result = this.events[EventFragment.fromString(nameOrSignatureOrTopic).format()];
+        if (!result) {
+            interface_logger.throwArgumentError("no matching event", "signature", nameOrSignatureOrTopic);
+        }
+        return result;
+    }
+    // Get the sighash (the bytes4 selector) used by Solidity to identify a function
+    getSighash(functionFragment) {
+        if (typeof (functionFragment) === "string") {
+            functionFragment = this.getFunction(functionFragment);
+        }
+        return getStatic(this.constructor, "getSighash")(functionFragment);
+    }
+    // Get the topic (the bytes32 hash) used by Solidity to identify an event
+    getEventTopic(eventFragment) {
+        if (typeof (eventFragment) === "string") {
+            eventFragment = this.getEvent(eventFragment);
+        }
+        return getStatic(this.constructor, "getEventTopic")(eventFragment);
+    }
+    _decodeParams(params, data) {
+        return this._abiCoder.decode(params, data);
+    }
+    _encodeParams(params, values) {
+        return this._abiCoder.encode(params, values);
+    }
+    encodeDeploy(values) {
+        return this._encodeParams(this.deploy.inputs, values || []);
+    }
+    // Decode the data for a function call (e.g. tx.data)
+    decodeFunctionData(functionFragment, data) {
+        if (typeof (functionFragment) === "string") {
+            functionFragment = this.getFunction(functionFragment);
+        }
+        const bytes = arrayify(data);
+        if (hexlify(bytes.slice(0, 4)) !== this.getSighash(functionFragment)) {
+            interface_logger.throwArgumentError(`data signature does not match function ${functionFragment.name}.`, "data", hexlify(bytes));
+        }
+        return this._decodeParams(functionFragment.inputs, bytes.slice(4));
+    }
+    // Encode the data for a function call (e.g. tx.data)
+    encodeFunctionData(functionFragment, values) {
+        if (typeof (functionFragment) === "string") {
+            functionFragment = this.getFunction(functionFragment);
+        }
+        return hexlify(concat([
+            this.getSighash(functionFragment),
+            this._encodeParams(functionFragment.inputs, values || [])
+        ]));
+    }
+    // Decode the result from a function call (e.g. from eth_call)
+    decodeFunctionResult(functionFragment, data) {
+        if (typeof (functionFragment) === "string") {
+            functionFragment = this.getFunction(functionFragment);
+        }
+        let bytes = arrayify(data);
+        let reason = null;
+        let errorSignature = null;
+        switch (bytes.length % this._abiCoder._getWordSize()) {
+            case 0:
+                try {
+                    return this._abiCoder.decode(functionFragment.outputs, bytes);
+                }
+                catch (error) { }
+                break;
+            case 4:
+                if (hexlify(bytes.slice(0, 4)) === "0x08c379a0") {
+                    errorSignature = "Error(string)";
+                    reason = this._abiCoder.decode(["string"], bytes.slice(4))[0];
+                }
+                break;
+        }
+        return interface_logger.throwError("call revert exception", Logger.errors.CALL_EXCEPTION, {
+            method: functionFragment.format(),
+            errorSignature: errorSignature,
+            errorArgs: [reason],
+            reason: reason
+        });
+    }
+    // Encode the result for a function call (e.g. for eth_call)
+    encodeFunctionResult(functionFragment, values) {
+        if (typeof (functionFragment) === "string") {
+            functionFragment = this.getFunction(functionFragment);
+        }
+        return hexlify(this._abiCoder.encode(functionFragment.outputs, values || []));
+    }
+    // Create the filter for the event with search criteria (e.g. for eth_filterLog)
+    encodeFilterTopics(eventFragment, values) {
+        if (typeof (eventFragment) === "string") {
+            eventFragment = this.getEvent(eventFragment);
+        }
+        if (values.length > eventFragment.inputs.length) {
+            interface_logger.throwError("too many arguments for " + eventFragment.format(), Logger.errors.UNEXPECTED_ARGUMENT, {
+                argument: "values",
+                value: values
+            });
+        }
+        let topics = [];
+        if (!eventFragment.anonymous) {
+            topics.push(this.getEventTopic(eventFragment));
+        }
+        const encodeTopic = (param, value) => {
+            if (param.type === "string") {
+                return id(value);
+            }
+            else if (param.type === "bytes") {
+                return keccak256(hexlify(value));
+            }
+            // Check addresses are valid
+            if (param.type === "address") {
+                this._abiCoder.encode(["address"], [value]);
+            }
+            return hexZeroPad(hexlify(value), 32);
+        };
+        values.forEach((value, index) => {
+            let param = eventFragment.inputs[index];
+            if (!param.indexed) {
+                if (value != null) {
+                    interface_logger.throwArgumentError("cannot filter non-indexed parameters; must be null", ("contract." + param.name), value);
+                }
+                return;
+            }
+            if (value == null) {
+                topics.push(null);
+            }
+            else if (param.baseType === "array" || param.baseType === "tuple") {
+                interface_logger.throwArgumentError("filtering with tuples or arrays not supported", ("contract." + param.name), value);
+            }
+            else if (Array.isArray(value)) {
+                topics.push(value.map((value) => encodeTopic(param, value)));
+            }
+            else {
+                topics.push(encodeTopic(param, value));
+            }
+        });
+        // Trim off trailing nulls
+        while (topics.length && topics[topics.length - 1] === null) {
+            topics.pop();
+        }
+        return topics;
+    }
+    encodeEventLog(eventFragment, values) {
+        if (typeof (eventFragment) === "string") {
+            eventFragment = this.getEvent(eventFragment);
+        }
+        const topics = [];
+        const dataTypes = [];
+        const dataValues = [];
+        if (!eventFragment.anonymous) {
+            topics.push(this.getEventTopic(eventFragment));
+        }
+        if (values.length !== eventFragment.inputs.length) {
+            interface_logger.throwArgumentError("event arguments/values mismatch", "values", values);
+        }
+        eventFragment.inputs.forEach((param, index) => {
+            const value = values[index];
+            if (param.indexed) {
+                if (param.type === "string") {
+                    topics.push(id(value));
+                }
+                else if (param.type === "bytes") {
+                    topics.push(keccak256(value));
+                }
+                else if (param.baseType === "tuple" || param.baseType === "array") {
+                    // @TOOD
+                    throw new Error("not implemented");
+                }
+                else {
+                    topics.push(this._abiCoder.encode([param.type], [value]));
+                }
+            }
+            else {
+                dataTypes.push(param);
+                dataValues.push(value);
+            }
+        });
+        return {
+            data: this._abiCoder.encode(dataTypes, dataValues),
+            topics: topics
+        };
+    }
+    // Decode a filter for the event and the search criteria
+    decodeEventLog(eventFragment, data, topics) {
+        if (typeof (eventFragment) === "string") {
+            eventFragment = this.getEvent(eventFragment);
+        }
+        if (topics != null && !eventFragment.anonymous) {
+            let topicHash = this.getEventTopic(eventFragment);
+            if (!isHexString(topics[0], 32) || topics[0].toLowerCase() !== topicHash) {
+                interface_logger.throwError("fragment/topic mismatch", Logger.errors.INVALID_ARGUMENT, { argument: "topics[0]", expected: topicHash, value: topics[0] });
+            }
+            topics = topics.slice(1);
+        }
+        let indexed = [];
+        let nonIndexed = [];
+        let dynamic = [];
+        eventFragment.inputs.forEach((param, index) => {
+            if (param.indexed) {
+                if (param.type === "string" || param.type === "bytes" || param.baseType === "tuple" || param.baseType === "array") {
+                    indexed.push(ParamType.fromObject({ type: "bytes32", name: param.name }));
+                    dynamic.push(true);
+                }
+                else {
+                    indexed.push(param);
+                    dynamic.push(false);
+                }
+            }
+            else {
+                nonIndexed.push(param);
+                dynamic.push(false);
+            }
+        });
+        let resultIndexed = (topics != null) ? this._abiCoder.decode(indexed, concat(topics)) : null;
+        let resultNonIndexed = this._abiCoder.decode(nonIndexed, data, true);
+        let result = [];
+        let nonIndexedIndex = 0, indexedIndex = 0;
+        eventFragment.inputs.forEach((param, index) => {
+            if (param.indexed) {
+                if (resultIndexed == null) {
+                    result[index] = new Indexed({ _isIndexed: true, hash: null });
+                }
+                else if (dynamic[index]) {
+                    result[index] = new Indexed({ _isIndexed: true, hash: resultIndexed[indexedIndex++] });
+                }
+                else {
+                    try {
+                        result[index] = resultIndexed[indexedIndex++];
+                    }
+                    catch (error) {
+                        result[index] = error;
+                    }
+                }
+            }
+            else {
+                try {
+                    result[index] = resultNonIndexed[nonIndexedIndex++];
+                }
+                catch (error) {
+                    result[index] = error;
+                }
+            }
+            // Add the keyword argument if named and safe
+            if (param.name && result[param.name] == null) {
+                const value = result[index];
+                // Make error named values throw on access
+                if (value instanceof Error) {
+                    Object.defineProperty(result, param.name, {
+                        get: () => { throw wrapAccessError(`property ${JSON.stringify(param.name)}`, value); }
+                    });
+                }
+                else {
+                    result[param.name] = value;
+                }
+            }
+        });
+        // Make all error indexed values throw on access
+        for (let i = 0; i < result.length; i++) {
+            const value = result[i];
+            if (value instanceof Error) {
+                Object.defineProperty(result, i, {
+                    get: () => { throw wrapAccessError(`index ${i}`, value); }
+                });
+            }
+        }
+        return Object.freeze(result);
+    }
+    // Given a transaction, find the matching function fragment (if any) and
+    // determine all its properties and call parameters
+    parseTransaction(tx) {
+        let fragment = this.getFunction(tx.data.substring(0, 10).toLowerCase());
+        if (!fragment) {
+            return null;
+        }
+        return new TransactionDescription({
+            args: this._abiCoder.decode(fragment.inputs, "0x" + tx.data.substring(10)),
+            functionFragment: fragment,
+            name: fragment.name,
+            signature: fragment.format(),
+            sighash: this.getSighash(fragment),
+            value: BigNumber.from(tx.value || "0"),
+        });
+    }
+    // Given an event log, find the matching event fragment (if any) and
+    // determine all its properties and values
+    parseLog(log) {
+        let fragment = this.getEvent(log.topics[0]);
+        if (!fragment || fragment.anonymous) {
+            return null;
+        }
+        // @TODO: If anonymous, and the only method, and the input count matches, should we parse?
+        //        Probably not, because just because it is the only event in the ABI does
+        //        not mean we have the full ABI; maybe jsut a fragment?
+        return new LogDescription({
+            eventFragment: fragment,
+            name: fragment.name,
+            signature: fragment.format(),
+            topic: this.getEventTopic(fragment),
+            args: this.decodeEventLog(fragment, log.data, log.topics)
+        });
+    }
+    /*
+    static from(value: Array<Fragment | string | JsonAbi> | string | Interface) {
+        if (Interface.isInterface(value)) {
+            return value;
+        }
+        if (typeof(value) === "string") {
+            return new Interface(JSON.parse(value));
+        }
+        return new Interface(value);
+    }
+    */
+    static isInterface(value) {
+        return !!(value && value._isInterface);
+    }
+}
+//# sourceMappingURL=interface.js.map
+;// CONCATENATED MODULE: ../node_modules/@ethersproject/abi/lib.esm/index.js
+
+
+
+
+
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
 /***/ 4782:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -2348,7 +5784,7 @@ function charCodeAt (c) {
 /***/ 2061:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var assert = __webpack_require__(458)
+var assert = __webpack_require__(3133)
 var wasm = __webpack_require__(2821)()
 
 var head = 64
@@ -2483,7 +5919,7 @@ function toHex (n) {
 /***/ 2900:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var assert = __webpack_require__(458)
+var assert = __webpack_require__(3133)
 var b2wasm = __webpack_require__(2061)
 
 // 64-bit unsigned addition
@@ -8744,8146 +12180,563 @@ class t{constructor(t){this.view=new DataView(t)}length(){return this.view.byteL
 
 /***/ }),
 
-/***/ 3048:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(9823);
-__webpack_require__(9701);
-__webpack_require__(5843);
-__webpack_require__(8344);
-__webpack_require__(541);
-__webpack_require__(8904);
-__webpack_require__(4978);
-__webpack_require__(9770);
-__webpack_require__(8338);
-__webpack_require__(7941);
-__webpack_require__(3668);
-__webpack_require__(7070);
-__webpack_require__(9163);
-__webpack_require__(3310);
-__webpack_require__(9773);
-__webpack_require__(9020);
-__webpack_require__(4210);
-__webpack_require__(6139);
-__webpack_require__(8629);
-__webpack_require__(9745);
-__webpack_require__(5694);
-__webpack_require__(6130);
-__webpack_require__(5821);
-__webpack_require__(6349);
-__webpack_require__(8110);
-__webpack_require__(3689);
-__webpack_require__(2211);
-__webpack_require__(3730);
-__webpack_require__(6729);
-__webpack_require__(7374);
-__webpack_require__(2095);
-__webpack_require__(6362);
-__webpack_require__(6329);
-__webpack_require__(7463);
-__webpack_require__(5874);
-__webpack_require__(5886);
-__webpack_require__(91);
-__webpack_require__(6799);
-__webpack_require__(1570);
-__webpack_require__(6006);
-__webpack_require__(8377);
-__webpack_require__(108);
-__webpack_require__(905);
-__webpack_require__(8103);
-__webpack_require__(5937);
-__webpack_require__(9979);
-__webpack_require__(3601);
-__webpack_require__(4226);
-__webpack_require__(9750);
-__webpack_require__(1462);
-__webpack_require__(4773);
-__webpack_require__(2421);
-__webpack_require__(2763);
-__webpack_require__(1711);
-__webpack_require__(183);
-__webpack_require__(7472);
-__webpack_require__(516);
-__webpack_require__(427);
-__webpack_require__(3777);
-__webpack_require__(7238);
-__webpack_require__(5942);
-__webpack_require__(513);
-__webpack_require__(4186);
-__webpack_require__(5502);
-__webpack_require__(6213);
-__webpack_require__(9457);
-__webpack_require__(9876);
-__webpack_require__(9772);
-__webpack_require__(7174);
-__webpack_require__(5251);
-__webpack_require__(7984);
-__webpack_require__(3359);
-__webpack_require__(195);
-__webpack_require__(8586);
-__webpack_require__(817);
-__webpack_require__(5337);
-__webpack_require__(5079);
-__webpack_require__(5105);
-__webpack_require__(4163);
-__webpack_require__(5867);
-__webpack_require__(9606);
-__webpack_require__(9174);
-__webpack_require__(8466);
-__webpack_require__(7209);
-__webpack_require__(1796);
-__webpack_require__(7772);
-__webpack_require__(286);
-__webpack_require__(4434);
-__webpack_require__(3231);
-__webpack_require__(46);
-__webpack_require__(9399);
-__webpack_require__(8312);
-__webpack_require__(5155);
-__webpack_require__(3133);
-__webpack_require__(1601);
-__webpack_require__(453);
-__webpack_require__(1954);
-__webpack_require__(62);
-__webpack_require__(652);
-__webpack_require__(7680);
-__webpack_require__(5506);
-__webpack_require__(5846);
-__webpack_require__(4321);
-__webpack_require__(751);
-__webpack_require__(4828);
-__webpack_require__(4208);
-__webpack_require__(2679);
-__webpack_require__(9236);
-__webpack_require__(2235);
-__webpack_require__(1239);
-__webpack_require__(8392);
-__webpack_require__(773);
-__webpack_require__(3623);
-__webpack_require__(345);
-__webpack_require__(8460);
-__webpack_require__(6788);
-__webpack_require__(6780);
-__webpack_require__(3620);
-__webpack_require__(3958);
-__webpack_require__(1592);
-__webpack_require__(5469);
-__webpack_require__(6471);
-__webpack_require__(3149);
-__webpack_require__(4637);
-__webpack_require__(1335);
-__webpack_require__(2603);
-__webpack_require__(4460);
-__webpack_require__(5970);
-__webpack_require__(4288);
-__webpack_require__(2039);
-__webpack_require__(4613);
-__webpack_require__(122);
-__webpack_require__(9484);
-__webpack_require__(1014);
-__webpack_require__(7150);
-__webpack_require__(8982);
-__webpack_require__(8868);
-__webpack_require__(8633);
-module.exports = __webpack_require__(66);
-
-
-/***/ }),
-
-/***/ 8128:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(7328);
-module.exports = __webpack_require__(66).Array.flatMap;
-
-
-/***/ }),
-
-/***/ 9247:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(8081);
-module.exports = __webpack_require__(66).Array.includes;
-
-
-/***/ }),
-
-/***/ 338:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(9716);
-module.exports = __webpack_require__(66).Object.entries;
-
-
-/***/ }),
-
-/***/ 4184:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(7453);
-module.exports = __webpack_require__(66).Object.getOwnPropertyDescriptors;
-
-
-/***/ }),
-
-/***/ 1587:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(27);
-module.exports = __webpack_require__(66).Object.values;
-
-
-/***/ }),
-
-/***/ 49:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-__webpack_require__(2235);
-__webpack_require__(6632);
-module.exports = __webpack_require__(66).Promise.finally;
-
-
-/***/ }),
-
-/***/ 4918:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(8302);
-module.exports = __webpack_require__(66).String.padEnd;
-
-
-/***/ }),
-
-/***/ 241:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(9447);
-module.exports = __webpack_require__(66).String.padStart;
-
-
-/***/ }),
-
-/***/ 8878:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(152);
-module.exports = __webpack_require__(66).String.trimRight;
-
-
-/***/ }),
-
-/***/ 9839:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(9324);
-module.exports = __webpack_require__(66).String.trimLeft;
-
-
-/***/ }),
-
-/***/ 3090:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(3756);
-module.exports = __webpack_require__(9669).f('asyncIterator');
-
-
-/***/ }),
-
-/***/ 1829:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(1739);
-module.exports = __webpack_require__(7208).global;
-
-
-/***/ }),
-
-/***/ 8171:
-/***/ ((module) => {
-
-module.exports = function (it) {
-  if (typeof it != 'function') throw TypeError(it + ' is not a function!');
-  return it;
-};
-
-
-/***/ }),
-
-/***/ 498:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var isObject = __webpack_require__(9632);
-module.exports = function (it) {
-  if (!isObject(it)) throw TypeError(it + ' is not an object!');
-  return it;
-};
-
-
-/***/ }),
-
-/***/ 7208:
-/***/ ((module) => {
-
-var core = module.exports = { version: '2.6.12' };
-if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
-
-
-/***/ }),
-
-/***/ 1725:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// optional / simple context binding
-var aFunction = __webpack_require__(8171);
-module.exports = function (fn, that, length) {
-  aFunction(fn);
-  if (that === undefined) return fn;
-  switch (length) {
-    case 1: return function (a) {
-      return fn.call(that, a);
-    };
-    case 2: return function (a, b) {
-      return fn.call(that, a, b);
-    };
-    case 3: return function (a, b, c) {
-      return fn.call(that, a, b, c);
-    };
-  }
-  return function (/* ...args */) {
-    return fn.apply(that, arguments);
-  };
-};
-
-
-/***/ }),
-
-/***/ 5179:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// Thank's IE8 for his funny defineProperty
-module.exports = !__webpack_require__(472)(function () {
-  return Object.defineProperty({}, 'a', { get: function () { return 7; } }).a != 7;
-});
-
-
-/***/ }),
-
-/***/ 8765:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var isObject = __webpack_require__(9632);
-var document = __webpack_require__(3280).document;
-// typeof document.createElement is 'object' in old IE
-var is = isObject(document) && isObject(document.createElement);
-module.exports = function (it) {
-  return is ? document.createElement(it) : {};
-};
-
-
-/***/ }),
-
-/***/ 8310:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var global = __webpack_require__(3280);
-var core = __webpack_require__(7208);
-var ctx = __webpack_require__(1725);
-var hide = __webpack_require__(2292);
-var has = __webpack_require__(657);
-var PROTOTYPE = 'prototype';
-
-var $export = function (type, name, source) {
-  var IS_FORCED = type & $export.F;
-  var IS_GLOBAL = type & $export.G;
-  var IS_STATIC = type & $export.S;
-  var IS_PROTO = type & $export.P;
-  var IS_BIND = type & $export.B;
-  var IS_WRAP = type & $export.W;
-  var exports = IS_GLOBAL ? core : core[name] || (core[name] = {});
-  var expProto = exports[PROTOTYPE];
-  var target = IS_GLOBAL ? global : IS_STATIC ? global[name] : (global[name] || {})[PROTOTYPE];
-  var key, own, out;
-  if (IS_GLOBAL) source = name;
-  for (key in source) {
-    // contains in native
-    own = !IS_FORCED && target && target[key] !== undefined;
-    if (own && has(exports, key)) continue;
-    // export native or passed
-    out = own ? target[key] : source[key];
-    // prevent global pollution for namespaces
-    exports[key] = IS_GLOBAL && typeof target[key] != 'function' ? source[key]
-    // bind timers to global for call from export context
-    : IS_BIND && own ? ctx(out, global)
-    // wrap global constructors for prevent change them in library
-    : IS_WRAP && target[key] == out ? (function (C) {
-      var F = function (a, b, c) {
-        if (this instanceof C) {
-          switch (arguments.length) {
-            case 0: return new C();
-            case 1: return new C(a);
-            case 2: return new C(a, b);
-          } return new C(a, b, c);
-        } return C.apply(this, arguments);
-      };
-      F[PROTOTYPE] = C[PROTOTYPE];
-      return F;
-    // make static versions for prototype methods
-    })(out) : IS_PROTO && typeof out == 'function' ? ctx(Function.call, out) : out;
-    // export proto methods to core.%CONSTRUCTOR%.methods.%NAME%
-    if (IS_PROTO) {
-      (exports.virtual || (exports.virtual = {}))[key] = out;
-      // export proto methods to core.%CONSTRUCTOR%.prototype.%NAME%
-      if (type & $export.R && expProto && !expProto[key]) hide(expProto, key, out);
-    }
-  }
-};
-// type bitmap
-$export.F = 1;   // forced
-$export.G = 2;   // global
-$export.S = 4;   // static
-$export.P = 8;   // proto
-$export.B = 16;  // bind
-$export.W = 32;  // wrap
-$export.U = 64;  // safe
-$export.R = 128; // real proto method for `library`
-module.exports = $export;
-
-
-/***/ }),
-
-/***/ 472:
-/***/ ((module) => {
-
-module.exports = function (exec) {
-  try {
-    return !!exec();
-  } catch (e) {
-    return true;
-  }
-};
-
-
-/***/ }),
-
-/***/ 3280:
-/***/ ((module) => {
-
-// https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
-var global = module.exports = typeof window != 'undefined' && window.Math == Math
-  ? window : typeof self != 'undefined' && self.Math == Math ? self
-  // eslint-disable-next-line no-new-func
-  : Function('return this')();
-if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
-
-
-/***/ }),
-
-/***/ 657:
-/***/ ((module) => {
-
-var hasOwnProperty = {}.hasOwnProperty;
-module.exports = function (it, key) {
-  return hasOwnProperty.call(it, key);
-};
-
-
-/***/ }),
-
-/***/ 2292:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var dP = __webpack_require__(510);
-var createDesc = __webpack_require__(8439);
-module.exports = __webpack_require__(5179) ? function (object, key, value) {
-  return dP.f(object, key, createDesc(1, value));
-} : function (object, key, value) {
-  object[key] = value;
-  return object;
-};
-
-
-/***/ }),
-
-/***/ 4457:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-module.exports = !__webpack_require__(5179) && !__webpack_require__(472)(function () {
-  return Object.defineProperty(__webpack_require__(8765)('div'), 'a', { get: function () { return 7; } }).a != 7;
-});
-
-
-/***/ }),
-
-/***/ 9632:
-/***/ ((module) => {
-
-module.exports = function (it) {
-  return typeof it === 'object' ? it !== null : typeof it === 'function';
-};
-
-
-/***/ }),
-
-/***/ 510:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-var anObject = __webpack_require__(498);
-var IE8_DOM_DEFINE = __webpack_require__(4457);
-var toPrimitive = __webpack_require__(2737);
-var dP = Object.defineProperty;
-
-exports.f = __webpack_require__(5179) ? Object.defineProperty : function defineProperty(O, P, Attributes) {
-  anObject(O);
-  P = toPrimitive(P, true);
-  anObject(Attributes);
-  if (IE8_DOM_DEFINE) try {
-    return dP(O, P, Attributes);
-  } catch (e) { /* empty */ }
-  if ('get' in Attributes || 'set' in Attributes) throw TypeError('Accessors not supported!');
-  if ('value' in Attributes) O[P] = Attributes.value;
-  return O;
-};
-
-
-/***/ }),
-
-/***/ 8439:
-/***/ ((module) => {
-
-module.exports = function (bitmap, value) {
-  return {
-    enumerable: !(bitmap & 1),
-    configurable: !(bitmap & 2),
-    writable: !(bitmap & 4),
-    value: value
-  };
-};
-
-
-/***/ }),
-
-/***/ 2737:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 7.1.1 ToPrimitive(input [, PreferredType])
-var isObject = __webpack_require__(9632);
-// instead of the ES6 spec version, we didn't implement @@toPrimitive case
-// and the second argument - flag - preferred type is a string
-module.exports = function (it, S) {
-  if (!isObject(it)) return it;
-  var fn, val;
-  if (S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
-  if (typeof (fn = it.valueOf) == 'function' && !isObject(val = fn.call(it))) return val;
-  if (!S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
-  throw TypeError("Can't convert object to primitive value");
-};
-
-
-/***/ }),
-
-/***/ 1739:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// https://github.com/tc39/proposal-global
-var $export = __webpack_require__(8310);
-
-$export($export.G, { global: __webpack_require__(3280) });
-
-
-/***/ }),
-
-/***/ 2761:
-/***/ ((module) => {
-
-module.exports = function (it) {
-  if (typeof it != 'function') throw TypeError(it + ' is not a function!');
-  return it;
-};
-
-
-/***/ }),
-
-/***/ 1525:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var cof = __webpack_require__(6688);
-module.exports = function (it, msg) {
-  if (typeof it != 'number' && cof(it) != 'Number') throw TypeError(msg);
-  return +it;
-};
-
-
-/***/ }),
-
-/***/ 2094:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 22.1.3.31 Array.prototype[@@unscopables]
-var UNSCOPABLES = __webpack_require__(2190)('unscopables');
-var ArrayProto = Array.prototype;
-if (ArrayProto[UNSCOPABLES] == undefined) __webpack_require__(4216)(ArrayProto, UNSCOPABLES, {});
-module.exports = function (key) {
-  ArrayProto[UNSCOPABLES][key] = true;
-};
-
-
-/***/ }),
-
-/***/ 8492:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var at = __webpack_require__(2070)(true);
-
- // `AdvanceStringIndex` abstract operation
-// https://tc39.github.io/ecma262/#sec-advancestringindex
-module.exports = function (S, index, unicode) {
-  return index + (unicode ? at(S, index).length : 1);
-};
-
-
-/***/ }),
-
-/***/ 5824:
-/***/ ((module) => {
-
-module.exports = function (it, Constructor, name, forbiddenField) {
-  if (!(it instanceof Constructor) || (forbiddenField !== undefined && forbiddenField in it)) {
-    throw TypeError(name + ': incorrect invocation!');
-  } return it;
-};
-
-
-/***/ }),
-
-/***/ 6365:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var isObject = __webpack_require__(7334);
-module.exports = function (it) {
-  if (!isObject(it)) throw TypeError(it + ' is not an object!');
-  return it;
-};
-
-
-/***/ }),
-
-/***/ 6257:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-// 22.1.3.3 Array.prototype.copyWithin(target, start, end = this.length)
-
-var toObject = __webpack_require__(6033);
-var toAbsoluteIndex = __webpack_require__(8615);
-var toLength = __webpack_require__(6078);
-
-module.exports = [].copyWithin || function copyWithin(target /* = 0 */, start /* = 0, end = @length */) {
-  var O = toObject(this);
-  var len = toLength(O.length);
-  var to = toAbsoluteIndex(target, len);
-  var from = toAbsoluteIndex(start, len);
-  var end = arguments.length > 2 ? arguments[2] : undefined;
-  var count = Math.min((end === undefined ? len : toAbsoluteIndex(end, len)) - from, len - to);
-  var inc = 1;
-  if (from < to && to < from + count) {
-    inc = -1;
-    from += count - 1;
-    to += count - 1;
-  }
-  while (count-- > 0) {
-    if (from in O) O[to] = O[from];
-    else delete O[to];
-    to += inc;
-    from += inc;
-  } return O;
-};
-
-
-/***/ }),
-
-/***/ 3195:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-// 22.1.3.6 Array.prototype.fill(value, start = 0, end = this.length)
-
-var toObject = __webpack_require__(6033);
-var toAbsoluteIndex = __webpack_require__(8615);
-var toLength = __webpack_require__(6078);
-module.exports = function fill(value /* , start = 0, end = @length */) {
-  var O = toObject(this);
-  var length = toLength(O.length);
-  var aLen = arguments.length;
-  var index = toAbsoluteIndex(aLen > 1 ? arguments[1] : undefined, length);
-  var end = aLen > 2 ? arguments[2] : undefined;
-  var endPos = end === undefined ? length : toAbsoluteIndex(end, length);
-  while (endPos > index) O[index++] = value;
-  return O;
-};
-
-
-/***/ }),
-
-/***/ 9021:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// false -> Array#indexOf
-// true  -> Array#includes
-var toIObject = __webpack_require__(5703);
-var toLength = __webpack_require__(6078);
-var toAbsoluteIndex = __webpack_require__(8615);
-module.exports = function (IS_INCLUDES) {
-  return function ($this, el, fromIndex) {
-    var O = toIObject($this);
-    var length = toLength(O.length);
-    var index = toAbsoluteIndex(fromIndex, length);
-    var value;
-    // Array#includes uses SameValueZero equality algorithm
-    // eslint-disable-next-line no-self-compare
-    if (IS_INCLUDES && el != el) while (length > index) {
-      value = O[index++];
-      // eslint-disable-next-line no-self-compare
-      if (value != value) return true;
-    // Array#indexOf ignores holes, Array#includes - not
-    } else for (;length > index; index++) if (IS_INCLUDES || index in O) {
-      if (O[index] === el) return IS_INCLUDES || index || 0;
-    } return !IS_INCLUDES && -1;
-  };
-};
-
-
-/***/ }),
-
-/***/ 8309:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 0 -> Array#forEach
-// 1 -> Array#map
-// 2 -> Array#filter
-// 3 -> Array#some
-// 4 -> Array#every
-// 5 -> Array#find
-// 6 -> Array#findIndex
-var ctx = __webpack_require__(1528);
-var IObject = __webpack_require__(8467);
-var toObject = __webpack_require__(6033);
-var toLength = __webpack_require__(6078);
-var asc = __webpack_require__(3531);
-module.exports = function (TYPE, $create) {
-  var IS_MAP = TYPE == 1;
-  var IS_FILTER = TYPE == 2;
-  var IS_SOME = TYPE == 3;
-  var IS_EVERY = TYPE == 4;
-  var IS_FIND_INDEX = TYPE == 6;
-  var NO_HOLES = TYPE == 5 || IS_FIND_INDEX;
-  var create = $create || asc;
-  return function ($this, callbackfn, that) {
-    var O = toObject($this);
-    var self = IObject(O);
-    var f = ctx(callbackfn, that, 3);
-    var length = toLength(self.length);
-    var index = 0;
-    var result = IS_MAP ? create($this, length) : IS_FILTER ? create($this, 0) : undefined;
-    var val, res;
-    for (;length > index; index++) if (NO_HOLES || index in self) {
-      val = self[index];
-      res = f(val, index, O);
-      if (TYPE) {
-        if (IS_MAP) result[index] = res;   // map
-        else if (res) switch (TYPE) {
-          case 3: return true;             // some
-          case 5: return val;              // find
-          case 6: return index;            // findIndex
-          case 2: result.push(val);        // filter
-        } else if (IS_EVERY) return false; // every
-      }
-    }
-    return IS_FIND_INDEX ? -1 : IS_SOME || IS_EVERY ? IS_EVERY : result;
-  };
-};
-
-
-/***/ }),
-
-/***/ 9291:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var aFunction = __webpack_require__(2761);
-var toObject = __webpack_require__(6033);
-var IObject = __webpack_require__(8467);
-var toLength = __webpack_require__(6078);
-
-module.exports = function (that, callbackfn, aLen, memo, isRight) {
-  aFunction(callbackfn);
-  var O = toObject(that);
-  var self = IObject(O);
-  var length = toLength(O.length);
-  var index = isRight ? length - 1 : 0;
-  var i = isRight ? -1 : 1;
-  if (aLen < 2) for (;;) {
-    if (index in self) {
-      memo = self[index];
-      index += i;
-      break;
-    }
-    index += i;
-    if (isRight ? index < 0 : length <= index) {
-      throw TypeError('Reduce of empty array with no initial value');
-    }
-  }
-  for (;isRight ? index >= 0 : length > index; index += i) if (index in self) {
-    memo = callbackfn(memo, self[index], index, O);
-  }
-  return memo;
-};
-
-
-/***/ }),
-
-/***/ 1071:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var isObject = __webpack_require__(7334);
-var isArray = __webpack_require__(9141);
-var SPECIES = __webpack_require__(2190)('species');
-
-module.exports = function (original) {
-  var C;
-  if (isArray(original)) {
-    C = original.constructor;
-    // cross-realm fallback
-    if (typeof C == 'function' && (C === Array || isArray(C.prototype))) C = undefined;
-    if (isObject(C)) {
-      C = C[SPECIES];
-      if (C === null) C = undefined;
-    }
-  } return C === undefined ? Array : C;
-};
-
-
-/***/ }),
-
-/***/ 3531:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 9.4.2.3 ArraySpeciesCreate(originalArray, length)
-var speciesConstructor = __webpack_require__(1071);
-
-module.exports = function (original, length) {
-  return new (speciesConstructor(original))(length);
-};
-
-
-/***/ }),
-
-/***/ 9337:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var aFunction = __webpack_require__(2761);
-var isObject = __webpack_require__(7334);
-var invoke = __webpack_require__(7757);
-var arraySlice = [].slice;
-var factories = {};
-
-var construct = function (F, len, args) {
-  if (!(len in factories)) {
-    for (var n = [], i = 0; i < len; i++) n[i] = 'a[' + i + ']';
-    // eslint-disable-next-line no-new-func
-    factories[len] = Function('F,a', 'return new F(' + n.join(',') + ')');
-  } return factories[len](F, args);
-};
-
-module.exports = Function.bind || function bind(that /* , ...args */) {
-  var fn = aFunction(this);
-  var partArgs = arraySlice.call(arguments, 1);
-  var bound = function (/* args... */) {
-    var args = partArgs.concat(arraySlice.call(arguments));
-    return this instanceof bound ? construct(fn, args.length, args) : invoke(fn, args, that);
-  };
-  if (isObject(fn.prototype)) bound.prototype = fn.prototype;
-  return bound;
-};
-
-
-/***/ }),
-
-/***/ 106:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// getting tag from 19.1.3.6 Object.prototype.toString()
-var cof = __webpack_require__(6688);
-var TAG = __webpack_require__(2190)('toStringTag');
-// ES3 wrong here
-var ARG = cof(function () { return arguments; }()) == 'Arguments';
-
-// fallback for IE11 Script Access Denied error
-var tryGet = function (it, key) {
-  try {
-    return it[key];
-  } catch (e) { /* empty */ }
-};
-
-module.exports = function (it) {
-  var O, T, B;
-  return it === undefined ? 'Undefined' : it === null ? 'Null'
-    // @@toStringTag case
-    : typeof (T = tryGet(O = Object(it), TAG)) == 'string' ? T
-    // builtinTag case
-    : ARG ? cof(O)
-    // ES3 arguments fallback
-    : (B = cof(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : B;
-};
-
-
-/***/ }),
-
-/***/ 6688:
-/***/ ((module) => {
-
-var toString = {}.toString;
-
-module.exports = function (it) {
-  return toString.call(it).slice(8, -1);
-};
-
-
-/***/ }),
-
-/***/ 8156:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var dP = __webpack_require__(8558).f;
-var create = __webpack_require__(2897);
-var redefineAll = __webpack_require__(2243);
-var ctx = __webpack_require__(1528);
-var anInstance = __webpack_require__(5824);
-var forOf = __webpack_require__(1891);
-var $iterDefine = __webpack_require__(1195);
-var step = __webpack_require__(5038);
-var setSpecies = __webpack_require__(9766);
-var DESCRIPTORS = __webpack_require__(6628);
-var fastKey = __webpack_require__(998).fastKey;
-var validate = __webpack_require__(9060);
-var SIZE = DESCRIPTORS ? '_s' : 'size';
-
-var getEntry = function (that, key) {
-  // fast case
-  var index = fastKey(key);
-  var entry;
-  if (index !== 'F') return that._i[index];
-  // frozen object case
-  for (entry = that._f; entry; entry = entry.n) {
-    if (entry.k == key) return entry;
-  }
-};
-
-module.exports = {
-  getConstructor: function (wrapper, NAME, IS_MAP, ADDER) {
-    var C = wrapper(function (that, iterable) {
-      anInstance(that, C, NAME, '_i');
-      that._t = NAME;         // collection type
-      that._i = create(null); // index
-      that._f = undefined;    // first entry
-      that._l = undefined;    // last entry
-      that[SIZE] = 0;         // size
-      if (iterable != undefined) forOf(iterable, IS_MAP, that[ADDER], that);
-    });
-    redefineAll(C.prototype, {
-      // 23.1.3.1 Map.prototype.clear()
-      // 23.2.3.2 Set.prototype.clear()
-      clear: function clear() {
-        for (var that = validate(this, NAME), data = that._i, entry = that._f; entry; entry = entry.n) {
-          entry.r = true;
-          if (entry.p) entry.p = entry.p.n = undefined;
-          delete data[entry.i];
-        }
-        that._f = that._l = undefined;
-        that[SIZE] = 0;
-      },
-      // 23.1.3.3 Map.prototype.delete(key)
-      // 23.2.3.4 Set.prototype.delete(value)
-      'delete': function (key) {
-        var that = validate(this, NAME);
-        var entry = getEntry(that, key);
-        if (entry) {
-          var next = entry.n;
-          var prev = entry.p;
-          delete that._i[entry.i];
-          entry.r = true;
-          if (prev) prev.n = next;
-          if (next) next.p = prev;
-          if (that._f == entry) that._f = next;
-          if (that._l == entry) that._l = prev;
-          that[SIZE]--;
-        } return !!entry;
-      },
-      // 23.2.3.6 Set.prototype.forEach(callbackfn, thisArg = undefined)
-      // 23.1.3.5 Map.prototype.forEach(callbackfn, thisArg = undefined)
-      forEach: function forEach(callbackfn /* , that = undefined */) {
-        validate(this, NAME);
-        var f = ctx(callbackfn, arguments.length > 1 ? arguments[1] : undefined, 3);
-        var entry;
-        while (entry = entry ? entry.n : this._f) {
-          f(entry.v, entry.k, this);
-          // revert to the last existing entry
-          while (entry && entry.r) entry = entry.p;
-        }
-      },
-      // 23.1.3.7 Map.prototype.has(key)
-      // 23.2.3.7 Set.prototype.has(value)
-      has: function has(key) {
-        return !!getEntry(validate(this, NAME), key);
-      }
-    });
-    if (DESCRIPTORS) dP(C.prototype, 'size', {
-      get: function () {
-        return validate(this, NAME)[SIZE];
-      }
-    });
-    return C;
-  },
-  def: function (that, key, value) {
-    var entry = getEntry(that, key);
-    var prev, index;
-    // change existing entry
-    if (entry) {
-      entry.v = value;
-    // create new entry
-    } else {
-      that._l = entry = {
-        i: index = fastKey(key, true), // <- index
-        k: key,                        // <- key
-        v: value,                      // <- value
-        p: prev = that._l,             // <- previous entry
-        n: undefined,                  // <- next entry
-        r: false                       // <- removed
-      };
-      if (!that._f) that._f = entry;
-      if (prev) prev.n = entry;
-      that[SIZE]++;
-      // add to index
-      if (index !== 'F') that._i[index] = entry;
-    } return that;
-  },
-  getEntry: getEntry,
-  setStrong: function (C, NAME, IS_MAP) {
-    // add .keys, .values, .entries, [@@iterator]
-    // 23.1.3.4, 23.1.3.8, 23.1.3.11, 23.1.3.12, 23.2.3.5, 23.2.3.8, 23.2.3.10, 23.2.3.11
-    $iterDefine(C, NAME, function (iterated, kind) {
-      this._t = validate(iterated, NAME); // target
-      this._k = kind;                     // kind
-      this._l = undefined;                // previous
-    }, function () {
-      var that = this;
-      var kind = that._k;
-      var entry = that._l;
-      // revert to the last existing entry
-      while (entry && entry.r) entry = entry.p;
-      // get next entry
-      if (!that._t || !(that._l = entry = entry ? entry.n : that._t._f)) {
-        // or finish the iteration
-        that._t = undefined;
-        return step(1);
-      }
-      // return step by kind
-      if (kind == 'keys') return step(0, entry.k);
-      if (kind == 'values') return step(0, entry.v);
-      return step(0, [entry.k, entry.v]);
-    }, IS_MAP ? 'entries' : 'values', !IS_MAP, true);
-
-    // add [@@species], 23.1.2.2, 23.2.2.2
-    setSpecies(NAME);
-  }
-};
-
-
-/***/ }),
-
-/***/ 6339:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var redefineAll = __webpack_require__(2243);
-var getWeak = __webpack_require__(998).getWeak;
-var anObject = __webpack_require__(6365);
-var isObject = __webpack_require__(7334);
-var anInstance = __webpack_require__(5824);
-var forOf = __webpack_require__(1891);
-var createArrayMethod = __webpack_require__(8309);
-var $has = __webpack_require__(4040);
-var validate = __webpack_require__(9060);
-var arrayFind = createArrayMethod(5);
-var arrayFindIndex = createArrayMethod(6);
-var id = 0;
-
-// fallback for uncaught frozen keys
-var uncaughtFrozenStore = function (that) {
-  return that._l || (that._l = new UncaughtFrozenStore());
-};
-var UncaughtFrozenStore = function () {
-  this.a = [];
-};
-var findUncaughtFrozen = function (store, key) {
-  return arrayFind(store.a, function (it) {
-    return it[0] === key;
-  });
-};
-UncaughtFrozenStore.prototype = {
-  get: function (key) {
-    var entry = findUncaughtFrozen(this, key);
-    if (entry) return entry[1];
-  },
-  has: function (key) {
-    return !!findUncaughtFrozen(this, key);
-  },
-  set: function (key, value) {
-    var entry = findUncaughtFrozen(this, key);
-    if (entry) entry[1] = value;
-    else this.a.push([key, value]);
-  },
-  'delete': function (key) {
-    var index = arrayFindIndex(this.a, function (it) {
-      return it[0] === key;
-    });
-    if (~index) this.a.splice(index, 1);
-    return !!~index;
-  }
-};
-
-module.exports = {
-  getConstructor: function (wrapper, NAME, IS_MAP, ADDER) {
-    var C = wrapper(function (that, iterable) {
-      anInstance(that, C, NAME, '_i');
-      that._t = NAME;      // collection type
-      that._i = id++;      // collection id
-      that._l = undefined; // leak store for uncaught frozen objects
-      if (iterable != undefined) forOf(iterable, IS_MAP, that[ADDER], that);
-    });
-    redefineAll(C.prototype, {
-      // 23.3.3.2 WeakMap.prototype.delete(key)
-      // 23.4.3.3 WeakSet.prototype.delete(value)
-      'delete': function (key) {
-        if (!isObject(key)) return false;
-        var data = getWeak(key);
-        if (data === true) return uncaughtFrozenStore(validate(this, NAME))['delete'](key);
-        return data && $has(data, this._i) && delete data[this._i];
-      },
-      // 23.3.3.4 WeakMap.prototype.has(key)
-      // 23.4.3.4 WeakSet.prototype.has(value)
-      has: function has(key) {
-        if (!isObject(key)) return false;
-        var data = getWeak(key);
-        if (data === true) return uncaughtFrozenStore(validate(this, NAME)).has(key);
-        return data && $has(data, this._i);
-      }
-    });
-    return C;
-  },
-  def: function (that, key, value) {
-    var data = getWeak(anObject(key), true);
-    if (data === true) uncaughtFrozenStore(that).set(key, value);
-    else data[that._i] = value;
-    return that;
-  },
-  ufstore: uncaughtFrozenStore
-};
-
-
-/***/ }),
-
-/***/ 7611:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var global = __webpack_require__(8113);
-var $export = __webpack_require__(5772);
-var redefine = __webpack_require__(7738);
-var redefineAll = __webpack_require__(2243);
-var meta = __webpack_require__(998);
-var forOf = __webpack_require__(1891);
-var anInstance = __webpack_require__(5824);
-var isObject = __webpack_require__(7334);
-var fails = __webpack_require__(8625);
-var $iterDetect = __webpack_require__(3143);
-var setToStringTag = __webpack_require__(5727);
-var inheritIfRequired = __webpack_require__(8938);
-
-module.exports = function (NAME, wrapper, methods, common, IS_MAP, IS_WEAK) {
-  var Base = global[NAME];
-  var C = Base;
-  var ADDER = IS_MAP ? 'set' : 'add';
-  var proto = C && C.prototype;
-  var O = {};
-  var fixMethod = function (KEY) {
-    var fn = proto[KEY];
-    redefine(proto, KEY,
-      KEY == 'delete' ? function (a) {
-        return IS_WEAK && !isObject(a) ? false : fn.call(this, a === 0 ? 0 : a);
-      } : KEY == 'has' ? function has(a) {
-        return IS_WEAK && !isObject(a) ? false : fn.call(this, a === 0 ? 0 : a);
-      } : KEY == 'get' ? function get(a) {
-        return IS_WEAK && !isObject(a) ? undefined : fn.call(this, a === 0 ? 0 : a);
-      } : KEY == 'add' ? function add(a) { fn.call(this, a === 0 ? 0 : a); return this; }
-        : function set(a, b) { fn.call(this, a === 0 ? 0 : a, b); return this; }
-    );
-  };
-  if (typeof C != 'function' || !(IS_WEAK || proto.forEach && !fails(function () {
-    new C().entries().next();
-  }))) {
-    // create collection constructor
-    C = common.getConstructor(wrapper, NAME, IS_MAP, ADDER);
-    redefineAll(C.prototype, methods);
-    meta.NEED = true;
-  } else {
-    var instance = new C();
-    // early implementations not supports chaining
-    var HASNT_CHAINING = instance[ADDER](IS_WEAK ? {} : -0, 1) != instance;
-    // V8 ~  Chromium 40- weak-collections throws on primitives, but should return false
-    var THROWS_ON_PRIMITIVES = fails(function () { instance.has(1); });
-    // most early implementations doesn't supports iterables, most modern - not close it correctly
-    var ACCEPT_ITERABLES = $iterDetect(function (iter) { new C(iter); }); // eslint-disable-line no-new
-    // for early implementations -0 and +0 not the same
-    var BUGGY_ZERO = !IS_WEAK && fails(function () {
-      // V8 ~ Chromium 42- fails only with 5+ elements
-      var $instance = new C();
-      var index = 5;
-      while (index--) $instance[ADDER](index, index);
-      return !$instance.has(-0);
-    });
-    if (!ACCEPT_ITERABLES) {
-      C = wrapper(function (target, iterable) {
-        anInstance(target, C, NAME);
-        var that = inheritIfRequired(new Base(), target, C);
-        if (iterable != undefined) forOf(iterable, IS_MAP, that[ADDER], that);
-        return that;
-      });
-      C.prototype = proto;
-      proto.constructor = C;
-    }
-    if (THROWS_ON_PRIMITIVES || BUGGY_ZERO) {
-      fixMethod('delete');
-      fixMethod('has');
-      IS_MAP && fixMethod('get');
-    }
-    if (BUGGY_ZERO || HASNT_CHAINING) fixMethod(ADDER);
-    // weak collections should not contains .clear method
-    if (IS_WEAK && proto.clear) delete proto.clear;
-  }
-
-  setToStringTag(C, NAME);
-
-  O[NAME] = C;
-  $export($export.G + $export.W + $export.F * (C != Base), O);
-
-  if (!IS_WEAK) common.setStrong(C, NAME, IS_MAP);
-
-  return C;
-};
-
-
-/***/ }),
-
-/***/ 66:
-/***/ ((module) => {
-
-var core = module.exports = { version: '2.6.12' };
-if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
-
-
-/***/ }),
-
-/***/ 6644:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $defineProperty = __webpack_require__(8558);
-var createDesc = __webpack_require__(6061);
-
-module.exports = function (object, index, value) {
-  if (index in object) $defineProperty.f(object, index, createDesc(0, value));
-  else object[index] = value;
-};
-
-
-/***/ }),
-
-/***/ 1528:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// optional / simple context binding
-var aFunction = __webpack_require__(2761);
-module.exports = function (fn, that, length) {
-  aFunction(fn);
-  if (that === undefined) return fn;
-  switch (length) {
-    case 1: return function (a) {
-      return fn.call(that, a);
-    };
-    case 2: return function (a, b) {
-      return fn.call(that, a, b);
-    };
-    case 3: return function (a, b, c) {
-      return fn.call(that, a, b, c);
-    };
-  }
-  return function (/* ...args */) {
-    return fn.apply(that, arguments);
-  };
-};
-
-
-/***/ }),
-
-/***/ 2626:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// 20.3.4.36 / 15.9.5.43 Date.prototype.toISOString()
-var fails = __webpack_require__(8625);
-var getTime = Date.prototype.getTime;
-var $toISOString = Date.prototype.toISOString;
-
-var lz = function (num) {
-  return num > 9 ? num : '0' + num;
-};
-
-// PhantomJS / old WebKit has a broken implementations
-module.exports = (fails(function () {
-  return $toISOString.call(new Date(-5e13 - 1)) != '0385-07-25T07:06:39.999Z';
-}) || !fails(function () {
-  $toISOString.call(new Date(NaN));
-})) ? function toISOString() {
-  if (!isFinite(getTime.call(this))) throw RangeError('Invalid time value');
-  var d = this;
-  var y = d.getUTCFullYear();
-  var m = d.getUTCMilliseconds();
-  var s = y < 0 ? '-' : y > 9999 ? '+' : '';
-  return s + ('00000' + Math.abs(y)).slice(s ? -6 : -4) +
-    '-' + lz(d.getUTCMonth() + 1) + '-' + lz(d.getUTCDate()) +
-    'T' + lz(d.getUTCHours()) + ':' + lz(d.getUTCMinutes()) +
-    ':' + lz(d.getUTCSeconds()) + '.' + (m > 99 ? m : '0' + lz(m)) + 'Z';
-} : $toISOString;
-
-
-/***/ }),
-
-/***/ 9296:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var anObject = __webpack_require__(6365);
-var toPrimitive = __webpack_require__(1382);
-var NUMBER = 'number';
-
-module.exports = function (hint) {
-  if (hint !== 'string' && hint !== NUMBER && hint !== 'default') throw TypeError('Incorrect hint');
-  return toPrimitive(anObject(this), hint != NUMBER);
-};
-
-
-/***/ }),
-
-/***/ 1622:
-/***/ ((module) => {
-
-// 7.2.1 RequireObjectCoercible(argument)
-module.exports = function (it) {
-  if (it == undefined) throw TypeError("Can't call method on  " + it);
-  return it;
-};
-
-
-/***/ }),
-
-/***/ 6628:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// Thank's IE8 for his funny defineProperty
-module.exports = !__webpack_require__(8625)(function () {
-  return Object.defineProperty({}, 'a', { get: function () { return 7; } }).a != 7;
-});
-
-
-/***/ }),
-
-/***/ 5050:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var isObject = __webpack_require__(7334);
-var document = __webpack_require__(8113).document;
-// typeof document.createElement is 'object' in old IE
-var is = isObject(document) && isObject(document.createElement);
-module.exports = function (it) {
-  return is ? document.createElement(it) : {};
-};
-
-
-/***/ }),
-
-/***/ 3603:
-/***/ ((module) => {
-
-// IE 8- don't enum bug keys
-module.exports = (
-  'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'
-).split(',');
-
-
-/***/ }),
-
-/***/ 7820:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// all enumerable object keys, includes symbols
-var getKeys = __webpack_require__(2912);
-var gOPS = __webpack_require__(7957);
-var pIE = __webpack_require__(5873);
-module.exports = function (it) {
-  var result = getKeys(it);
-  var getSymbols = gOPS.f;
-  if (getSymbols) {
-    var symbols = getSymbols(it);
-    var isEnum = pIE.f;
-    var i = 0;
-    var key;
-    while (symbols.length > i) if (isEnum.call(it, key = symbols[i++])) result.push(key);
-  } return result;
-};
-
-
-/***/ }),
-
-/***/ 5772:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var global = __webpack_require__(8113);
-var core = __webpack_require__(66);
-var hide = __webpack_require__(4216);
-var redefine = __webpack_require__(7738);
-var ctx = __webpack_require__(1528);
-var PROTOTYPE = 'prototype';
-
-var $export = function (type, name, source) {
-  var IS_FORCED = type & $export.F;
-  var IS_GLOBAL = type & $export.G;
-  var IS_STATIC = type & $export.S;
-  var IS_PROTO = type & $export.P;
-  var IS_BIND = type & $export.B;
-  var target = IS_GLOBAL ? global : IS_STATIC ? global[name] || (global[name] = {}) : (global[name] || {})[PROTOTYPE];
-  var exports = IS_GLOBAL ? core : core[name] || (core[name] = {});
-  var expProto = exports[PROTOTYPE] || (exports[PROTOTYPE] = {});
-  var key, own, out, exp;
-  if (IS_GLOBAL) source = name;
-  for (key in source) {
-    // contains in native
-    own = !IS_FORCED && target && target[key] !== undefined;
-    // export native or passed
-    out = (own ? target : source)[key];
-    // bind timers to global for call from export context
-    exp = IS_BIND && own ? ctx(out, global) : IS_PROTO && typeof out == 'function' ? ctx(Function.call, out) : out;
-    // extend global
-    if (target) redefine(target, key, out, type & $export.U);
-    // export
-    if (exports[key] != out) hide(exports, key, exp);
-    if (IS_PROTO && expProto[key] != out) expProto[key] = out;
-  }
-};
-global.core = core;
-// type bitmap
-$export.F = 1;   // forced
-$export.G = 2;   // global
-$export.S = 4;   // static
-$export.P = 8;   // proto
-$export.B = 16;  // bind
-$export.W = 32;  // wrap
-$export.U = 64;  // safe
-$export.R = 128; // real proto method for `library`
-module.exports = $export;
-
-
-/***/ }),
-
-/***/ 6570:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var MATCH = __webpack_require__(2190)('match');
-module.exports = function (KEY) {
-  var re = /./;
-  try {
-    '/./'[KEY](re);
-  } catch (e) {
-    try {
-      re[MATCH] = false;
-      return !'/./'[KEY](re);
-    } catch (f) { /* empty */ }
-  } return true;
-};
-
-
-/***/ }),
-
-/***/ 8625:
-/***/ ((module) => {
-
-module.exports = function (exec) {
-  try {
-    return !!exec();
-  } catch (e) {
-    return true;
-  }
-};
-
-
-/***/ }),
-
-/***/ 8897:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-__webpack_require__(5846);
-var redefine = __webpack_require__(7738);
-var hide = __webpack_require__(4216);
-var fails = __webpack_require__(8625);
-var defined = __webpack_require__(1622);
-var wks = __webpack_require__(2190);
-var regexpExec = __webpack_require__(3288);
-
-var SPECIES = wks('species');
-
-var REPLACE_SUPPORTS_NAMED_GROUPS = !fails(function () {
-  // #replace needs built-in support for named groups.
-  // #match works fine because it just return the exec results, even if it has
-  // a "grops" property.
-  var re = /./;
-  re.exec = function () {
-    var result = [];
-    result.groups = { a: '7' };
-    return result;
-  };
-  return ''.replace(re, '$<a>') !== '7';
-});
-
-var SPLIT_WORKS_WITH_OVERWRITTEN_EXEC = (function () {
-  // Chrome 51 has a buggy "split" implementation when RegExp#exec !== nativeExec
-  var re = /(?:)/;
-  var originalExec = re.exec;
-  re.exec = function () { return originalExec.apply(this, arguments); };
-  var result = 'ab'.split(re);
-  return result.length === 2 && result[0] === 'a' && result[1] === 'b';
+/***/ 9372:
+/***/ (function(module, exports) {
+
+var global = typeof self !== 'undefined' ? self : this;
+var __self__ = (function () {
+function F() {
+this.fetch = false;
+this.DOMException = global.DOMException
+}
+F.prototype = global;
+return new F();
 })();
-
-module.exports = function (KEY, length, exec) {
-  var SYMBOL = wks(KEY);
-
-  var DELEGATES_TO_SYMBOL = !fails(function () {
-    // String methods call symbol-named RegEp methods
-    var O = {};
-    O[SYMBOL] = function () { return 7; };
-    return ''[KEY](O) != 7;
-  });
-
-  var DELEGATES_TO_EXEC = DELEGATES_TO_SYMBOL ? !fails(function () {
-    // Symbol-named RegExp methods call .exec
-    var execCalled = false;
-    var re = /a/;
-    re.exec = function () { execCalled = true; return null; };
-    if (KEY === 'split') {
-      // RegExp[@@split] doesn't call the regex's exec method, but first creates
-      // a new one. We need to return the patched regex when creating the new one.
-      re.constructor = {};
-      re.constructor[SPECIES] = function () { return re; };
-    }
-    re[SYMBOL]('');
-    return !execCalled;
-  }) : undefined;
-
-  if (
-    !DELEGATES_TO_SYMBOL ||
-    !DELEGATES_TO_EXEC ||
-    (KEY === 'replace' && !REPLACE_SUPPORTS_NAMED_GROUPS) ||
-    (KEY === 'split' && !SPLIT_WORKS_WITH_OVERWRITTEN_EXEC)
-  ) {
-    var nativeRegExpMethod = /./[SYMBOL];
-    var fns = exec(
-      defined,
-      SYMBOL,
-      ''[KEY],
-      function maybeCallNative(nativeMethod, regexp, str, arg2, forceStringMethod) {
-        if (regexp.exec === regexpExec) {
-          if (DELEGATES_TO_SYMBOL && !forceStringMethod) {
-            // The native String method already delegates to @@method (this
-            // polyfilled function), leasing to infinite recursion.
-            // We avoid it by directly calling the native @@method method.
-            return { done: true, value: nativeRegExpMethod.call(regexp, str, arg2) };
-          }
-          return { done: true, value: nativeMethod.call(str, regexp, arg2) };
-        }
-        return { done: false };
-      }
-    );
-    var strfn = fns[0];
-    var rxfn = fns[1];
-
-    redefine(String.prototype, KEY, strfn);
-    hide(RegExp.prototype, SYMBOL, length == 2
-      // 21.2.5.8 RegExp.prototype[@@replace](string, replaceValue)
-      // 21.2.5.11 RegExp.prototype[@@split](string, limit)
-      ? function (string, arg) { return rxfn.call(string, this, arg); }
-      // 21.2.5.6 RegExp.prototype[@@match](string)
-      // 21.2.5.9 RegExp.prototype[@@search](string)
-      : function (string) { return rxfn.call(string, this); }
-    );
-  }
-};
-
-
-/***/ }),
-
-/***/ 4859:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// 21.2.5.3 get RegExp.prototype.flags
-var anObject = __webpack_require__(6365);
-module.exports = function () {
-  var that = anObject(this);
-  var result = '';
-  if (that.global) result += 'g';
-  if (that.ignoreCase) result += 'i';
-  if (that.multiline) result += 'm';
-  if (that.unicode) result += 'u';
-  if (that.sticky) result += 'y';
-  return result;
-};
-
-
-/***/ }),
-
-/***/ 2674:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// https://tc39.github.io/proposal-flatMap/#sec-FlattenIntoArray
-var isArray = __webpack_require__(9141);
-var isObject = __webpack_require__(7334);
-var toLength = __webpack_require__(6078);
-var ctx = __webpack_require__(1528);
-var IS_CONCAT_SPREADABLE = __webpack_require__(2190)('isConcatSpreadable');
-
-function flattenIntoArray(target, original, source, sourceLen, start, depth, mapper, thisArg) {
-  var targetIndex = start;
-  var sourceIndex = 0;
-  var mapFn = mapper ? ctx(mapper, thisArg, 3) : false;
-  var element, spreadable;
-
-  while (sourceIndex < sourceLen) {
-    if (sourceIndex in source) {
-      element = mapFn ? mapFn(source[sourceIndex], sourceIndex, original) : source[sourceIndex];
-
-      spreadable = false;
-      if (isObject(element)) {
-        spreadable = element[IS_CONCAT_SPREADABLE];
-        spreadable = spreadable !== undefined ? !!spreadable : isArray(element);
-      }
-
-      if (spreadable && depth > 0) {
-        targetIndex = flattenIntoArray(target, original, element, toLength(element.length), targetIndex, depth - 1) - 1;
-      } else {
-        if (targetIndex >= 0x1fffffffffffff) throw TypeError();
-        target[targetIndex] = element;
-      }
-
-      targetIndex++;
-    }
-    sourceIndex++;
-  }
-  return targetIndex;
-}
-
-module.exports = flattenIntoArray;
-
-
-/***/ }),
-
-/***/ 1891:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var ctx = __webpack_require__(1528);
-var call = __webpack_require__(3221);
-var isArrayIter = __webpack_require__(8908);
-var anObject = __webpack_require__(6365);
-var toLength = __webpack_require__(6078);
-var getIterFn = __webpack_require__(7107);
-var BREAK = {};
-var RETURN = {};
-var exports = module.exports = function (iterable, entries, fn, that, ITERATOR) {
-  var iterFn = ITERATOR ? function () { return iterable; } : getIterFn(iterable);
-  var f = ctx(fn, that, entries ? 2 : 1);
-  var index = 0;
-  var length, step, iterator, result;
-  if (typeof iterFn != 'function') throw TypeError(iterable + ' is not iterable!');
-  // fast case for arrays with default iterator
-  if (isArrayIter(iterFn)) for (length = toLength(iterable.length); length > index; index++) {
-    result = entries ? f(anObject(step = iterable[index])[0], step[1]) : f(iterable[index]);
-    if (result === BREAK || result === RETURN) return result;
-  } else for (iterator = iterFn.call(iterable); !(step = iterator.next()).done;) {
-    result = call(iterator, f, step.value, entries);
-    if (result === BREAK || result === RETURN) return result;
-  }
-};
-exports.BREAK = BREAK;
-exports.RETURN = RETURN;
-
-
-/***/ }),
-
-/***/ 646:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-module.exports = __webpack_require__(8655)('native-function-to-string', Function.toString);
-
-
-/***/ }),
-
-/***/ 8113:
-/***/ ((module) => {
-
-// https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
-var global = module.exports = typeof window != 'undefined' && window.Math == Math
-  ? window : typeof self != 'undefined' && self.Math == Math ? self
-  // eslint-disable-next-line no-new-func
-  : Function('return this')();
-if (typeof __g == 'number') __g = global; // eslint-disable-line no-undef
-
-
-/***/ }),
-
-/***/ 4040:
-/***/ ((module) => {
-
-var hasOwnProperty = {}.hasOwnProperty;
-module.exports = function (it, key) {
-  return hasOwnProperty.call(it, key);
-};
-
-
-/***/ }),
-
-/***/ 4216:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var dP = __webpack_require__(8558);
-var createDesc = __webpack_require__(6061);
-module.exports = __webpack_require__(6628) ? function (object, key, value) {
-  return dP.f(object, key, createDesc(1, value));
-} : function (object, key, value) {
-  object[key] = value;
-  return object;
-};
-
-
-/***/ }),
-
-/***/ 8954:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var document = __webpack_require__(8113).document;
-module.exports = document && document.documentElement;
-
-
-/***/ }),
-
-/***/ 5100:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-module.exports = !__webpack_require__(6628) && !__webpack_require__(8625)(function () {
-  return Object.defineProperty(__webpack_require__(5050)('div'), 'a', { get: function () { return 7; } }).a != 7;
-});
-
-
-/***/ }),
-
-/***/ 8938:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var isObject = __webpack_require__(7334);
-var setPrototypeOf = __webpack_require__(6095).set;
-module.exports = function (that, target, C) {
-  var S = target.constructor;
-  var P;
-  if (S !== C && typeof S == 'function' && (P = S.prototype) !== C.prototype && isObject(P) && setPrototypeOf) {
-    setPrototypeOf(that, P);
-  } return that;
-};
-
-
-/***/ }),
-
-/***/ 7757:
-/***/ ((module) => {
-
-// fast apply, http://jsperf.lnkit.com/fast-apply/5
-module.exports = function (fn, args, that) {
-  var un = that === undefined;
-  switch (args.length) {
-    case 0: return un ? fn()
-                      : fn.call(that);
-    case 1: return un ? fn(args[0])
-                      : fn.call(that, args[0]);
-    case 2: return un ? fn(args[0], args[1])
-                      : fn.call(that, args[0], args[1]);
-    case 3: return un ? fn(args[0], args[1], args[2])
-                      : fn.call(that, args[0], args[1], args[2]);
-    case 4: return un ? fn(args[0], args[1], args[2], args[3])
-                      : fn.call(that, args[0], args[1], args[2], args[3]);
-  } return fn.apply(that, args);
-};
-
-
-/***/ }),
-
-/***/ 8467:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// fallback for non-array-like ES3 and non-enumerable old V8 strings
-var cof = __webpack_require__(6688);
-// eslint-disable-next-line no-prototype-builtins
-module.exports = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
-  return cof(it) == 'String' ? it.split('') : Object(it);
-};
-
-
-/***/ }),
-
-/***/ 8908:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// check on default Array iterator
-var Iterators = __webpack_require__(3988);
-var ITERATOR = __webpack_require__(2190)('iterator');
-var ArrayProto = Array.prototype;
-
-module.exports = function (it) {
-  return it !== undefined && (Iterators.Array === it || ArrayProto[ITERATOR] === it);
-};
-
-
-/***/ }),
-
-/***/ 9141:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 7.2.2 IsArray(argument)
-var cof = __webpack_require__(6688);
-module.exports = Array.isArray || function isArray(arg) {
-  return cof(arg) == 'Array';
-};
-
-
-/***/ }),
-
-/***/ 3917:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.1.2.3 Number.isInteger(number)
-var isObject = __webpack_require__(7334);
-var floor = Math.floor;
-module.exports = function isInteger(it) {
-  return !isObject(it) && isFinite(it) && floor(it) === it;
-};
-
-
-/***/ }),
-
-/***/ 7334:
-/***/ ((module) => {
-
-module.exports = function (it) {
-  return typeof it === 'object' ? it !== null : typeof it === 'function';
-};
-
-
-/***/ }),
-
-/***/ 4587:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 7.2.8 IsRegExp(argument)
-var isObject = __webpack_require__(7334);
-var cof = __webpack_require__(6688);
-var MATCH = __webpack_require__(2190)('match');
-module.exports = function (it) {
-  var isRegExp;
-  return isObject(it) && ((isRegExp = it[MATCH]) !== undefined ? !!isRegExp : cof(it) == 'RegExp');
-};
-
-
-/***/ }),
-
-/***/ 3221:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// call something on iterator step with safe closing on error
-var anObject = __webpack_require__(6365);
-module.exports = function (iterator, fn, value, entries) {
-  try {
-    return entries ? fn(anObject(value)[0], value[1]) : fn(value);
-  // 7.4.6 IteratorClose(iterator, completion)
-  } catch (e) {
-    var ret = iterator['return'];
-    if (ret !== undefined) anObject(ret.call(iterator));
-    throw e;
-  }
-};
-
-
-/***/ }),
-
-/***/ 6445:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var create = __webpack_require__(2897);
-var descriptor = __webpack_require__(6061);
-var setToStringTag = __webpack_require__(5727);
-var IteratorPrototype = {};
-
-// 25.1.2.1.1 %IteratorPrototype%[@@iterator]()
-__webpack_require__(4216)(IteratorPrototype, __webpack_require__(2190)('iterator'), function () { return this; });
-
-module.exports = function (Constructor, NAME, next) {
-  Constructor.prototype = create(IteratorPrototype, { next: descriptor(1, next) });
-  setToStringTag(Constructor, NAME + ' Iterator');
-};
-
-
-/***/ }),
-
-/***/ 1195:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var LIBRARY = __webpack_require__(1422);
-var $export = __webpack_require__(5772);
-var redefine = __webpack_require__(7738);
-var hide = __webpack_require__(4216);
-var Iterators = __webpack_require__(3988);
-var $iterCreate = __webpack_require__(6445);
-var setToStringTag = __webpack_require__(5727);
-var getPrototypeOf = __webpack_require__(9002);
-var ITERATOR = __webpack_require__(2190)('iterator');
-var BUGGY = !([].keys && 'next' in [].keys()); // Safari has buggy iterators w/o `next`
-var FF_ITERATOR = '@@iterator';
-var KEYS = 'keys';
-var VALUES = 'values';
-
-var returnThis = function () { return this; };
-
-module.exports = function (Base, NAME, Constructor, next, DEFAULT, IS_SET, FORCED) {
-  $iterCreate(Constructor, NAME, next);
-  var getMethod = function (kind) {
-    if (!BUGGY && kind in proto) return proto[kind];
-    switch (kind) {
-      case KEYS: return function keys() { return new Constructor(this, kind); };
-      case VALUES: return function values() { return new Constructor(this, kind); };
-    } return function entries() { return new Constructor(this, kind); };
-  };
-  var TAG = NAME + ' Iterator';
-  var DEF_VALUES = DEFAULT == VALUES;
-  var VALUES_BUG = false;
-  var proto = Base.prototype;
-  var $native = proto[ITERATOR] || proto[FF_ITERATOR] || DEFAULT && proto[DEFAULT];
-  var $default = $native || getMethod(DEFAULT);
-  var $entries = DEFAULT ? !DEF_VALUES ? $default : getMethod('entries') : undefined;
-  var $anyNative = NAME == 'Array' ? proto.entries || $native : $native;
-  var methods, key, IteratorPrototype;
-  // Fix native
-  if ($anyNative) {
-    IteratorPrototype = getPrototypeOf($anyNative.call(new Base()));
-    if (IteratorPrototype !== Object.prototype && IteratorPrototype.next) {
-      // Set @@toStringTag to native iterators
-      setToStringTag(IteratorPrototype, TAG, true);
-      // fix for some old engines
-      if (!LIBRARY && typeof IteratorPrototype[ITERATOR] != 'function') hide(IteratorPrototype, ITERATOR, returnThis);
-    }
-  }
-  // fix Array#{values, @@iterator}.name in V8 / FF
-  if (DEF_VALUES && $native && $native.name !== VALUES) {
-    VALUES_BUG = true;
-    $default = function values() { return $native.call(this); };
-  }
-  // Define iterator
-  if ((!LIBRARY || FORCED) && (BUGGY || VALUES_BUG || !proto[ITERATOR])) {
-    hide(proto, ITERATOR, $default);
-  }
-  // Plug for library
-  Iterators[NAME] = $default;
-  Iterators[TAG] = returnThis;
-  if (DEFAULT) {
-    methods = {
-      values: DEF_VALUES ? $default : getMethod(VALUES),
-      keys: IS_SET ? $default : getMethod(KEYS),
-      entries: $entries
-    };
-    if (FORCED) for (key in methods) {
-      if (!(key in proto)) redefine(proto, key, methods[key]);
-    } else $export($export.P + $export.F * (BUGGY || VALUES_BUG), NAME, methods);
-  }
-  return methods;
-};
-
-
-/***/ }),
-
-/***/ 3143:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var ITERATOR = __webpack_require__(2190)('iterator');
-var SAFE_CLOSING = false;
-
-try {
-  var riter = [7][ITERATOR]();
-  riter['return'] = function () { SAFE_CLOSING = true; };
-  // eslint-disable-next-line no-throw-literal
-  Array.from(riter, function () { throw 2; });
-} catch (e) { /* empty */ }
-
-module.exports = function (exec, skipClosing) {
-  if (!skipClosing && !SAFE_CLOSING) return false;
-  var safe = false;
-  try {
-    var arr = [7];
-    var iter = arr[ITERATOR]();
-    iter.next = function () { return { done: safe = true }; };
-    arr[ITERATOR] = function () { return iter; };
-    exec(arr);
-  } catch (e) { /* empty */ }
-  return safe;
-};
-
-
-/***/ }),
-
-/***/ 5038:
-/***/ ((module) => {
-
-module.exports = function (done, value) {
-  return { value: value, done: !!done };
-};
-
-
-/***/ }),
-
-/***/ 3988:
-/***/ ((module) => {
-
-module.exports = {};
-
-
-/***/ }),
-
-/***/ 1422:
-/***/ ((module) => {
-
-module.exports = false;
-
-
-/***/ }),
-
-/***/ 9489:
-/***/ ((module) => {
-
-// 20.2.2.14 Math.expm1(x)
-var $expm1 = Math.expm1;
-module.exports = (!$expm1
-  // Old FF bug
-  || $expm1(10) > 22025.465794806719 || $expm1(10) < 22025.4657948067165168
-  // Tor Browser bug
-  || $expm1(-2e-17) != -2e-17
-) ? function expm1(x) {
-  return (x = +x) == 0 ? x : x > -1e-6 && x < 1e-6 ? x + x * x / 2 : Math.exp(x) - 1;
-} : $expm1;
-
-
-/***/ }),
-
-/***/ 4519:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.16 Math.fround(x)
-var sign = __webpack_require__(2697);
-var pow = Math.pow;
-var EPSILON = pow(2, -52);
-var EPSILON32 = pow(2, -23);
-var MAX32 = pow(2, 127) * (2 - EPSILON32);
-var MIN32 = pow(2, -126);
-
-var roundTiesToEven = function (n) {
-  return n + 1 / EPSILON - 1 / EPSILON;
-};
-
-module.exports = Math.fround || function fround(x) {
-  var $abs = Math.abs(x);
-  var $sign = sign(x);
-  var a, result;
-  if ($abs < MIN32) return $sign * roundTiesToEven($abs / MIN32 / EPSILON32) * MIN32 * EPSILON32;
-  a = (1 + EPSILON32 / EPSILON) * $abs;
-  result = a - (a - $abs);
-  // eslint-disable-next-line no-self-compare
-  if (result > MAX32 || result != result) return $sign * Infinity;
-  return $sign * result;
-};
-
-
-/***/ }),
-
-/***/ 922:
-/***/ ((module) => {
-
-// 20.2.2.20 Math.log1p(x)
-module.exports = Math.log1p || function log1p(x) {
-  return (x = +x) > -1e-8 && x < 1e-8 ? x - x * x / 2 : Math.log(1 + x);
-};
-
-
-/***/ }),
-
-/***/ 2697:
-/***/ ((module) => {
-
-// 20.2.2.28 Math.sign(x)
-module.exports = Math.sign || function sign(x) {
-  // eslint-disable-next-line no-self-compare
-  return (x = +x) == 0 || x != x ? x : x < 0 ? -1 : 1;
-};
-
-
-/***/ }),
-
-/***/ 998:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var META = __webpack_require__(5078)('meta');
-var isObject = __webpack_require__(7334);
-var has = __webpack_require__(4040);
-var setDesc = __webpack_require__(8558).f;
-var id = 0;
-var isExtensible = Object.isExtensible || function () {
-  return true;
-};
-var FREEZE = !__webpack_require__(8625)(function () {
-  return isExtensible(Object.preventExtensions({}));
-});
-var setMeta = function (it) {
-  setDesc(it, META, { value: {
-    i: 'O' + ++id, // object ID
-    w: {}          // weak collections IDs
-  } });
-};
-var fastKey = function (it, create) {
-  // return primitive with prefix
-  if (!isObject(it)) return typeof it == 'symbol' ? it : (typeof it == 'string' ? 'S' : 'P') + it;
-  if (!has(it, META)) {
-    // can't set metadata to uncaught frozen object
-    if (!isExtensible(it)) return 'F';
-    // not necessary to add metadata
-    if (!create) return 'E';
-    // add missing metadata
-    setMeta(it);
-  // return object ID
-  } return it[META].i;
-};
-var getWeak = function (it, create) {
-  if (!has(it, META)) {
-    // can't set metadata to uncaught frozen object
-    if (!isExtensible(it)) return true;
-    // not necessary to add metadata
-    if (!create) return false;
-    // add missing metadata
-    setMeta(it);
-  // return hash weak collections IDs
-  } return it[META].w;
-};
-// add metadata on freeze-family methods calling
-var onFreeze = function (it) {
-  if (FREEZE && meta.NEED && isExtensible(it) && !has(it, META)) setMeta(it);
-  return it;
-};
-var meta = module.exports = {
-  KEY: META,
-  NEED: false,
-  fastKey: fastKey,
-  getWeak: getWeak,
-  onFreeze: onFreeze
-};
-
-
-/***/ }),
-
-/***/ 3492:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var global = __webpack_require__(8113);
-var macrotask = __webpack_require__(9124).set;
-var Observer = global.MutationObserver || global.WebKitMutationObserver;
-var process = global.process;
-var Promise = global.Promise;
-var isNode = __webpack_require__(6688)(process) == 'process';
-
-module.exports = function () {
-  var head, last, notify;
-
-  var flush = function () {
-    var parent, fn;
-    if (isNode && (parent = process.domain)) parent.exit();
-    while (head) {
-      fn = head.fn;
-      head = head.next;
-      try {
-        fn();
-      } catch (e) {
-        if (head) notify();
-        else last = undefined;
-        throw e;
-      }
-    } last = undefined;
-    if (parent) parent.enter();
-  };
-
-  // Node.js
-  if (isNode) {
-    notify = function () {
-      process.nextTick(flush);
-    };
-  // browsers with MutationObserver, except iOS Safari - https://github.com/zloirock/core-js/issues/339
-  } else if (Observer && !(global.navigator && global.navigator.standalone)) {
-    var toggle = true;
-    var node = document.createTextNode('');
-    new Observer(flush).observe(node, { characterData: true }); // eslint-disable-line no-new
-    notify = function () {
-      node.data = toggle = !toggle;
-    };
-  // environments with maybe non-completely correct, but existent Promise
-  } else if (Promise && Promise.resolve) {
-    // Promise.resolve without an argument throws an error in LG WebOS 2
-    var promise = Promise.resolve(undefined);
-    notify = function () {
-      promise.then(flush);
-    };
-  // for other environments - macrotask based on:
-  // - setImmediate
-  // - MessageChannel
-  // - window.postMessag
-  // - onreadystatechange
-  // - setTimeout
-  } else {
-    notify = function () {
-      // strange IE + webpack dev server bug - use .call(global)
-      macrotask.call(global, flush);
-    };
-  }
-
-  return function (fn) {
-    var task = { fn: fn, next: undefined };
-    if (last) last.next = task;
-    if (!head) {
-      head = task;
-      notify();
-    } last = task;
-  };
-};
-
-
-/***/ }),
-
-/***/ 8577:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// 25.4.1.5 NewPromiseCapability(C)
-var aFunction = __webpack_require__(2761);
-
-function PromiseCapability(C) {
-  var resolve, reject;
-  this.promise = new C(function ($$resolve, $$reject) {
-    if (resolve !== undefined || reject !== undefined) throw TypeError('Bad Promise constructor');
-    resolve = $$resolve;
-    reject = $$reject;
-  });
-  this.resolve = aFunction(resolve);
-  this.reject = aFunction(reject);
-}
-
-module.exports.f = function (C) {
-  return new PromiseCapability(C);
-};
-
-
-/***/ }),
-
-/***/ 7029:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// 19.1.2.1 Object.assign(target, source, ...)
-var DESCRIPTORS = __webpack_require__(6628);
-var getKeys = __webpack_require__(2912);
-var gOPS = __webpack_require__(7957);
-var pIE = __webpack_require__(5873);
-var toObject = __webpack_require__(6033);
-var IObject = __webpack_require__(8467);
-var $assign = Object.assign;
-
-// should work with symbols and should have deterministic property order (V8 bug)
-module.exports = !$assign || __webpack_require__(8625)(function () {
-  var A = {};
-  var B = {};
-  // eslint-disable-next-line no-undef
-  var S = Symbol();
-  var K = 'abcdefghijklmnopqrst';
-  A[S] = 7;
-  K.split('').forEach(function (k) { B[k] = k; });
-  return $assign({}, A)[S] != 7 || Object.keys($assign({}, B)).join('') != K;
-}) ? function assign(target, source) { // eslint-disable-line no-unused-vars
-  var T = toObject(target);
-  var aLen = arguments.length;
-  var index = 1;
-  var getSymbols = gOPS.f;
-  var isEnum = pIE.f;
-  while (aLen > index) {
-    var S = IObject(arguments[index++]);
-    var keys = getSymbols ? getKeys(S).concat(getSymbols(S)) : getKeys(S);
-    var length = keys.length;
-    var j = 0;
-    var key;
-    while (length > j) {
-      key = keys[j++];
-      if (!DESCRIPTORS || isEnum.call(S, key)) T[key] = S[key];
-    }
-  } return T;
-} : $assign;
-
-
-/***/ }),
-
-/***/ 2897:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.2.2 / 15.2.3.5 Object.create(O [, Properties])
-var anObject = __webpack_require__(6365);
-var dPs = __webpack_require__(7331);
-var enumBugKeys = __webpack_require__(3603);
-var IE_PROTO = __webpack_require__(8034)('IE_PROTO');
-var Empty = function () { /* empty */ };
-var PROTOTYPE = 'prototype';
-
-// Create object with fake `null` prototype: use iframe Object with cleared prototype
-var createDict = function () {
-  // Thrash, waste and sodomy: IE GC bug
-  var iframe = __webpack_require__(5050)('iframe');
-  var i = enumBugKeys.length;
-  var lt = '<';
-  var gt = '>';
-  var iframeDocument;
-  iframe.style.display = 'none';
-  __webpack_require__(8954).appendChild(iframe);
-  iframe.src = 'javascript:'; // eslint-disable-line no-script-url
-  // createDict = iframe.contentWindow.Object;
-  // html.removeChild(iframe);
-  iframeDocument = iframe.contentWindow.document;
-  iframeDocument.open();
-  iframeDocument.write(lt + 'script' + gt + 'document.F=Object' + lt + '/script' + gt);
-  iframeDocument.close();
-  createDict = iframeDocument.F;
-  while (i--) delete createDict[PROTOTYPE][enumBugKeys[i]];
-  return createDict();
-};
-
-module.exports = Object.create || function create(O, Properties) {
-  var result;
-  if (O !== null) {
-    Empty[PROTOTYPE] = anObject(O);
-    result = new Empty();
-    Empty[PROTOTYPE] = null;
-    // add "__proto__" for Object.getPrototypeOf polyfill
-    result[IE_PROTO] = O;
-  } else result = createDict();
-  return Properties === undefined ? result : dPs(result, Properties);
-};
-
-
-/***/ }),
-
-/***/ 8558:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-var anObject = __webpack_require__(6365);
-var IE8_DOM_DEFINE = __webpack_require__(5100);
-var toPrimitive = __webpack_require__(1382);
-var dP = Object.defineProperty;
-
-exports.f = __webpack_require__(6628) ? Object.defineProperty : function defineProperty(O, P, Attributes) {
-  anObject(O);
-  P = toPrimitive(P, true);
-  anObject(Attributes);
-  if (IE8_DOM_DEFINE) try {
-    return dP(O, P, Attributes);
-  } catch (e) { /* empty */ }
-  if ('get' in Attributes || 'set' in Attributes) throw TypeError('Accessors not supported!');
-  if ('value' in Attributes) O[P] = Attributes.value;
-  return O;
-};
-
-
-/***/ }),
-
-/***/ 7331:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var dP = __webpack_require__(8558);
-var anObject = __webpack_require__(6365);
-var getKeys = __webpack_require__(2912);
-
-module.exports = __webpack_require__(6628) ? Object.defineProperties : function defineProperties(O, Properties) {
-  anObject(O);
-  var keys = getKeys(Properties);
-  var length = keys.length;
-  var i = 0;
-  var P;
-  while (length > i) dP.f(O, P = keys[i++], Properties[P]);
-  return O;
-};
-
-
-/***/ }),
-
-/***/ 4662:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-var pIE = __webpack_require__(5873);
-var createDesc = __webpack_require__(6061);
-var toIObject = __webpack_require__(5703);
-var toPrimitive = __webpack_require__(1382);
-var has = __webpack_require__(4040);
-var IE8_DOM_DEFINE = __webpack_require__(5100);
-var gOPD = Object.getOwnPropertyDescriptor;
-
-exports.f = __webpack_require__(6628) ? gOPD : function getOwnPropertyDescriptor(O, P) {
-  O = toIObject(O);
-  P = toPrimitive(P, true);
-  if (IE8_DOM_DEFINE) try {
-    return gOPD(O, P);
-  } catch (e) { /* empty */ }
-  if (has(O, P)) return createDesc(!pIE.f.call(O, P), O[P]);
-};
-
-
-/***/ }),
-
-/***/ 5259:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// fallback for IE11 buggy Object.getOwnPropertyNames with iframe and window
-var toIObject = __webpack_require__(5703);
-var gOPN = __webpack_require__(6604).f;
-var toString = {}.toString;
-
-var windowNames = typeof window == 'object' && window && Object.getOwnPropertyNames
-  ? Object.getOwnPropertyNames(window) : [];
-
-var getWindowNames = function (it) {
-  try {
-    return gOPN(it);
-  } catch (e) {
-    return windowNames.slice();
-  }
-};
-
-module.exports.f = function getOwnPropertyNames(it) {
-  return windowNames && toString.call(it) == '[object Window]' ? getWindowNames(it) : gOPN(toIObject(it));
-};
-
-
-/***/ }),
-
-/***/ 6604:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-// 19.1.2.7 / 15.2.3.4 Object.getOwnPropertyNames(O)
-var $keys = __webpack_require__(5547);
-var hiddenKeys = __webpack_require__(3603).concat('length', 'prototype');
-
-exports.f = Object.getOwnPropertyNames || function getOwnPropertyNames(O) {
-  return $keys(O, hiddenKeys);
-};
-
-
-/***/ }),
-
-/***/ 7957:
-/***/ ((__unused_webpack_module, exports) => {
-
-exports.f = Object.getOwnPropertySymbols;
-
-
-/***/ }),
-
-/***/ 9002:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.2.9 / 15.2.3.2 Object.getPrototypeOf(O)
-var has = __webpack_require__(4040);
-var toObject = __webpack_require__(6033);
-var IE_PROTO = __webpack_require__(8034)('IE_PROTO');
-var ObjectProto = Object.prototype;
-
-module.exports = Object.getPrototypeOf || function (O) {
-  O = toObject(O);
-  if (has(O, IE_PROTO)) return O[IE_PROTO];
-  if (typeof O.constructor == 'function' && O instanceof O.constructor) {
-    return O.constructor.prototype;
-  } return O instanceof Object ? ObjectProto : null;
-};
-
-
-/***/ }),
-
-/***/ 5547:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var has = __webpack_require__(4040);
-var toIObject = __webpack_require__(5703);
-var arrayIndexOf = __webpack_require__(9021)(false);
-var IE_PROTO = __webpack_require__(8034)('IE_PROTO');
-
-module.exports = function (object, names) {
-  var O = toIObject(object);
-  var i = 0;
-  var result = [];
-  var key;
-  for (key in O) if (key != IE_PROTO) has(O, key) && result.push(key);
-  // Don't enum bug & hidden keys
-  while (names.length > i) if (has(O, key = names[i++])) {
-    ~arrayIndexOf(result, key) || result.push(key);
-  }
-  return result;
-};
-
-
-/***/ }),
-
-/***/ 2912:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.2.14 / 15.2.3.14 Object.keys(O)
-var $keys = __webpack_require__(5547);
-var enumBugKeys = __webpack_require__(3603);
-
-module.exports = Object.keys || function keys(O) {
-  return $keys(O, enumBugKeys);
-};
-
-
-/***/ }),
-
-/***/ 5873:
-/***/ ((__unused_webpack_module, exports) => {
-
-exports.f = {}.propertyIsEnumerable;
-
-
-/***/ }),
-
-/***/ 468:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// most Object methods by ES6 should accept primitives
-var $export = __webpack_require__(5772);
-var core = __webpack_require__(66);
-var fails = __webpack_require__(8625);
-module.exports = function (KEY, exec) {
-  var fn = (core.Object || {})[KEY] || Object[KEY];
-  var exp = {};
-  exp[KEY] = exec(fn);
-  $export($export.S + $export.F * fails(function () { fn(1); }), 'Object', exp);
-};
-
-
-/***/ }),
-
-/***/ 758:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var DESCRIPTORS = __webpack_require__(6628);
-var getKeys = __webpack_require__(2912);
-var toIObject = __webpack_require__(5703);
-var isEnum = __webpack_require__(5873).f;
-module.exports = function (isEntries) {
-  return function (it) {
-    var O = toIObject(it);
-    var keys = getKeys(O);
-    var length = keys.length;
-    var i = 0;
-    var result = [];
-    var key;
-    while (length > i) {
-      key = keys[i++];
-      if (!DESCRIPTORS || isEnum.call(O, key)) {
-        result.push(isEntries ? [key, O[key]] : O[key]);
-      }
-    }
-    return result;
-  };
-};
-
-
-/***/ }),
-
-/***/ 6831:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// all object keys, includes non-enumerable and symbols
-var gOPN = __webpack_require__(6604);
-var gOPS = __webpack_require__(7957);
-var anObject = __webpack_require__(6365);
-var Reflect = __webpack_require__(8113).Reflect;
-module.exports = Reflect && Reflect.ownKeys || function ownKeys(it) {
-  var keys = gOPN.f(anObject(it));
-  var getSymbols = gOPS.f;
-  return getSymbols ? keys.concat(getSymbols(it)) : keys;
-};
-
-
-/***/ }),
-
-/***/ 5575:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var $parseFloat = __webpack_require__(8113).parseFloat;
-var $trim = __webpack_require__(8487).trim;
-
-module.exports = 1 / $parseFloat(__webpack_require__(8021) + '-0') !== -Infinity ? function parseFloat(str) {
-  var string = $trim(String(str), 3);
-  var result = $parseFloat(string);
-  return result === 0 && string.charAt(0) == '-' ? -0 : result;
-} : $parseFloat;
-
-
-/***/ }),
-
-/***/ 929:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var $parseInt = __webpack_require__(8113).parseInt;
-var $trim = __webpack_require__(8487).trim;
-var ws = __webpack_require__(8021);
-var hex = /^[-+]?0[xX]/;
-
-module.exports = $parseInt(ws + '08') !== 8 || $parseInt(ws + '0x16') !== 22 ? function parseInt(str, radix) {
-  var string = $trim(String(str), 3);
-  return $parseInt(string, (radix >>> 0) || (hex.test(string) ? 16 : 10));
-} : $parseInt;
-
-
-/***/ }),
-
-/***/ 9739:
-/***/ ((module) => {
-
-module.exports = function (exec) {
-  try {
-    return { e: false, v: exec() };
-  } catch (e) {
-    return { e: true, v: e };
-  }
-};
-
-
-/***/ }),
-
-/***/ 5151:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var anObject = __webpack_require__(6365);
-var isObject = __webpack_require__(7334);
-var newPromiseCapability = __webpack_require__(8577);
-
-module.exports = function (C, x) {
-  anObject(C);
-  if (isObject(x) && x.constructor === C) return x;
-  var promiseCapability = newPromiseCapability.f(C);
-  var resolve = promiseCapability.resolve;
-  resolve(x);
-  return promiseCapability.promise;
-};
-
-
-/***/ }),
-
-/***/ 6061:
-/***/ ((module) => {
-
-module.exports = function (bitmap, value) {
-  return {
-    enumerable: !(bitmap & 1),
-    configurable: !(bitmap & 2),
-    writable: !(bitmap & 4),
-    value: value
-  };
-};
-
-
-/***/ }),
-
-/***/ 2243:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var redefine = __webpack_require__(7738);
-module.exports = function (target, src, safe) {
-  for (var key in src) redefine(target, key, src[key], safe);
-  return target;
-};
-
-
-/***/ }),
-
-/***/ 7738:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var global = __webpack_require__(8113);
-var hide = __webpack_require__(4216);
-var has = __webpack_require__(4040);
-var SRC = __webpack_require__(5078)('src');
-var $toString = __webpack_require__(646);
-var TO_STRING = 'toString';
-var TPL = ('' + $toString).split(TO_STRING);
-
-__webpack_require__(66).inspectSource = function (it) {
-  return $toString.call(it);
-};
-
-(module.exports = function (O, key, val, safe) {
-  var isFunction = typeof val == 'function';
-  if (isFunction) has(val, 'name') || hide(val, 'name', key);
-  if (O[key] === val) return;
-  if (isFunction) has(val, SRC) || hide(val, SRC, O[key] ? '' + O[key] : TPL.join(String(key)));
-  if (O === global) {
-    O[key] = val;
-  } else if (!safe) {
-    delete O[key];
-    hide(O, key, val);
-  } else if (O[key]) {
-    O[key] = val;
-  } else {
-    hide(O, key, val);
-  }
-// add fake Function#toString for correct work wrapped methods / constructors with methods like LoDash isNative
-})(Function.prototype, TO_STRING, function toString() {
-  return typeof this == 'function' && this[SRC] || $toString.call(this);
-});
-
-
-/***/ }),
-
-/***/ 2404:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var classof = __webpack_require__(106);
-var builtinExec = RegExp.prototype.exec;
-
- // `RegExpExec` abstract operation
-// https://tc39.github.io/ecma262/#sec-regexpexec
-module.exports = function (R, S) {
-  var exec = R.exec;
-  if (typeof exec === 'function') {
-    var result = exec.call(R, S);
-    if (typeof result !== 'object') {
-      throw new TypeError('RegExp exec method returned something other than an Object or null');
-    }
-    return result;
-  }
-  if (classof(R) !== 'RegExp') {
-    throw new TypeError('RegExp#exec called on incompatible receiver');
-  }
-  return builtinExec.call(R, S);
-};
-
-
-/***/ }),
-
-/***/ 3288:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var regexpFlags = __webpack_require__(4859);
-
-var nativeExec = RegExp.prototype.exec;
-// This always refers to the native implementation, because the
-// String#replace polyfill uses ./fix-regexp-well-known-symbol-logic.js,
-// which loads this file before patching the method.
-var nativeReplace = String.prototype.replace;
-
-var patchedExec = nativeExec;
-
-var LAST_INDEX = 'lastIndex';
-
-var UPDATES_LAST_INDEX_WRONG = (function () {
-  var re1 = /a/,
-      re2 = /b*/g;
-  nativeExec.call(re1, 'a');
-  nativeExec.call(re2, 'a');
-  return re1[LAST_INDEX] !== 0 || re2[LAST_INDEX] !== 0;
-})();
-
-// nonparticipating capturing group, copied from es5-shim's String#split patch.
-var NPCG_INCLUDED = /()??/.exec('')[1] !== undefined;
-
-var PATCH = UPDATES_LAST_INDEX_WRONG || NPCG_INCLUDED;
-
-if (PATCH) {
-  patchedExec = function exec(str) {
-    var re = this;
-    var lastIndex, reCopy, match, i;
-
-    if (NPCG_INCLUDED) {
-      reCopy = new RegExp('^' + re.source + '$(?!\\s)', regexpFlags.call(re));
-    }
-    if (UPDATES_LAST_INDEX_WRONG) lastIndex = re[LAST_INDEX];
-
-    match = nativeExec.call(re, str);
-
-    if (UPDATES_LAST_INDEX_WRONG && match) {
-      re[LAST_INDEX] = re.global ? match.index + match[0].length : lastIndex;
-    }
-    if (NPCG_INCLUDED && match && match.length > 1) {
-      // Fix browsers whose `exec` methods don't consistently return `undefined`
-      // for NPCG, like IE8. NOTE: This doesn' work for /(.?)?/
-      // eslint-disable-next-line no-loop-func
-      nativeReplace.call(match[0], reCopy, function () {
-        for (i = 1; i < arguments.length - 2; i++) {
-          if (arguments[i] === undefined) match[i] = undefined;
-        }
-      });
-    }
-
-    return match;
-  };
-}
-
-module.exports = patchedExec;
-
-
-/***/ }),
-
-/***/ 339:
-/***/ ((module) => {
-
-// 7.2.9 SameValue(x, y)
-module.exports = Object.is || function is(x, y) {
-  // eslint-disable-next-line no-self-compare
-  return x === y ? x !== 0 || 1 / x === 1 / y : x != x && y != y;
-};
-
-
-/***/ }),
-
-/***/ 6095:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// Works with __proto__ only. Old v8 can't work with null proto objects.
-/* eslint-disable no-proto */
-var isObject = __webpack_require__(7334);
-var anObject = __webpack_require__(6365);
-var check = function (O, proto) {
-  anObject(O);
-  if (!isObject(proto) && proto !== null) throw TypeError(proto + ": can't set as prototype!");
-};
-module.exports = {
-  set: Object.setPrototypeOf || ('__proto__' in {} ? // eslint-disable-line
-    function (test, buggy, set) {
-      try {
-        set = __webpack_require__(1528)(Function.call, __webpack_require__(4662).f(Object.prototype, '__proto__').set, 2);
-        set(test, []);
-        buggy = !(test instanceof Array);
-      } catch (e) { buggy = true; }
-      return function setPrototypeOf(O, proto) {
-        check(O, proto);
-        if (buggy) O.__proto__ = proto;
-        else set(O, proto);
-        return O;
-      };
-    }({}, false) : undefined),
-  check: check
-};
-
-
-/***/ }),
-
-/***/ 9766:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var global = __webpack_require__(8113);
-var dP = __webpack_require__(8558);
-var DESCRIPTORS = __webpack_require__(6628);
-var SPECIES = __webpack_require__(2190)('species');
-
-module.exports = function (KEY) {
-  var C = global[KEY];
-  if (DESCRIPTORS && C && !C[SPECIES]) dP.f(C, SPECIES, {
-    configurable: true,
-    get: function () { return this; }
-  });
-};
-
-
-/***/ }),
-
-/***/ 5727:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var def = __webpack_require__(8558).f;
-var has = __webpack_require__(4040);
-var TAG = __webpack_require__(2190)('toStringTag');
-
-module.exports = function (it, tag, stat) {
-  if (it && !has(it = stat ? it : it.prototype, TAG)) def(it, TAG, { configurable: true, value: tag });
-};
-
-
-/***/ }),
-
-/***/ 8034:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var shared = __webpack_require__(8655)('keys');
-var uid = __webpack_require__(5078);
-module.exports = function (key) {
-  return shared[key] || (shared[key] = uid(key));
-};
-
-
-/***/ }),
-
-/***/ 8655:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var core = __webpack_require__(66);
-var global = __webpack_require__(8113);
-var SHARED = '__core-js_shared__';
-var store = global[SHARED] || (global[SHARED] = {});
-
-(module.exports = function (key, value) {
-  return store[key] || (store[key] = value !== undefined ? value : {});
-})('versions', []).push({
-  version: core.version,
-  mode: __webpack_require__(1422) ? 'pure' : 'global',
-  copyright: '© 2020 Denis Pushkarev (zloirock.ru)'
-});
-
-
-/***/ }),
-
-/***/ 1987:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 7.3.20 SpeciesConstructor(O, defaultConstructor)
-var anObject = __webpack_require__(6365);
-var aFunction = __webpack_require__(2761);
-var SPECIES = __webpack_require__(2190)('species');
-module.exports = function (O, D) {
-  var C = anObject(O).constructor;
-  var S;
-  return C === undefined || (S = anObject(C)[SPECIES]) == undefined ? D : aFunction(S);
-};
-
-
-/***/ }),
-
-/***/ 225:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var fails = __webpack_require__(8625);
-
-module.exports = function (method, arg) {
-  return !!method && fails(function () {
-    // eslint-disable-next-line no-useless-call
-    arg ? method.call(null, function () { /* empty */ }, 1) : method.call(null);
-  });
-};
-
-
-/***/ }),
-
-/***/ 2070:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var toInteger = __webpack_require__(3338);
-var defined = __webpack_require__(1622);
-// true  -> String#at
-// false -> String#codePointAt
-module.exports = function (TO_STRING) {
-  return function (that, pos) {
-    var s = String(defined(that));
-    var i = toInteger(pos);
-    var l = s.length;
-    var a, b;
-    if (i < 0 || i >= l) return TO_STRING ? '' : undefined;
-    a = s.charCodeAt(i);
-    return a < 0xd800 || a > 0xdbff || i + 1 === l || (b = s.charCodeAt(i + 1)) < 0xdc00 || b > 0xdfff
-      ? TO_STRING ? s.charAt(i) : a
-      : TO_STRING ? s.slice(i, i + 2) : (a - 0xd800 << 10) + (b - 0xdc00) + 0x10000;
-  };
-};
-
-
-/***/ }),
-
-/***/ 465:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// helper for String#{startsWith, endsWith, includes}
-var isRegExp = __webpack_require__(4587);
-var defined = __webpack_require__(1622);
-
-module.exports = function (that, searchString, NAME) {
-  if (isRegExp(searchString)) throw TypeError('String#' + NAME + " doesn't accept regex!");
-  return String(defined(that));
-};
-
-
-/***/ }),
-
-/***/ 5776:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var $export = __webpack_require__(5772);
-var fails = __webpack_require__(8625);
-var defined = __webpack_require__(1622);
-var quot = /"/g;
-// B.2.3.2.1 CreateHTML(string, tag, attribute, value)
-var createHTML = function (string, tag, attribute, value) {
-  var S = String(defined(string));
-  var p1 = '<' + tag;
-  if (attribute !== '') p1 += ' ' + attribute + '="' + String(value).replace(quot, '&quot;') + '"';
-  return p1 + '>' + S + '</' + tag + '>';
-};
-module.exports = function (NAME, exec) {
-  var O = {};
-  O[NAME] = exec(createHTML);
-  $export($export.P + $export.F * fails(function () {
-    var test = ''[NAME]('"');
-    return test !== test.toLowerCase() || test.split('"').length > 3;
-  }), 'String', O);
-};
-
-
-/***/ }),
-
-/***/ 6283:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// https://github.com/tc39/proposal-string-pad-start-end
-var toLength = __webpack_require__(6078);
-var repeat = __webpack_require__(7160);
-var defined = __webpack_require__(1622);
-
-module.exports = function (that, maxLength, fillString, left) {
-  var S = String(defined(that));
-  var stringLength = S.length;
-  var fillStr = fillString === undefined ? ' ' : String(fillString);
-  var intMaxLength = toLength(maxLength);
-  if (intMaxLength <= stringLength || fillStr == '') return S;
-  var fillLen = intMaxLength - stringLength;
-  var stringFiller = repeat.call(fillStr, Math.ceil(fillLen / fillStr.length));
-  if (stringFiller.length > fillLen) stringFiller = stringFiller.slice(0, fillLen);
-  return left ? stringFiller + S : S + stringFiller;
-};
-
-
-/***/ }),
-
-/***/ 7160:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var toInteger = __webpack_require__(3338);
-var defined = __webpack_require__(1622);
-
-module.exports = function repeat(count) {
-  var str = String(defined(this));
-  var res = '';
-  var n = toInteger(count);
-  if (n < 0 || n == Infinity) throw RangeError("Count can't be negative");
-  for (;n > 0; (n >>>= 1) && (str += str)) if (n & 1) res += str;
-  return res;
-};
-
-
-/***/ }),
-
-/***/ 8487:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var $export = __webpack_require__(5772);
-var defined = __webpack_require__(1622);
-var fails = __webpack_require__(8625);
-var spaces = __webpack_require__(8021);
-var space = '[' + spaces + ']';
-var non = '\u200b\u0085';
-var ltrim = RegExp('^' + space + space + '*');
-var rtrim = RegExp(space + space + '*$');
-
-var exporter = function (KEY, exec, ALIAS) {
-  var exp = {};
-  var FORCE = fails(function () {
-    return !!spaces[KEY]() || non[KEY]() != non;
-  });
-  var fn = exp[KEY] = FORCE ? exec(trim) : spaces[KEY];
-  if (ALIAS) exp[ALIAS] = fn;
-  $export($export.P + $export.F * FORCE, 'String', exp);
-};
-
-// 1 -> String#trimLeft
-// 2 -> String#trimRight
-// 3 -> String#trim
-var trim = exporter.trim = function (string, TYPE) {
-  string = String(defined(string));
-  if (TYPE & 1) string = string.replace(ltrim, '');
-  if (TYPE & 2) string = string.replace(rtrim, '');
-  return string;
-};
-
-module.exports = exporter;
-
-
-/***/ }),
-
-/***/ 8021:
-/***/ ((module) => {
-
-module.exports = '\x09\x0A\x0B\x0C\x0D\x20\xA0\u1680\u180E\u2000\u2001\u2002\u2003' +
-  '\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028\u2029\uFEFF';
-
-
-/***/ }),
-
-/***/ 9124:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var ctx = __webpack_require__(1528);
-var invoke = __webpack_require__(7757);
-var html = __webpack_require__(8954);
-var cel = __webpack_require__(5050);
-var global = __webpack_require__(8113);
-var process = global.process;
-var setTask = global.setImmediate;
-var clearTask = global.clearImmediate;
-var MessageChannel = global.MessageChannel;
-var Dispatch = global.Dispatch;
-var counter = 0;
-var queue = {};
-var ONREADYSTATECHANGE = 'onreadystatechange';
-var defer, channel, port;
-var run = function () {
-  var id = +this;
-  // eslint-disable-next-line no-prototype-builtins
-  if (queue.hasOwnProperty(id)) {
-    var fn = queue[id];
-    delete queue[id];
-    fn();
-  }
-};
-var listener = function (event) {
-  run.call(event.data);
-};
-// Node.js 0.9+ & IE10+ has setImmediate, otherwise:
-if (!setTask || !clearTask) {
-  setTask = function setImmediate(fn) {
-    var args = [];
-    var i = 1;
-    while (arguments.length > i) args.push(arguments[i++]);
-    queue[++counter] = function () {
-      // eslint-disable-next-line no-new-func
-      invoke(typeof fn == 'function' ? fn : Function(fn), args);
-    };
-    defer(counter);
-    return counter;
-  };
-  clearTask = function clearImmediate(id) {
-    delete queue[id];
-  };
-  // Node.js 0.8-
-  if (__webpack_require__(6688)(process) == 'process') {
-    defer = function (id) {
-      process.nextTick(ctx(run, id, 1));
-    };
-  // Sphere (JS game engine) Dispatch API
-  } else if (Dispatch && Dispatch.now) {
-    defer = function (id) {
-      Dispatch.now(ctx(run, id, 1));
-    };
-  // Browsers with MessageChannel, includes WebWorkers
-  } else if (MessageChannel) {
-    channel = new MessageChannel();
-    port = channel.port2;
-    channel.port1.onmessage = listener;
-    defer = ctx(port.postMessage, port, 1);
-  // Browsers with postMessage, skip WebWorkers
-  // IE8 has postMessage, but it's sync & typeof its postMessage is 'object'
-  } else if (global.addEventListener && typeof postMessage == 'function' && !global.importScripts) {
-    defer = function (id) {
-      global.postMessage(id + '', '*');
-    };
-    global.addEventListener('message', listener, false);
-  // IE8-
-  } else if (ONREADYSTATECHANGE in cel('script')) {
-    defer = function (id) {
-      html.appendChild(cel('script'))[ONREADYSTATECHANGE] = function () {
-        html.removeChild(this);
-        run.call(id);
-      };
-    };
-  // Rest old browsers
-  } else {
-    defer = function (id) {
-      setTimeout(ctx(run, id, 1), 0);
-    };
-  }
-}
-module.exports = {
-  set: setTask,
-  clear: clearTask
-};
-
-
-/***/ }),
-
-/***/ 8615:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var toInteger = __webpack_require__(3338);
-var max = Math.max;
-var min = Math.min;
-module.exports = function (index, length) {
-  index = toInteger(index);
-  return index < 0 ? max(index + length, 0) : min(index, length);
-};
-
-
-/***/ }),
-
-/***/ 1982:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// https://tc39.github.io/ecma262/#sec-toindex
-var toInteger = __webpack_require__(3338);
-var toLength = __webpack_require__(6078);
-module.exports = function (it) {
-  if (it === undefined) return 0;
-  var number = toInteger(it);
-  var length = toLength(number);
-  if (number !== length) throw RangeError('Wrong length!');
-  return length;
-};
-
-
-/***/ }),
-
-/***/ 3338:
-/***/ ((module) => {
-
-// 7.1.4 ToInteger
-var ceil = Math.ceil;
-var floor = Math.floor;
-module.exports = function (it) {
-  return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
-};
-
-
-/***/ }),
-
-/***/ 5703:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// to indexed object, toObject with fallback for non-array-like ES3 strings
-var IObject = __webpack_require__(8467);
-var defined = __webpack_require__(1622);
-module.exports = function (it) {
-  return IObject(defined(it));
-};
-
-
-/***/ }),
-
-/***/ 6078:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 7.1.15 ToLength
-var toInteger = __webpack_require__(3338);
-var min = Math.min;
-module.exports = function (it) {
-  return it > 0 ? min(toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
-};
-
-
-/***/ }),
-
-/***/ 6033:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 7.1.13 ToObject(argument)
-var defined = __webpack_require__(1622);
-module.exports = function (it) {
-  return Object(defined(it));
-};
-
-
-/***/ }),
-
-/***/ 1382:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-// 7.1.1 ToPrimitive(input [, PreferredType])
-var isObject = __webpack_require__(7334);
-// instead of the ES6 spec version, we didn't implement @@toPrimitive case
-// and the second argument - flag - preferred type is a string
-module.exports = function (it, S) {
-  if (!isObject(it)) return it;
-  var fn, val;
-  if (S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
-  if (typeof (fn = it.valueOf) == 'function' && !isObject(val = fn.call(it))) return val;
-  if (!S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
-  throw TypeError("Can't convert object to primitive value");
-};
-
-
-/***/ }),
-
-/***/ 7978:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-if (__webpack_require__(6628)) {
-  var LIBRARY = __webpack_require__(1422);
-  var global = __webpack_require__(8113);
-  var fails = __webpack_require__(8625);
-  var $export = __webpack_require__(5772);
-  var $typed = __webpack_require__(5949);
-  var $buffer = __webpack_require__(4972);
-  var ctx = __webpack_require__(1528);
-  var anInstance = __webpack_require__(5824);
-  var propertyDesc = __webpack_require__(6061);
-  var hide = __webpack_require__(4216);
-  var redefineAll = __webpack_require__(2243);
-  var toInteger = __webpack_require__(3338);
-  var toLength = __webpack_require__(6078);
-  var toIndex = __webpack_require__(1982);
-  var toAbsoluteIndex = __webpack_require__(8615);
-  var toPrimitive = __webpack_require__(1382);
-  var has = __webpack_require__(4040);
-  var classof = __webpack_require__(106);
-  var isObject = __webpack_require__(7334);
-  var toObject = __webpack_require__(6033);
-  var isArrayIter = __webpack_require__(8908);
-  var create = __webpack_require__(2897);
-  var getPrototypeOf = __webpack_require__(9002);
-  var gOPN = __webpack_require__(6604).f;
-  var getIterFn = __webpack_require__(7107);
-  var uid = __webpack_require__(5078);
-  var wks = __webpack_require__(2190);
-  var createArrayMethod = __webpack_require__(8309);
-  var createArrayIncludes = __webpack_require__(9021);
-  var speciesConstructor = __webpack_require__(1987);
-  var ArrayIterators = __webpack_require__(7680);
-  var Iterators = __webpack_require__(3988);
-  var $iterDetect = __webpack_require__(3143);
-  var setSpecies = __webpack_require__(9766);
-  var arrayFill = __webpack_require__(3195);
-  var arrayCopyWithin = __webpack_require__(6257);
-  var $DP = __webpack_require__(8558);
-  var $GOPD = __webpack_require__(4662);
-  var dP = $DP.f;
-  var gOPD = $GOPD.f;
-  var RangeError = global.RangeError;
-  var TypeError = global.TypeError;
-  var Uint8Array = global.Uint8Array;
-  var ARRAY_BUFFER = 'ArrayBuffer';
-  var SHARED_BUFFER = 'Shared' + ARRAY_BUFFER;
-  var BYTES_PER_ELEMENT = 'BYTES_PER_ELEMENT';
-  var PROTOTYPE = 'prototype';
-  var ArrayProto = Array[PROTOTYPE];
-  var $ArrayBuffer = $buffer.ArrayBuffer;
-  var $DataView = $buffer.DataView;
-  var arrayForEach = createArrayMethod(0);
-  var arrayFilter = createArrayMethod(2);
-  var arraySome = createArrayMethod(3);
-  var arrayEvery = createArrayMethod(4);
-  var arrayFind = createArrayMethod(5);
-  var arrayFindIndex = createArrayMethod(6);
-  var arrayIncludes = createArrayIncludes(true);
-  var arrayIndexOf = createArrayIncludes(false);
-  var arrayValues = ArrayIterators.values;
-  var arrayKeys = ArrayIterators.keys;
-  var arrayEntries = ArrayIterators.entries;
-  var arrayLastIndexOf = ArrayProto.lastIndexOf;
-  var arrayReduce = ArrayProto.reduce;
-  var arrayReduceRight = ArrayProto.reduceRight;
-  var arrayJoin = ArrayProto.join;
-  var arraySort = ArrayProto.sort;
-  var arraySlice = ArrayProto.slice;
-  var arrayToString = ArrayProto.toString;
-  var arrayToLocaleString = ArrayProto.toLocaleString;
-  var ITERATOR = wks('iterator');
-  var TAG = wks('toStringTag');
-  var TYPED_CONSTRUCTOR = uid('typed_constructor');
-  var DEF_CONSTRUCTOR = uid('def_constructor');
-  var ALL_CONSTRUCTORS = $typed.CONSTR;
-  var TYPED_ARRAY = $typed.TYPED;
-  var VIEW = $typed.VIEW;
-  var WRONG_LENGTH = 'Wrong length!';
-
-  var $map = createArrayMethod(1, function (O, length) {
-    return allocate(speciesConstructor(O, O[DEF_CONSTRUCTOR]), length);
-  });
-
-  var LITTLE_ENDIAN = fails(function () {
-    // eslint-disable-next-line no-undef
-    return new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
-  });
-
-  var FORCED_SET = !!Uint8Array && !!Uint8Array[PROTOTYPE].set && fails(function () {
-    new Uint8Array(1).set({});
-  });
-
-  var toOffset = function (it, BYTES) {
-    var offset = toInteger(it);
-    if (offset < 0 || offset % BYTES) throw RangeError('Wrong offset!');
-    return offset;
-  };
-
-  var validate = function (it) {
-    if (isObject(it) && TYPED_ARRAY in it) return it;
-    throw TypeError(it + ' is not a typed array!');
-  };
-
-  var allocate = function (C, length) {
-    if (!(isObject(C) && TYPED_CONSTRUCTOR in C)) {
-      throw TypeError('It is not a typed array constructor!');
-    } return new C(length);
-  };
-
-  var speciesFromList = function (O, list) {
-    return fromList(speciesConstructor(O, O[DEF_CONSTRUCTOR]), list);
-  };
-
-  var fromList = function (C, list) {
-    var index = 0;
-    var length = list.length;
-    var result = allocate(C, length);
-    while (length > index) result[index] = list[index++];
-    return result;
-  };
-
-  var addGetter = function (it, key, internal) {
-    dP(it, key, { get: function () { return this._d[internal]; } });
-  };
-
-  var $from = function from(source /* , mapfn, thisArg */) {
-    var O = toObject(source);
-    var aLen = arguments.length;
-    var mapfn = aLen > 1 ? arguments[1] : undefined;
-    var mapping = mapfn !== undefined;
-    var iterFn = getIterFn(O);
-    var i, length, values, result, step, iterator;
-    if (iterFn != undefined && !isArrayIter(iterFn)) {
-      for (iterator = iterFn.call(O), values = [], i = 0; !(step = iterator.next()).done; i++) {
-        values.push(step.value);
-      } O = values;
-    }
-    if (mapping && aLen > 2) mapfn = ctx(mapfn, arguments[2], 2);
-    for (i = 0, length = toLength(O.length), result = allocate(this, length); length > i; i++) {
-      result[i] = mapping ? mapfn(O[i], i) : O[i];
-    }
-    return result;
-  };
-
-  var $of = function of(/* ...items */) {
-    var index = 0;
-    var length = arguments.length;
-    var result = allocate(this, length);
-    while (length > index) result[index] = arguments[index++];
-    return result;
-  };
-
-  // iOS Safari 6.x fails here
-  var TO_LOCALE_BUG = !!Uint8Array && fails(function () { arrayToLocaleString.call(new Uint8Array(1)); });
-
-  var $toLocaleString = function toLocaleString() {
-    return arrayToLocaleString.apply(TO_LOCALE_BUG ? arraySlice.call(validate(this)) : validate(this), arguments);
-  };
-
-  var proto = {
-    copyWithin: function copyWithin(target, start /* , end */) {
-      return arrayCopyWithin.call(validate(this), target, start, arguments.length > 2 ? arguments[2] : undefined);
-    },
-    every: function every(callbackfn /* , thisArg */) {
-      return arrayEvery(validate(this), callbackfn, arguments.length > 1 ? arguments[1] : undefined);
-    },
-    fill: function fill(value /* , start, end */) { // eslint-disable-line no-unused-vars
-      return arrayFill.apply(validate(this), arguments);
-    },
-    filter: function filter(callbackfn /* , thisArg */) {
-      return speciesFromList(this, arrayFilter(validate(this), callbackfn,
-        arguments.length > 1 ? arguments[1] : undefined));
-    },
-    find: function find(predicate /* , thisArg */) {
-      return arrayFind(validate(this), predicate, arguments.length > 1 ? arguments[1] : undefined);
-    },
-    findIndex: function findIndex(predicate /* , thisArg */) {
-      return arrayFindIndex(validate(this), predicate, arguments.length > 1 ? arguments[1] : undefined);
-    },
-    forEach: function forEach(callbackfn /* , thisArg */) {
-      arrayForEach(validate(this), callbackfn, arguments.length > 1 ? arguments[1] : undefined);
-    },
-    indexOf: function indexOf(searchElement /* , fromIndex */) {
-      return arrayIndexOf(validate(this), searchElement, arguments.length > 1 ? arguments[1] : undefined);
-    },
-    includes: function includes(searchElement /* , fromIndex */) {
-      return arrayIncludes(validate(this), searchElement, arguments.length > 1 ? arguments[1] : undefined);
-    },
-    join: function join(separator) { // eslint-disable-line no-unused-vars
-      return arrayJoin.apply(validate(this), arguments);
-    },
-    lastIndexOf: function lastIndexOf(searchElement /* , fromIndex */) { // eslint-disable-line no-unused-vars
-      return arrayLastIndexOf.apply(validate(this), arguments);
-    },
-    map: function map(mapfn /* , thisArg */) {
-      return $map(validate(this), mapfn, arguments.length > 1 ? arguments[1] : undefined);
-    },
-    reduce: function reduce(callbackfn /* , initialValue */) { // eslint-disable-line no-unused-vars
-      return arrayReduce.apply(validate(this), arguments);
-    },
-    reduceRight: function reduceRight(callbackfn /* , initialValue */) { // eslint-disable-line no-unused-vars
-      return arrayReduceRight.apply(validate(this), arguments);
-    },
-    reverse: function reverse() {
-      var that = this;
-      var length = validate(that).length;
-      var middle = Math.floor(length / 2);
-      var index = 0;
-      var value;
-      while (index < middle) {
-        value = that[index];
-        that[index++] = that[--length];
-        that[length] = value;
-      } return that;
-    },
-    some: function some(callbackfn /* , thisArg */) {
-      return arraySome(validate(this), callbackfn, arguments.length > 1 ? arguments[1] : undefined);
-    },
-    sort: function sort(comparefn) {
-      return arraySort.call(validate(this), comparefn);
-    },
-    subarray: function subarray(begin, end) {
-      var O = validate(this);
-      var length = O.length;
-      var $begin = toAbsoluteIndex(begin, length);
-      return new (speciesConstructor(O, O[DEF_CONSTRUCTOR]))(
-        O.buffer,
-        O.byteOffset + $begin * O.BYTES_PER_ELEMENT,
-        toLength((end === undefined ? length : toAbsoluteIndex(end, length)) - $begin)
-      );
-    }
-  };
-
-  var $slice = function slice(start, end) {
-    return speciesFromList(this, arraySlice.call(validate(this), start, end));
-  };
-
-  var $set = function set(arrayLike /* , offset */) {
-    validate(this);
-    var offset = toOffset(arguments[1], 1);
-    var length = this.length;
-    var src = toObject(arrayLike);
-    var len = toLength(src.length);
-    var index = 0;
-    if (len + offset > length) throw RangeError(WRONG_LENGTH);
-    while (index < len) this[offset + index] = src[index++];
-  };
-
-  var $iterators = {
-    entries: function entries() {
-      return arrayEntries.call(validate(this));
-    },
-    keys: function keys() {
-      return arrayKeys.call(validate(this));
-    },
-    values: function values() {
-      return arrayValues.call(validate(this));
-    }
-  };
-
-  var isTAIndex = function (target, key) {
-    return isObject(target)
-      && target[TYPED_ARRAY]
-      && typeof key != 'symbol'
-      && key in target
-      && String(+key) == String(key);
-  };
-  var $getDesc = function getOwnPropertyDescriptor(target, key) {
-    return isTAIndex(target, key = toPrimitive(key, true))
-      ? propertyDesc(2, target[key])
-      : gOPD(target, key);
-  };
-  var $setDesc = function defineProperty(target, key, desc) {
-    if (isTAIndex(target, key = toPrimitive(key, true))
-      && isObject(desc)
-      && has(desc, 'value')
-      && !has(desc, 'get')
-      && !has(desc, 'set')
-      // TODO: add validation descriptor w/o calling accessors
-      && !desc.configurable
-      && (!has(desc, 'writable') || desc.writable)
-      && (!has(desc, 'enumerable') || desc.enumerable)
-    ) {
-      target[key] = desc.value;
-      return target;
-    } return dP(target, key, desc);
-  };
-
-  if (!ALL_CONSTRUCTORS) {
-    $GOPD.f = $getDesc;
-    $DP.f = $setDesc;
-  }
-
-  $export($export.S + $export.F * !ALL_CONSTRUCTORS, 'Object', {
-    getOwnPropertyDescriptor: $getDesc,
-    defineProperty: $setDesc
-  });
-
-  if (fails(function () { arrayToString.call({}); })) {
-    arrayToString = arrayToLocaleString = function toString() {
-      return arrayJoin.call(this);
-    };
-  }
-
-  var $TypedArrayPrototype$ = redefineAll({}, proto);
-  redefineAll($TypedArrayPrototype$, $iterators);
-  hide($TypedArrayPrototype$, ITERATOR, $iterators.values);
-  redefineAll($TypedArrayPrototype$, {
-    slice: $slice,
-    set: $set,
-    constructor: function () { /* noop */ },
-    toString: arrayToString,
-    toLocaleString: $toLocaleString
-  });
-  addGetter($TypedArrayPrototype$, 'buffer', 'b');
-  addGetter($TypedArrayPrototype$, 'byteOffset', 'o');
-  addGetter($TypedArrayPrototype$, 'byteLength', 'l');
-  addGetter($TypedArrayPrototype$, 'length', 'e');
-  dP($TypedArrayPrototype$, TAG, {
-    get: function () { return this[TYPED_ARRAY]; }
-  });
-
-  // eslint-disable-next-line max-statements
-  module.exports = function (KEY, BYTES, wrapper, CLAMPED) {
-    CLAMPED = !!CLAMPED;
-    var NAME = KEY + (CLAMPED ? 'Clamped' : '') + 'Array';
-    var GETTER = 'get' + KEY;
-    var SETTER = 'set' + KEY;
-    var TypedArray = global[NAME];
-    var Base = TypedArray || {};
-    var TAC = TypedArray && getPrototypeOf(TypedArray);
-    var FORCED = !TypedArray || !$typed.ABV;
-    var O = {};
-    var TypedArrayPrototype = TypedArray && TypedArray[PROTOTYPE];
-    var getter = function (that, index) {
-      var data = that._d;
-      return data.v[GETTER](index * BYTES + data.o, LITTLE_ENDIAN);
-    };
-    var setter = function (that, index, value) {
-      var data = that._d;
-      if (CLAMPED) value = (value = Math.round(value)) < 0 ? 0 : value > 0xff ? 0xff : value & 0xff;
-      data.v[SETTER](index * BYTES + data.o, value, LITTLE_ENDIAN);
-    };
-    var addElement = function (that, index) {
-      dP(that, index, {
-        get: function () {
-          return getter(this, index);
-        },
-        set: function (value) {
-          return setter(this, index, value);
-        },
-        enumerable: true
-      });
-    };
-    if (FORCED) {
-      TypedArray = wrapper(function (that, data, $offset, $length) {
-        anInstance(that, TypedArray, NAME, '_d');
-        var index = 0;
-        var offset = 0;
-        var buffer, byteLength, length, klass;
-        if (!isObject(data)) {
-          length = toIndex(data);
-          byteLength = length * BYTES;
-          buffer = new $ArrayBuffer(byteLength);
-        } else if (data instanceof $ArrayBuffer || (klass = classof(data)) == ARRAY_BUFFER || klass == SHARED_BUFFER) {
-          buffer = data;
-          offset = toOffset($offset, BYTES);
-          var $len = data.byteLength;
-          if ($length === undefined) {
-            if ($len % BYTES) throw RangeError(WRONG_LENGTH);
-            byteLength = $len - offset;
-            if (byteLength < 0) throw RangeError(WRONG_LENGTH);
-          } else {
-            byteLength = toLength($length) * BYTES;
-            if (byteLength + offset > $len) throw RangeError(WRONG_LENGTH);
-          }
-          length = byteLength / BYTES;
-        } else if (TYPED_ARRAY in data) {
-          return fromList(TypedArray, data);
-        } else {
-          return $from.call(TypedArray, data);
-        }
-        hide(that, '_d', {
-          b: buffer,
-          o: offset,
-          l: byteLength,
-          e: length,
-          v: new $DataView(buffer)
-        });
-        while (index < length) addElement(that, index++);
-      });
-      TypedArrayPrototype = TypedArray[PROTOTYPE] = create($TypedArrayPrototype$);
-      hide(TypedArrayPrototype, 'constructor', TypedArray);
-    } else if (!fails(function () {
-      TypedArray(1);
-    }) || !fails(function () {
-      new TypedArray(-1); // eslint-disable-line no-new
-    }) || !$iterDetect(function (iter) {
-      new TypedArray(); // eslint-disable-line no-new
-      new TypedArray(null); // eslint-disable-line no-new
-      new TypedArray(1.5); // eslint-disable-line no-new
-      new TypedArray(iter); // eslint-disable-line no-new
-    }, true)) {
-      TypedArray = wrapper(function (that, data, $offset, $length) {
-        anInstance(that, TypedArray, NAME);
-        var klass;
-        // `ws` module bug, temporarily remove validation length for Uint8Array
-        // https://github.com/websockets/ws/pull/645
-        if (!isObject(data)) return new Base(toIndex(data));
-        if (data instanceof $ArrayBuffer || (klass = classof(data)) == ARRAY_BUFFER || klass == SHARED_BUFFER) {
-          return $length !== undefined
-            ? new Base(data, toOffset($offset, BYTES), $length)
-            : $offset !== undefined
-              ? new Base(data, toOffset($offset, BYTES))
-              : new Base(data);
-        }
-        if (TYPED_ARRAY in data) return fromList(TypedArray, data);
-        return $from.call(TypedArray, data);
-      });
-      arrayForEach(TAC !== Function.prototype ? gOPN(Base).concat(gOPN(TAC)) : gOPN(Base), function (key) {
-        if (!(key in TypedArray)) hide(TypedArray, key, Base[key]);
-      });
-      TypedArray[PROTOTYPE] = TypedArrayPrototype;
-      if (!LIBRARY) TypedArrayPrototype.constructor = TypedArray;
-    }
-    var $nativeIterator = TypedArrayPrototype[ITERATOR];
-    var CORRECT_ITER_NAME = !!$nativeIterator
-      && ($nativeIterator.name == 'values' || $nativeIterator.name == undefined);
-    var $iterator = $iterators.values;
-    hide(TypedArray, TYPED_CONSTRUCTOR, true);
-    hide(TypedArrayPrototype, TYPED_ARRAY, NAME);
-    hide(TypedArrayPrototype, VIEW, true);
-    hide(TypedArrayPrototype, DEF_CONSTRUCTOR, TypedArray);
-
-    if (CLAMPED ? new TypedArray(1)[TAG] != NAME : !(TAG in TypedArrayPrototype)) {
-      dP(TypedArrayPrototype, TAG, {
-        get: function () { return NAME; }
-      });
-    }
-
-    O[NAME] = TypedArray;
-
-    $export($export.G + $export.W + $export.F * (TypedArray != Base), O);
-
-    $export($export.S, NAME, {
-      BYTES_PER_ELEMENT: BYTES
-    });
-
-    $export($export.S + $export.F * fails(function () { Base.of.call(TypedArray, 1); }), NAME, {
-      from: $from,
-      of: $of
-    });
-
-    if (!(BYTES_PER_ELEMENT in TypedArrayPrototype)) hide(TypedArrayPrototype, BYTES_PER_ELEMENT, BYTES);
-
-    $export($export.P, NAME, proto);
-
-    setSpecies(NAME);
-
-    $export($export.P + $export.F * FORCED_SET, NAME, { set: $set });
-
-    $export($export.P + $export.F * !CORRECT_ITER_NAME, NAME, $iterators);
-
-    if (!LIBRARY && TypedArrayPrototype.toString != arrayToString) TypedArrayPrototype.toString = arrayToString;
-
-    $export($export.P + $export.F * fails(function () {
-      new TypedArray(1).slice();
-    }), NAME, { slice: $slice });
-
-    $export($export.P + $export.F * (fails(function () {
-      return [1, 2].toLocaleString() != new TypedArray([1, 2]).toLocaleString();
-    }) || !fails(function () {
-      TypedArrayPrototype.toLocaleString.call([1, 2]);
-    })), NAME, { toLocaleString: $toLocaleString });
-
-    Iterators[NAME] = CORRECT_ITER_NAME ? $nativeIterator : $iterator;
-    if (!LIBRARY && !CORRECT_ITER_NAME) hide(TypedArrayPrototype, ITERATOR, $iterator);
-  };
-} else module.exports = function () { /* empty */ };
-
-
-/***/ }),
-
-/***/ 4972:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-var global = __webpack_require__(8113);
-var DESCRIPTORS = __webpack_require__(6628);
-var LIBRARY = __webpack_require__(1422);
-var $typed = __webpack_require__(5949);
-var hide = __webpack_require__(4216);
-var redefineAll = __webpack_require__(2243);
-var fails = __webpack_require__(8625);
-var anInstance = __webpack_require__(5824);
-var toInteger = __webpack_require__(3338);
-var toLength = __webpack_require__(6078);
-var toIndex = __webpack_require__(1982);
-var gOPN = __webpack_require__(6604).f;
-var dP = __webpack_require__(8558).f;
-var arrayFill = __webpack_require__(3195);
-var setToStringTag = __webpack_require__(5727);
-var ARRAY_BUFFER = 'ArrayBuffer';
-var DATA_VIEW = 'DataView';
-var PROTOTYPE = 'prototype';
-var WRONG_LENGTH = 'Wrong length!';
-var WRONG_INDEX = 'Wrong index!';
-var $ArrayBuffer = global[ARRAY_BUFFER];
-var $DataView = global[DATA_VIEW];
-var Math = global.Math;
-var RangeError = global.RangeError;
-// eslint-disable-next-line no-shadow-restricted-names
-var Infinity = global.Infinity;
-var BaseBuffer = $ArrayBuffer;
-var abs = Math.abs;
-var pow = Math.pow;
-var floor = Math.floor;
-var log = Math.log;
-var LN2 = Math.LN2;
-var BUFFER = 'buffer';
-var BYTE_LENGTH = 'byteLength';
-var BYTE_OFFSET = 'byteOffset';
-var $BUFFER = DESCRIPTORS ? '_b' : BUFFER;
-var $LENGTH = DESCRIPTORS ? '_l' : BYTE_LENGTH;
-var $OFFSET = DESCRIPTORS ? '_o' : BYTE_OFFSET;
-
-// IEEE754 conversions based on https://github.com/feross/ieee754
-function packIEEE754(value, mLen, nBytes) {
-  var buffer = new Array(nBytes);
-  var eLen = nBytes * 8 - mLen - 1;
-  var eMax = (1 << eLen) - 1;
-  var eBias = eMax >> 1;
-  var rt = mLen === 23 ? pow(2, -24) - pow(2, -77) : 0;
-  var i = 0;
-  var s = value < 0 || value === 0 && 1 / value < 0 ? 1 : 0;
-  var e, m, c;
-  value = abs(value);
-  // eslint-disable-next-line no-self-compare
-  if (value != value || value === Infinity) {
-    // eslint-disable-next-line no-self-compare
-    m = value != value ? 1 : 0;
-    e = eMax;
-  } else {
-    e = floor(log(value) / LN2);
-    if (value * (c = pow(2, -e)) < 1) {
-      e--;
-      c *= 2;
-    }
-    if (e + eBias >= 1) {
-      value += rt / c;
-    } else {
-      value += rt * pow(2, 1 - eBias);
-    }
-    if (value * c >= 2) {
-      e++;
-      c /= 2;
-    }
-    if (e + eBias >= eMax) {
-      m = 0;
-      e = eMax;
-    } else if (e + eBias >= 1) {
-      m = (value * c - 1) * pow(2, mLen);
-      e = e + eBias;
-    } else {
-      m = value * pow(2, eBias - 1) * pow(2, mLen);
-      e = 0;
-    }
-  }
-  for (; mLen >= 8; buffer[i++] = m & 255, m /= 256, mLen -= 8);
-  e = e << mLen | m;
-  eLen += mLen;
-  for (; eLen > 0; buffer[i++] = e & 255, e /= 256, eLen -= 8);
-  buffer[--i] |= s * 128;
-  return buffer;
-}
-function unpackIEEE754(buffer, mLen, nBytes) {
-  var eLen = nBytes * 8 - mLen - 1;
-  var eMax = (1 << eLen) - 1;
-  var eBias = eMax >> 1;
-  var nBits = eLen - 7;
-  var i = nBytes - 1;
-  var s = buffer[i--];
-  var e = s & 127;
-  var m;
-  s >>= 7;
-  for (; nBits > 0; e = e * 256 + buffer[i], i--, nBits -= 8);
-  m = e & (1 << -nBits) - 1;
-  e >>= -nBits;
-  nBits += mLen;
-  for (; nBits > 0; m = m * 256 + buffer[i], i--, nBits -= 8);
-  if (e === 0) {
-    e = 1 - eBias;
-  } else if (e === eMax) {
-    return m ? NaN : s ? -Infinity : Infinity;
-  } else {
-    m = m + pow(2, mLen);
-    e = e - eBias;
-  } return (s ? -1 : 1) * m * pow(2, e - mLen);
-}
-
-function unpackI32(bytes) {
-  return bytes[3] << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0];
-}
-function packI8(it) {
-  return [it & 0xff];
-}
-function packI16(it) {
-  return [it & 0xff, it >> 8 & 0xff];
-}
-function packI32(it) {
-  return [it & 0xff, it >> 8 & 0xff, it >> 16 & 0xff, it >> 24 & 0xff];
-}
-function packF64(it) {
-  return packIEEE754(it, 52, 8);
-}
-function packF32(it) {
-  return packIEEE754(it, 23, 4);
-}
-
-function addGetter(C, key, internal) {
-  dP(C[PROTOTYPE], key, { get: function () { return this[internal]; } });
-}
-
-function get(view, bytes, index, isLittleEndian) {
-  var numIndex = +index;
-  var intIndex = toIndex(numIndex);
-  if (intIndex + bytes > view[$LENGTH]) throw RangeError(WRONG_INDEX);
-  var store = view[$BUFFER]._b;
-  var start = intIndex + view[$OFFSET];
-  var pack = store.slice(start, start + bytes);
-  return isLittleEndian ? pack : pack.reverse();
-}
-function set(view, bytes, index, conversion, value, isLittleEndian) {
-  var numIndex = +index;
-  var intIndex = toIndex(numIndex);
-  if (intIndex + bytes > view[$LENGTH]) throw RangeError(WRONG_INDEX);
-  var store = view[$BUFFER]._b;
-  var start = intIndex + view[$OFFSET];
-  var pack = conversion(+value);
-  for (var i = 0; i < bytes; i++) store[start + i] = pack[isLittleEndian ? i : bytes - i - 1];
-}
-
-if (!$typed.ABV) {
-  $ArrayBuffer = function ArrayBuffer(length) {
-    anInstance(this, $ArrayBuffer, ARRAY_BUFFER);
-    var byteLength = toIndex(length);
-    this._b = arrayFill.call(new Array(byteLength), 0);
-    this[$LENGTH] = byteLength;
-  };
-
-  $DataView = function DataView(buffer, byteOffset, byteLength) {
-    anInstance(this, $DataView, DATA_VIEW);
-    anInstance(buffer, $ArrayBuffer, DATA_VIEW);
-    var bufferLength = buffer[$LENGTH];
-    var offset = toInteger(byteOffset);
-    if (offset < 0 || offset > bufferLength) throw RangeError('Wrong offset!');
-    byteLength = byteLength === undefined ? bufferLength - offset : toLength(byteLength);
-    if (offset + byteLength > bufferLength) throw RangeError(WRONG_LENGTH);
-    this[$BUFFER] = buffer;
-    this[$OFFSET] = offset;
-    this[$LENGTH] = byteLength;
-  };
-
-  if (DESCRIPTORS) {
-    addGetter($ArrayBuffer, BYTE_LENGTH, '_l');
-    addGetter($DataView, BUFFER, '_b');
-    addGetter($DataView, BYTE_LENGTH, '_l');
-    addGetter($DataView, BYTE_OFFSET, '_o');
-  }
-
-  redefineAll($DataView[PROTOTYPE], {
-    getInt8: function getInt8(byteOffset) {
-      return get(this, 1, byteOffset)[0] << 24 >> 24;
-    },
-    getUint8: function getUint8(byteOffset) {
-      return get(this, 1, byteOffset)[0];
-    },
-    getInt16: function getInt16(byteOffset /* , littleEndian */) {
-      var bytes = get(this, 2, byteOffset, arguments[1]);
-      return (bytes[1] << 8 | bytes[0]) << 16 >> 16;
-    },
-    getUint16: function getUint16(byteOffset /* , littleEndian */) {
-      var bytes = get(this, 2, byteOffset, arguments[1]);
-      return bytes[1] << 8 | bytes[0];
-    },
-    getInt32: function getInt32(byteOffset /* , littleEndian */) {
-      return unpackI32(get(this, 4, byteOffset, arguments[1]));
-    },
-    getUint32: function getUint32(byteOffset /* , littleEndian */) {
-      return unpackI32(get(this, 4, byteOffset, arguments[1])) >>> 0;
-    },
-    getFloat32: function getFloat32(byteOffset /* , littleEndian */) {
-      return unpackIEEE754(get(this, 4, byteOffset, arguments[1]), 23, 4);
-    },
-    getFloat64: function getFloat64(byteOffset /* , littleEndian */) {
-      return unpackIEEE754(get(this, 8, byteOffset, arguments[1]), 52, 8);
-    },
-    setInt8: function setInt8(byteOffset, value) {
-      set(this, 1, byteOffset, packI8, value);
-    },
-    setUint8: function setUint8(byteOffset, value) {
-      set(this, 1, byteOffset, packI8, value);
-    },
-    setInt16: function setInt16(byteOffset, value /* , littleEndian */) {
-      set(this, 2, byteOffset, packI16, value, arguments[2]);
-    },
-    setUint16: function setUint16(byteOffset, value /* , littleEndian */) {
-      set(this, 2, byteOffset, packI16, value, arguments[2]);
-    },
-    setInt32: function setInt32(byteOffset, value /* , littleEndian */) {
-      set(this, 4, byteOffset, packI32, value, arguments[2]);
-    },
-    setUint32: function setUint32(byteOffset, value /* , littleEndian */) {
-      set(this, 4, byteOffset, packI32, value, arguments[2]);
-    },
-    setFloat32: function setFloat32(byteOffset, value /* , littleEndian */) {
-      set(this, 4, byteOffset, packF32, value, arguments[2]);
-    },
-    setFloat64: function setFloat64(byteOffset, value /* , littleEndian */) {
-      set(this, 8, byteOffset, packF64, value, arguments[2]);
-    }
-  });
-} else {
-  if (!fails(function () {
-    $ArrayBuffer(1);
-  }) || !fails(function () {
-    new $ArrayBuffer(-1); // eslint-disable-line no-new
-  }) || fails(function () {
-    new $ArrayBuffer(); // eslint-disable-line no-new
-    new $ArrayBuffer(1.5); // eslint-disable-line no-new
-    new $ArrayBuffer(NaN); // eslint-disable-line no-new
-    return $ArrayBuffer.name != ARRAY_BUFFER;
-  })) {
-    $ArrayBuffer = function ArrayBuffer(length) {
-      anInstance(this, $ArrayBuffer);
-      return new BaseBuffer(toIndex(length));
-    };
-    var ArrayBufferProto = $ArrayBuffer[PROTOTYPE] = BaseBuffer[PROTOTYPE];
-    for (var keys = gOPN(BaseBuffer), j = 0, key; keys.length > j;) {
-      if (!((key = keys[j++]) in $ArrayBuffer)) hide($ArrayBuffer, key, BaseBuffer[key]);
-    }
-    if (!LIBRARY) ArrayBufferProto.constructor = $ArrayBuffer;
-  }
-  // iOS Safari 7.x bug
-  var view = new $DataView(new $ArrayBuffer(2));
-  var $setInt8 = $DataView[PROTOTYPE].setInt8;
-  view.setInt8(0, 2147483648);
-  view.setInt8(1, 2147483649);
-  if (view.getInt8(0) || !view.getInt8(1)) redefineAll($DataView[PROTOTYPE], {
-    setInt8: function setInt8(byteOffset, value) {
-      $setInt8.call(this, byteOffset, value << 24 >> 24);
-    },
-    setUint8: function setUint8(byteOffset, value) {
-      $setInt8.call(this, byteOffset, value << 24 >> 24);
-    }
-  }, true);
-}
-setToStringTag($ArrayBuffer, ARRAY_BUFFER);
-setToStringTag($DataView, DATA_VIEW);
-hide($DataView[PROTOTYPE], $typed.VIEW, true);
-exports[ARRAY_BUFFER] = $ArrayBuffer;
-exports[DATA_VIEW] = $DataView;
-
-
-/***/ }),
-
-/***/ 5949:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var global = __webpack_require__(8113);
-var hide = __webpack_require__(4216);
-var uid = __webpack_require__(5078);
-var TYPED = uid('typed_array');
-var VIEW = uid('view');
-var ABV = !!(global.ArrayBuffer && global.DataView);
-var CONSTR = ABV;
-var i = 0;
-var l = 9;
-var Typed;
-
-var TypedArrayConstructors = (
-  'Int8Array,Uint8Array,Uint8ClampedArray,Int16Array,Uint16Array,Int32Array,Uint32Array,Float32Array,Float64Array'
-).split(',');
-
-while (i < l) {
-  if (Typed = global[TypedArrayConstructors[i++]]) {
-    hide(Typed.prototype, TYPED, true);
-    hide(Typed.prototype, VIEW, true);
-  } else CONSTR = false;
-}
-
-module.exports = {
-  ABV: ABV,
-  CONSTR: CONSTR,
-  TYPED: TYPED,
-  VIEW: VIEW
-};
-
-
-/***/ }),
-
-/***/ 5078:
-/***/ ((module) => {
-
-var id = 0;
-var px = Math.random();
-module.exports = function (key) {
-  return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
-};
-
-
-/***/ }),
-
-/***/ 5822:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var global = __webpack_require__(8113);
-var navigator = global.navigator;
-
-module.exports = navigator && navigator.userAgent || '';
-
-
-/***/ }),
-
-/***/ 9060:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var isObject = __webpack_require__(7334);
-module.exports = function (it, TYPE) {
-  if (!isObject(it) || it._t !== TYPE) throw TypeError('Incompatible receiver, ' + TYPE + ' required!');
-  return it;
-};
-
-
-/***/ }),
-
-/***/ 5660:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var global = __webpack_require__(8113);
-var core = __webpack_require__(66);
-var LIBRARY = __webpack_require__(1422);
-var wksExt = __webpack_require__(9669);
-var defineProperty = __webpack_require__(8558).f;
-module.exports = function (name) {
-  var $Symbol = core.Symbol || (core.Symbol = LIBRARY ? {} : global.Symbol || {});
-  if (name.charAt(0) != '_' && !(name in $Symbol)) defineProperty($Symbol, name, { value: wksExt.f(name) });
-};
-
-
-/***/ }),
-
-/***/ 9669:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-exports.f = __webpack_require__(2190);
-
-
-/***/ }),
-
-/***/ 2190:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var store = __webpack_require__(8655)('wks');
-var uid = __webpack_require__(5078);
-var Symbol = __webpack_require__(8113).Symbol;
-var USE_SYMBOL = typeof Symbol == 'function';
-
-var $exports = module.exports = function (name) {
-  return store[name] || (store[name] =
-    USE_SYMBOL && Symbol[name] || (USE_SYMBOL ? Symbol : uid)('Symbol.' + name));
-};
-
-$exports.store = store;
-
-
-/***/ }),
-
-/***/ 7107:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var classof = __webpack_require__(106);
-var ITERATOR = __webpack_require__(2190)('iterator');
-var Iterators = __webpack_require__(3988);
-module.exports = __webpack_require__(66).getIteratorMethod = function (it) {
-  if (it != undefined) return it[ITERATOR]
-    || it['@@iterator']
-    || Iterators[classof(it)];
-};
-
-
-/***/ }),
-
-/***/ 1601:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 22.1.3.3 Array.prototype.copyWithin(target, start, end = this.length)
-var $export = __webpack_require__(5772);
-
-$export($export.P, 'Array', { copyWithin: __webpack_require__(6257) });
-
-__webpack_require__(2094)('copyWithin');
-
-
-/***/ }),
-
-/***/ 46:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var $every = __webpack_require__(8309)(4);
-
-$export($export.P + $export.F * !__webpack_require__(225)([].every, true), 'Array', {
-  // 22.1.3.5 / 15.4.4.16 Array.prototype.every(callbackfn [, thisArg])
-  every: function every(callbackfn /* , thisArg */) {
-    return $every(this, callbackfn, arguments[1]);
-  }
-});
-
-
-/***/ }),
-
-/***/ 453:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 22.1.3.6 Array.prototype.fill(value, start = 0, end = this.length)
-var $export = __webpack_require__(5772);
-
-$export($export.P, 'Array', { fill: __webpack_require__(3195) });
-
-__webpack_require__(2094)('fill');
-
-
-/***/ }),
-
-/***/ 4434:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var $filter = __webpack_require__(8309)(2);
-
-$export($export.P + $export.F * !__webpack_require__(225)([].filter, true), 'Array', {
-  // 22.1.3.7 / 15.4.4.20 Array.prototype.filter(callbackfn [, thisArg])
-  filter: function filter(callbackfn /* , thisArg */) {
-    return $filter(this, callbackfn, arguments[1]);
-  }
-});
-
-
-/***/ }),
-
-/***/ 62:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// 22.1.3.9 Array.prototype.findIndex(predicate, thisArg = undefined)
-var $export = __webpack_require__(5772);
-var $find = __webpack_require__(8309)(6);
-var KEY = 'findIndex';
-var forced = true;
-// Shouldn't skip holes
-if (KEY in []) Array(1)[KEY](function () { forced = false; });
-$export($export.P + $export.F * forced, 'Array', {
-  findIndex: function findIndex(callbackfn /* , that = undefined */) {
-    return $find(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
-  }
-});
-__webpack_require__(2094)(KEY);
-
-
-/***/ }),
-
-/***/ 1954:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// 22.1.3.8 Array.prototype.find(predicate, thisArg = undefined)
-var $export = __webpack_require__(5772);
-var $find = __webpack_require__(8309)(5);
-var KEY = 'find';
-var forced = true;
-// Shouldn't skip holes
-if (KEY in []) Array(1)[KEY](function () { forced = false; });
-$export($export.P + $export.F * forced, 'Array', {
-  find: function find(callbackfn /* , that = undefined */) {
-    return $find(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
-  }
-});
-__webpack_require__(2094)(KEY);
-
-
-/***/ }),
-
-/***/ 7772:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var $forEach = __webpack_require__(8309)(0);
-var STRICT = __webpack_require__(225)([].forEach, true);
-
-$export($export.P + $export.F * !STRICT, 'Array', {
-  // 22.1.3.10 / 15.4.4.18 Array.prototype.forEach(callbackfn [, thisArg])
-  forEach: function forEach(callbackfn /* , thisArg */) {
-    return $forEach(this, callbackfn, arguments[1]);
-  }
-});
-
-
-/***/ }),
-
-/***/ 9606:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var ctx = __webpack_require__(1528);
-var $export = __webpack_require__(5772);
-var toObject = __webpack_require__(6033);
-var call = __webpack_require__(3221);
-var isArrayIter = __webpack_require__(8908);
-var toLength = __webpack_require__(6078);
-var createProperty = __webpack_require__(6644);
-var getIterFn = __webpack_require__(7107);
-
-$export($export.S + $export.F * !__webpack_require__(3143)(function (iter) { Array.from(iter); }), 'Array', {
-  // 22.1.2.1 Array.from(arrayLike, mapfn = undefined, thisArg = undefined)
-  from: function from(arrayLike /* , mapfn = undefined, thisArg = undefined */) {
-    var O = toObject(arrayLike);
-    var C = typeof this == 'function' ? this : Array;
-    var aLen = arguments.length;
-    var mapfn = aLen > 1 ? arguments[1] : undefined;
-    var mapping = mapfn !== undefined;
-    var index = 0;
-    var iterFn = getIterFn(O);
-    var length, result, step, iterator;
-    if (mapping) mapfn = ctx(mapfn, aLen > 2 ? arguments[2] : undefined, 2);
-    // if object isn't iterable or it's array with default iterator - use simple case
-    if (iterFn != undefined && !(C == Array && isArrayIter(iterFn))) {
-      for (iterator = iterFn.call(O), result = new C(); !(step = iterator.next()).done; index++) {
-        createProperty(result, index, mapping ? call(iterator, mapfn, [step.value, index], true) : step.value);
-      }
-    } else {
-      length = toLength(O.length);
-      for (result = new C(length); length > index; index++) {
-        createProperty(result, index, mapping ? mapfn(O[index], index) : O[index]);
-      }
-    }
-    result.length = index;
-    return result;
-  }
-});
-
-
-/***/ }),
-
-/***/ 5155:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var $indexOf = __webpack_require__(9021)(false);
-var $native = [].indexOf;
-var NEGATIVE_ZERO = !!$native && 1 / [1].indexOf(1, -0) < 0;
-
-$export($export.P + $export.F * (NEGATIVE_ZERO || !__webpack_require__(225)($native)), 'Array', {
-  // 22.1.3.11 / 15.4.4.14 Array.prototype.indexOf(searchElement [, fromIndex])
-  indexOf: function indexOf(searchElement /* , fromIndex = 0 */) {
-    return NEGATIVE_ZERO
-      // convert -0 to +0
-      ? $native.apply(this, arguments) || 0
-      : $indexOf(this, searchElement, arguments[1]);
-  }
-});
-
-
-/***/ }),
-
-/***/ 5867:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 22.1.2.2 / 15.4.3.2 Array.isArray(arg)
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Array', { isArray: __webpack_require__(9141) });
-
-
-/***/ }),
-
-/***/ 7680:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var addToUnscopables = __webpack_require__(2094);
-var step = __webpack_require__(5038);
-var Iterators = __webpack_require__(3988);
-var toIObject = __webpack_require__(5703);
-
-// 22.1.3.4 Array.prototype.entries()
-// 22.1.3.13 Array.prototype.keys()
-// 22.1.3.29 Array.prototype.values()
-// 22.1.3.30 Array.prototype[@@iterator]()
-module.exports = __webpack_require__(1195)(Array, 'Array', function (iterated, kind) {
-  this._t = toIObject(iterated); // target
-  this._i = 0;                   // next index
-  this._k = kind;                // kind
-// 22.1.5.2.1 %ArrayIteratorPrototype%.next()
-}, function () {
-  var O = this._t;
-  var kind = this._k;
-  var index = this._i++;
-  if (!O || index >= O.length) {
-    this._t = undefined;
-    return step(1);
-  }
-  if (kind == 'keys') return step(0, index);
-  if (kind == 'values') return step(0, O[index]);
-  return step(0, [index, O[index]]);
-}, 'values');
-
-// argumentsList[@@iterator] is %ArrayProto_values% (9.4.4.6, 9.4.4.7)
-Iterators.Arguments = Iterators.Array;
-
-addToUnscopables('keys');
-addToUnscopables('values');
-addToUnscopables('entries');
-
-
-/***/ }),
-
-/***/ 8466:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// 22.1.3.13 Array.prototype.join(separator)
-var $export = __webpack_require__(5772);
-var toIObject = __webpack_require__(5703);
-var arrayJoin = [].join;
-
-// fallback for not array-like strings
-$export($export.P + $export.F * (__webpack_require__(8467) != Object || !__webpack_require__(225)(arrayJoin)), 'Array', {
-  join: function join(separator) {
-    return arrayJoin.call(toIObject(this), separator === undefined ? ',' : separator);
-  }
-});
-
-
-/***/ }),
-
-/***/ 3133:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var toIObject = __webpack_require__(5703);
-var toInteger = __webpack_require__(3338);
-var toLength = __webpack_require__(6078);
-var $native = [].lastIndexOf;
-var NEGATIVE_ZERO = !!$native && 1 / [1].lastIndexOf(1, -0) < 0;
-
-$export($export.P + $export.F * (NEGATIVE_ZERO || !__webpack_require__(225)($native)), 'Array', {
-  // 22.1.3.14 / 15.4.4.15 Array.prototype.lastIndexOf(searchElement [, fromIndex])
-  lastIndexOf: function lastIndexOf(searchElement /* , fromIndex = @[*-1] */) {
-    // convert -0 to +0
-    if (NEGATIVE_ZERO) return $native.apply(this, arguments) || 0;
-    var O = toIObject(this);
-    var length = toLength(O.length);
-    var index = length - 1;
-    if (arguments.length > 1) index = Math.min(index, toInteger(arguments[1]));
-    if (index < 0) index = length + index;
-    for (;index >= 0; index--) if (index in O) if (O[index] === searchElement) return index || 0;
-    return -1;
-  }
-});
-
-
-/***/ }),
-
-/***/ 286:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var $map = __webpack_require__(8309)(1);
-
-$export($export.P + $export.F * !__webpack_require__(225)([].map, true), 'Array', {
-  // 22.1.3.15 / 15.4.4.19 Array.prototype.map(callbackfn [, thisArg])
-  map: function map(callbackfn /* , thisArg */) {
-    return $map(this, callbackfn, arguments[1]);
-  }
-});
-
-
-/***/ }),
-
-/***/ 9174:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var createProperty = __webpack_require__(6644);
-
-// WebKit Array.of isn't generic
-$export($export.S + $export.F * __webpack_require__(8625)(function () {
-  function F() { /* empty */ }
-  return !(Array.of.call(F) instanceof F);
-}), 'Array', {
-  // 22.1.2.3 Array.of( ...items)
-  of: function of(/* ...args */) {
-    var index = 0;
-    var aLen = arguments.length;
-    var result = new (typeof this == 'function' ? this : Array)(aLen);
-    while (aLen > index) createProperty(result, index, arguments[index++]);
-    result.length = aLen;
-    return result;
-  }
-});
-
-
-/***/ }),
-
-/***/ 8312:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var $reduce = __webpack_require__(9291);
-
-$export($export.P + $export.F * !__webpack_require__(225)([].reduceRight, true), 'Array', {
-  // 22.1.3.19 / 15.4.4.22 Array.prototype.reduceRight(callbackfn [, initialValue])
-  reduceRight: function reduceRight(callbackfn /* , initialValue */) {
-    return $reduce(this, callbackfn, arguments.length, arguments[1], true);
-  }
-});
-
-
-/***/ }),
-
-/***/ 9399:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var $reduce = __webpack_require__(9291);
-
-$export($export.P + $export.F * !__webpack_require__(225)([].reduce, true), 'Array', {
-  // 22.1.3.18 / 15.4.4.21 Array.prototype.reduce(callbackfn [, initialValue])
-  reduce: function reduce(callbackfn /* , initialValue */) {
-    return $reduce(this, callbackfn, arguments.length, arguments[1], false);
-  }
-});
-
-
-/***/ }),
-
-/***/ 7209:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var html = __webpack_require__(8954);
-var cof = __webpack_require__(6688);
-var toAbsoluteIndex = __webpack_require__(8615);
-var toLength = __webpack_require__(6078);
-var arraySlice = [].slice;
-
-// fallback for not array-like ES3 strings and DOM objects
-$export($export.P + $export.F * __webpack_require__(8625)(function () {
-  if (html) arraySlice.call(html);
-}), 'Array', {
-  slice: function slice(begin, end) {
-    var len = toLength(this.length);
-    var klass = cof(this);
-    end = end === undefined ? len : end;
-    if (klass == 'Array') return arraySlice.call(this, begin, end);
-    var start = toAbsoluteIndex(begin, len);
-    var upTo = toAbsoluteIndex(end, len);
-    var size = toLength(upTo - start);
-    var cloned = new Array(size);
-    var i = 0;
-    for (; i < size; i++) cloned[i] = klass == 'String'
-      ? this.charAt(start + i)
-      : this[start + i];
-    return cloned;
-  }
-});
-
-
-/***/ }),
-
-/***/ 3231:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var $some = __webpack_require__(8309)(3);
-
-$export($export.P + $export.F * !__webpack_require__(225)([].some, true), 'Array', {
-  // 22.1.3.23 / 15.4.4.17 Array.prototype.some(callbackfn [, thisArg])
-  some: function some(callbackfn /* , thisArg */) {
-    return $some(this, callbackfn, arguments[1]);
-  }
-});
-
-
-/***/ }),
-
-/***/ 1796:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var aFunction = __webpack_require__(2761);
-var toObject = __webpack_require__(6033);
-var fails = __webpack_require__(8625);
-var $sort = [].sort;
-var test = [1, 2, 3];
-
-$export($export.P + $export.F * (fails(function () {
-  // IE8-
-  test.sort(undefined);
-}) || !fails(function () {
-  // V8 bug
-  test.sort(null);
-  // Old WebKit
-}) || !__webpack_require__(225)($sort)), 'Array', {
-  // 22.1.3.25 Array.prototype.sort(comparefn)
-  sort: function sort(comparefn) {
-    return comparefn === undefined
-      ? $sort.call(toObject(this))
-      : $sort.call(toObject(this), aFunction(comparefn));
-  }
-});
-
-
-/***/ }),
-
-/***/ 652:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(9766)('Array');
-
-
-/***/ }),
-
-/***/ 817:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.3.3.1 / 15.9.4.4 Date.now()
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Date', { now: function () { return new Date().getTime(); } });
-
-
-/***/ }),
-
-/***/ 5079:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.3.4.36 / 15.9.5.43 Date.prototype.toISOString()
-var $export = __webpack_require__(5772);
-var toISOString = __webpack_require__(2626);
-
-// PhantomJS / old WebKit has a broken implementations
-$export($export.P + $export.F * (Date.prototype.toISOString !== toISOString), 'Date', {
-  toISOString: toISOString
-});
-
-
-/***/ }),
-
-/***/ 5337:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var toObject = __webpack_require__(6033);
-var toPrimitive = __webpack_require__(1382);
-
-$export($export.P + $export.F * __webpack_require__(8625)(function () {
-  return new Date(NaN).toJSON() !== null
-    || Date.prototype.toJSON.call({ toISOString: function () { return 1; } }) !== 1;
-}), 'Date', {
-  // eslint-disable-next-line no-unused-vars
-  toJSON: function toJSON(key) {
-    var O = toObject(this);
-    var pv = toPrimitive(O);
-    return typeof pv == 'number' && !isFinite(pv) ? null : O.toISOString();
-  }
-});
-
-
-/***/ }),
-
-/***/ 4163:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var TO_PRIMITIVE = __webpack_require__(2190)('toPrimitive');
-var proto = Date.prototype;
-
-if (!(TO_PRIMITIVE in proto)) __webpack_require__(4216)(proto, TO_PRIMITIVE, __webpack_require__(9296));
-
-
-/***/ }),
-
-/***/ 5105:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var DateProto = Date.prototype;
-var INVALID_DATE = 'Invalid Date';
-var TO_STRING = 'toString';
-var $toString = DateProto[TO_STRING];
-var getTime = DateProto.getTime;
-if (new Date(NaN) + '' != INVALID_DATE) {
-  __webpack_require__(7738)(DateProto, TO_STRING, function toString() {
-    var value = getTime.call(this);
-    // eslint-disable-next-line no-self-compare
-    return value === value ? $toString.call(this) : INVALID_DATE;
-  });
-}
-
-
-/***/ }),
-
-/***/ 8629:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.2.3.2 / 15.3.4.5 Function.prototype.bind(thisArg, args...)
-var $export = __webpack_require__(5772);
-
-$export($export.P, 'Function', { bind: __webpack_require__(9337) });
-
-
-/***/ }),
-
-/***/ 5694:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var isObject = __webpack_require__(7334);
-var getPrototypeOf = __webpack_require__(9002);
-var HAS_INSTANCE = __webpack_require__(2190)('hasInstance');
-var FunctionProto = Function.prototype;
-// 19.2.3.6 Function.prototype[@@hasInstance](V)
-if (!(HAS_INSTANCE in FunctionProto)) __webpack_require__(8558).f(FunctionProto, HAS_INSTANCE, { value: function (O) {
-  if (typeof this != 'function' || !isObject(O)) return false;
-  if (!isObject(this.prototype)) return O instanceof this;
-  // for environment w/o native `@@hasInstance` logic enough `instanceof`, but add this:
-  while (O = getPrototypeOf(O)) if (this.prototype === O) return true;
-  return false;
-} });
-
-
-/***/ }),
-
-/***/ 9745:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var dP = __webpack_require__(8558).f;
-var FProto = Function.prototype;
-var nameRE = /^\s*function ([^ (]*)/;
-var NAME = 'name';
-
-// 19.2.4.2 name
-NAME in FProto || __webpack_require__(6628) && dP(FProto, NAME, {
-  configurable: true,
-  get: function () {
-    try {
-      return ('' + this).match(nameRE)[1];
-    } catch (e) {
-      return '';
-    }
-  }
-});
-
-
-/***/ }),
-
-/***/ 1239:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var strong = __webpack_require__(8156);
-var validate = __webpack_require__(9060);
-var MAP = 'Map';
-
-// 23.1 Map Objects
-module.exports = __webpack_require__(7611)(MAP, function (get) {
-  return function Map() { return get(this, arguments.length > 0 ? arguments[0] : undefined); };
-}, {
-  // 23.1.3.6 Map.prototype.get(key)
-  get: function get(key) {
-    var entry = strong.getEntry(validate(this, MAP), key);
-    return entry && entry.v;
-  },
-  // 23.1.3.9 Map.prototype.set(key, value)
-  set: function set(key, value) {
-    return strong.def(validate(this, MAP), key === 0 ? 0 : key, value);
-  }
-}, strong, true);
-
-
-/***/ }),
-
-/***/ 5886:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.3 Math.acosh(x)
-var $export = __webpack_require__(5772);
-var log1p = __webpack_require__(922);
-var sqrt = Math.sqrt;
-var $acosh = Math.acosh;
-
-$export($export.S + $export.F * !($acosh
-  // V8 bug: https://code.google.com/p/v8/issues/detail?id=3509
-  && Math.floor($acosh(Number.MAX_VALUE)) == 710
-  // Tor Browser bug: Math.acosh(Infinity) -> NaN
-  && $acosh(Infinity) == Infinity
-), 'Math', {
-  acosh: function acosh(x) {
-    return (x = +x) < 1 ? NaN : x > 94906265.62425156
-      ? Math.log(x) + Math.LN2
-      : log1p(x - 1 + sqrt(x - 1) * sqrt(x + 1));
-  }
-});
-
-
-/***/ }),
-
-/***/ 91:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.5 Math.asinh(x)
-var $export = __webpack_require__(5772);
-var $asinh = Math.asinh;
-
-function asinh(x) {
-  return !isFinite(x = +x) || x == 0 ? x : x < 0 ? -asinh(-x) : Math.log(x + Math.sqrt(x * x + 1));
-}
-
-// Tor Browser bug: Math.asinh(0) -> -0
-$export($export.S + $export.F * !($asinh && 1 / $asinh(0) > 0), 'Math', { asinh: asinh });
-
-
-/***/ }),
-
-/***/ 6799:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.7 Math.atanh(x)
-var $export = __webpack_require__(5772);
-var $atanh = Math.atanh;
-
-// Tor Browser bug: Math.atanh(-0) -> 0
-$export($export.S + $export.F * !($atanh && 1 / $atanh(-0) < 0), 'Math', {
-  atanh: function atanh(x) {
-    return (x = +x) == 0 ? x : Math.log((1 + x) / (1 - x)) / 2;
-  }
-});
-
-
-/***/ }),
-
-/***/ 1570:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.9 Math.cbrt(x)
-var $export = __webpack_require__(5772);
-var sign = __webpack_require__(2697);
-
-$export($export.S, 'Math', {
-  cbrt: function cbrt(x) {
-    return sign(x = +x) * Math.pow(Math.abs(x), 1 / 3);
-  }
-});
-
-
-/***/ }),
-
-/***/ 6006:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.11 Math.clz32(x)
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Math', {
-  clz32: function clz32(x) {
-    return (x >>>= 0) ? 31 - Math.floor(Math.log(x + 0.5) * Math.LOG2E) : 32;
-  }
-});
-
-
-/***/ }),
-
-/***/ 8377:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.12 Math.cosh(x)
-var $export = __webpack_require__(5772);
-var exp = Math.exp;
-
-$export($export.S, 'Math', {
-  cosh: function cosh(x) {
-    return (exp(x = +x) + exp(-x)) / 2;
-  }
-});
-
-
-/***/ }),
-
-/***/ 108:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.14 Math.expm1(x)
-var $export = __webpack_require__(5772);
-var $expm1 = __webpack_require__(9489);
-
-$export($export.S + $export.F * ($expm1 != Math.expm1), 'Math', { expm1: $expm1 });
-
-
-/***/ }),
-
-/***/ 905:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.16 Math.fround(x)
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Math', { fround: __webpack_require__(4519) });
-
-
-/***/ }),
-
-/***/ 8103:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.17 Math.hypot([value1[, value2[, … ]]])
-var $export = __webpack_require__(5772);
-var abs = Math.abs;
-
-$export($export.S, 'Math', {
-  hypot: function hypot(value1, value2) { // eslint-disable-line no-unused-vars
-    var sum = 0;
-    var i = 0;
-    var aLen = arguments.length;
-    var larg = 0;
-    var arg, div;
-    while (i < aLen) {
-      arg = abs(arguments[i++]);
-      if (larg < arg) {
-        div = larg / arg;
-        sum = sum * div * div + 1;
-        larg = arg;
-      } else if (arg > 0) {
-        div = arg / larg;
-        sum += div * div;
-      } else sum += arg;
-    }
-    return larg === Infinity ? Infinity : larg * Math.sqrt(sum);
-  }
-});
-
-
-/***/ }),
-
-/***/ 5937:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.18 Math.imul(x, y)
-var $export = __webpack_require__(5772);
-var $imul = Math.imul;
-
-// some WebKit versions fails with big numbers, some has wrong arity
-$export($export.S + $export.F * __webpack_require__(8625)(function () {
-  return $imul(0xffffffff, 5) != -5 || $imul.length != 2;
-}), 'Math', {
-  imul: function imul(x, y) {
-    var UINT16 = 0xffff;
-    var xn = +x;
-    var yn = +y;
-    var xl = UINT16 & xn;
-    var yl = UINT16 & yn;
-    return 0 | xl * yl + ((UINT16 & xn >>> 16) * yl + xl * (UINT16 & yn >>> 16) << 16 >>> 0);
-  }
-});
-
-
-/***/ }),
-
-/***/ 9979:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.21 Math.log10(x)
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Math', {
-  log10: function log10(x) {
-    return Math.log(x) * Math.LOG10E;
-  }
-});
-
-
-/***/ }),
-
-/***/ 3601:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.20 Math.log1p(x)
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Math', { log1p: __webpack_require__(922) });
-
-
-/***/ }),
-
-/***/ 4226:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.22 Math.log2(x)
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Math', {
-  log2: function log2(x) {
-    return Math.log(x) / Math.LN2;
-  }
-});
-
-
-/***/ }),
-
-/***/ 9750:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.28 Math.sign(x)
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Math', { sign: __webpack_require__(2697) });
-
-
-/***/ }),
-
-/***/ 1462:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.30 Math.sinh(x)
-var $export = __webpack_require__(5772);
-var expm1 = __webpack_require__(9489);
-var exp = Math.exp;
-
-// V8 near Chromium 38 has a problem with very small numbers
-$export($export.S + $export.F * __webpack_require__(8625)(function () {
-  return !Math.sinh(-2e-17) != -2e-17;
-}), 'Math', {
-  sinh: function sinh(x) {
-    return Math.abs(x = +x) < 1
-      ? (expm1(x) - expm1(-x)) / 2
-      : (exp(x - 1) - exp(-x - 1)) * (Math.E / 2);
-  }
-});
-
-
-/***/ }),
-
-/***/ 4773:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.33 Math.tanh(x)
-var $export = __webpack_require__(5772);
-var expm1 = __webpack_require__(9489);
-var exp = Math.exp;
-
-$export($export.S, 'Math', {
-  tanh: function tanh(x) {
-    var a = expm1(x = +x);
-    var b = expm1(-x);
-    return a == Infinity ? 1 : b == Infinity ? -1 : (a - b) / (exp(x) + exp(-x));
-  }
-});
-
-
-/***/ }),
-
-/***/ 2421:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.2.2.34 Math.trunc(x)
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Math', {
-  trunc: function trunc(it) {
-    return (it > 0 ? Math.floor : Math.ceil)(it);
-  }
-});
-
-
-/***/ }),
-
-/***/ 6349:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var global = __webpack_require__(8113);
-var has = __webpack_require__(4040);
-var cof = __webpack_require__(6688);
-var inheritIfRequired = __webpack_require__(8938);
-var toPrimitive = __webpack_require__(1382);
-var fails = __webpack_require__(8625);
-var gOPN = __webpack_require__(6604).f;
-var gOPD = __webpack_require__(4662).f;
-var dP = __webpack_require__(8558).f;
-var $trim = __webpack_require__(8487).trim;
-var NUMBER = 'Number';
-var $Number = global[NUMBER];
-var Base = $Number;
-var proto = $Number.prototype;
-// Opera ~12 has broken Object#toString
-var BROKEN_COF = cof(__webpack_require__(2897)(proto)) == NUMBER;
-var TRIM = 'trim' in String.prototype;
-
-// 7.1.3 ToNumber(argument)
-var toNumber = function (argument) {
-  var it = toPrimitive(argument, false);
-  if (typeof it == 'string' && it.length > 2) {
-    it = TRIM ? it.trim() : $trim(it, 3);
-    var first = it.charCodeAt(0);
-    var third, radix, maxCode;
-    if (first === 43 || first === 45) {
-      third = it.charCodeAt(2);
-      if (third === 88 || third === 120) return NaN; // Number('+0x1') should be NaN, old V8 fix
-    } else if (first === 48) {
-      switch (it.charCodeAt(1)) {
-        case 66: case 98: radix = 2; maxCode = 49; break; // fast equal /^0b[01]+$/i
-        case 79: case 111: radix = 8; maxCode = 55; break; // fast equal /^0o[0-7]+$/i
-        default: return +it;
-      }
-      for (var digits = it.slice(2), i = 0, l = digits.length, code; i < l; i++) {
-        code = digits.charCodeAt(i);
-        // parseInt parses a string to a first unavailable symbol
-        // but ToNumber should return NaN if a string contains unavailable symbols
-        if (code < 48 || code > maxCode) return NaN;
-      } return parseInt(digits, radix);
-    }
-  } return +it;
-};
-
-if (!$Number(' 0o1') || !$Number('0b1') || $Number('+0x1')) {
-  $Number = function Number(value) {
-    var it = arguments.length < 1 ? 0 : value;
-    var that = this;
-    return that instanceof $Number
-      // check on 1..constructor(foo) case
-      && (BROKEN_COF ? fails(function () { proto.valueOf.call(that); }) : cof(that) != NUMBER)
-        ? inheritIfRequired(new Base(toNumber(it)), that, $Number) : toNumber(it);
-  };
-  for (var keys = __webpack_require__(6628) ? gOPN(Base) : (
-    // ES3:
-    'MAX_VALUE,MIN_VALUE,NaN,NEGATIVE_INFINITY,POSITIVE_INFINITY,' +
-    // ES6 (in case, if modules with ES6 Number statics required before):
-    'EPSILON,isFinite,isInteger,isNaN,isSafeInteger,MAX_SAFE_INTEGER,' +
-    'MIN_SAFE_INTEGER,parseFloat,parseInt,isInteger'
-  ).split(','), j = 0, key; keys.length > j; j++) {
-    if (has(Base, key = keys[j]) && !has($Number, key)) {
-      dP($Number, key, gOPD(Base, key));
-    }
-  }
-  $Number.prototype = proto;
-  proto.constructor = $Number;
-  __webpack_require__(7738)(global, NUMBER, $Number);
-}
-
-
-/***/ }),
-
-/***/ 2211:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.1.2.1 Number.EPSILON
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Number', { EPSILON: Math.pow(2, -52) });
-
-
-/***/ }),
-
-/***/ 3730:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.1.2.2 Number.isFinite(number)
-var $export = __webpack_require__(5772);
-var _isFinite = __webpack_require__(8113).isFinite;
-
-$export($export.S, 'Number', {
-  isFinite: function isFinite(it) {
-    return typeof it == 'number' && _isFinite(it);
-  }
-});
-
-
-/***/ }),
-
-/***/ 6729:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.1.2.3 Number.isInteger(number)
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Number', { isInteger: __webpack_require__(3917) });
-
-
-/***/ }),
-
-/***/ 7374:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.1.2.4 Number.isNaN(number)
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Number', {
-  isNaN: function isNaN(number) {
-    // eslint-disable-next-line no-self-compare
-    return number != number;
-  }
-});
-
-
-/***/ }),
-
-/***/ 2095:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.1.2.5 Number.isSafeInteger(number)
-var $export = __webpack_require__(5772);
-var isInteger = __webpack_require__(3917);
-var abs = Math.abs;
-
-$export($export.S, 'Number', {
-  isSafeInteger: function isSafeInteger(number) {
-    return isInteger(number) && abs(number) <= 0x1fffffffffffff;
-  }
-});
-
-
-/***/ }),
-
-/***/ 6362:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.1.2.6 Number.MAX_SAFE_INTEGER
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Number', { MAX_SAFE_INTEGER: 0x1fffffffffffff });
-
-
-/***/ }),
-
-/***/ 6329:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 20.1.2.10 Number.MIN_SAFE_INTEGER
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Number', { MIN_SAFE_INTEGER: -0x1fffffffffffff });
-
-
-/***/ }),
-
-/***/ 7463:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var $export = __webpack_require__(5772);
-var $parseFloat = __webpack_require__(5575);
-// 20.1.2.12 Number.parseFloat(string)
-$export($export.S + $export.F * (Number.parseFloat != $parseFloat), 'Number', { parseFloat: $parseFloat });
-
-
-/***/ }),
-
-/***/ 5874:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var $export = __webpack_require__(5772);
-var $parseInt = __webpack_require__(929);
-// 20.1.2.13 Number.parseInt(string, radix)
-$export($export.S + $export.F * (Number.parseInt != $parseInt), 'Number', { parseInt: $parseInt });
-
-
-/***/ }),
-
-/***/ 8110:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var toInteger = __webpack_require__(3338);
-var aNumberValue = __webpack_require__(1525);
-var repeat = __webpack_require__(7160);
-var $toFixed = 1.0.toFixed;
-var floor = Math.floor;
-var data = [0, 0, 0, 0, 0, 0];
-var ERROR = 'Number.toFixed: incorrect invocation!';
-var ZERO = '0';
-
-var multiply = function (n, c) {
-  var i = -1;
-  var c2 = c;
-  while (++i < 6) {
-    c2 += n * data[i];
-    data[i] = c2 % 1e7;
-    c2 = floor(c2 / 1e7);
-  }
-};
-var divide = function (n) {
-  var i = 6;
-  var c = 0;
-  while (--i >= 0) {
-    c += data[i];
-    data[i] = floor(c / n);
-    c = (c % n) * 1e7;
-  }
-};
-var numToString = function () {
-  var i = 6;
-  var s = '';
-  while (--i >= 0) {
-    if (s !== '' || i === 0 || data[i] !== 0) {
-      var t = String(data[i]);
-      s = s === '' ? t : s + repeat.call(ZERO, 7 - t.length) + t;
-    }
-  } return s;
-};
-var pow = function (x, n, acc) {
-  return n === 0 ? acc : n % 2 === 1 ? pow(x, n - 1, acc * x) : pow(x * x, n / 2, acc);
-};
-var log = function (x) {
-  var n = 0;
-  var x2 = x;
-  while (x2 >= 4096) {
-    n += 12;
-    x2 /= 4096;
-  }
-  while (x2 >= 2) {
-    n += 1;
-    x2 /= 2;
-  } return n;
-};
-
-$export($export.P + $export.F * (!!$toFixed && (
-  0.00008.toFixed(3) !== '0.000' ||
-  0.9.toFixed(0) !== '1' ||
-  1.255.toFixed(2) !== '1.25' ||
-  1000000000000000128.0.toFixed(0) !== '1000000000000000128'
-) || !__webpack_require__(8625)(function () {
-  // V8 ~ Android 4.3-
-  $toFixed.call({});
-})), 'Number', {
-  toFixed: function toFixed(fractionDigits) {
-    var x = aNumberValue(this, ERROR);
-    var f = toInteger(fractionDigits);
-    var s = '';
-    var m = ZERO;
-    var e, z, j, k;
-    if (f < 0 || f > 20) throw RangeError(ERROR);
-    // eslint-disable-next-line no-self-compare
-    if (x != x) return 'NaN';
-    if (x <= -1e21 || x >= 1e21) return String(x);
-    if (x < 0) {
-      s = '-';
-      x = -x;
-    }
-    if (x > 1e-21) {
-      e = log(x * pow(2, 69, 1)) - 69;
-      z = e < 0 ? x * pow(2, -e, 1) : x / pow(2, e, 1);
-      z *= 0x10000000000000;
-      e = 52 - e;
-      if (e > 0) {
-        multiply(0, z);
-        j = f;
-        while (j >= 7) {
-          multiply(1e7, 0);
-          j -= 7;
-        }
-        multiply(pow(10, j, 1), 0);
-        j = e - 1;
-        while (j >= 23) {
-          divide(1 << 23);
-          j -= 23;
-        }
-        divide(1 << j);
-        multiply(1, 1);
-        divide(2);
-        m = numToString();
-      } else {
-        multiply(0, z);
-        multiply(1 << -e, 0);
-        m = numToString() + repeat.call(ZERO, f);
-      }
-    }
-    if (f > 0) {
-      k = m.length;
-      m = s + (k <= f ? '0.' + repeat.call(ZERO, f - k) + m : m.slice(0, k - f) + '.' + m.slice(k - f));
-    } else {
-      m = s + m;
-    } return m;
-  }
-});
-
-
-/***/ }),
-
-/***/ 3689:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var $fails = __webpack_require__(8625);
-var aNumberValue = __webpack_require__(1525);
-var $toPrecision = 1.0.toPrecision;
-
-$export($export.P + $export.F * ($fails(function () {
-  // IE7-
-  return $toPrecision.call(1, undefined) !== '1';
-}) || !$fails(function () {
-  // V8 ~ Android 4.3-
-  $toPrecision.call({});
-})), 'Number', {
-  toPrecision: function toPrecision(precision) {
-    var that = aNumberValue(this, 'Number#toPrecision: incorrect invocation!');
-    return precision === undefined ? $toPrecision.call(that) : $toPrecision.call(that, precision);
-  }
-});
-
-
-/***/ }),
-
-/***/ 9773:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.3.1 Object.assign(target, source)
-var $export = __webpack_require__(5772);
-
-$export($export.S + $export.F, 'Object', { assign: __webpack_require__(7029) });
-
-
-/***/ }),
-
-/***/ 9701:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var $export = __webpack_require__(5772);
-// 19.1.2.2 / 15.2.3.5 Object.create(O [, Properties])
-$export($export.S, 'Object', { create: __webpack_require__(2897) });
-
-
-/***/ }),
-
-/***/ 8344:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var $export = __webpack_require__(5772);
-// 19.1.2.3 / 15.2.3.7 Object.defineProperties(O, Properties)
-$export($export.S + $export.F * !__webpack_require__(6628), 'Object', { defineProperties: __webpack_require__(7331) });
-
-
-/***/ }),
-
-/***/ 5843:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var $export = __webpack_require__(5772);
-// 19.1.2.4 / 15.2.3.6 Object.defineProperty(O, P, Attributes)
-$export($export.S + $export.F * !__webpack_require__(6628), 'Object', { defineProperty: __webpack_require__(8558).f });
-
-
-/***/ }),
-
-/***/ 8338:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.2.5 Object.freeze(O)
-var isObject = __webpack_require__(7334);
-var meta = __webpack_require__(998).onFreeze;
-
-__webpack_require__(468)('freeze', function ($freeze) {
-  return function freeze(it) {
-    return $freeze && isObject(it) ? $freeze(meta(it)) : it;
-  };
-});
-
-
-/***/ }),
-
-/***/ 541:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.2.6 Object.getOwnPropertyDescriptor(O, P)
-var toIObject = __webpack_require__(5703);
-var $getOwnPropertyDescriptor = __webpack_require__(4662).f;
-
-__webpack_require__(468)('getOwnPropertyDescriptor', function () {
-  return function getOwnPropertyDescriptor(it, key) {
-    return $getOwnPropertyDescriptor(toIObject(it), key);
-  };
-});
-
-
-/***/ }),
-
-/***/ 9770:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.2.7 Object.getOwnPropertyNames(O)
-__webpack_require__(468)('getOwnPropertyNames', function () {
-  return __webpack_require__(5259).f;
-});
-
-
-/***/ }),
-
-/***/ 8904:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.2.9 Object.getPrototypeOf(O)
-var toObject = __webpack_require__(6033);
-var $getPrototypeOf = __webpack_require__(9002);
-
-__webpack_require__(468)('getPrototypeOf', function () {
-  return function getPrototypeOf(it) {
-    return $getPrototypeOf(toObject(it));
-  };
-});
-
-
-/***/ }),
-
-/***/ 3310:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.2.11 Object.isExtensible(O)
-var isObject = __webpack_require__(7334);
-
-__webpack_require__(468)('isExtensible', function ($isExtensible) {
-  return function isExtensible(it) {
-    return isObject(it) ? $isExtensible ? $isExtensible(it) : true : false;
-  };
-});
-
-
-/***/ }),
-
-/***/ 7070:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.2.12 Object.isFrozen(O)
-var isObject = __webpack_require__(7334);
-
-__webpack_require__(468)('isFrozen', function ($isFrozen) {
-  return function isFrozen(it) {
-    return isObject(it) ? $isFrozen ? $isFrozen(it) : false : true;
-  };
-});
-
-
-/***/ }),
-
-/***/ 9163:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.2.13 Object.isSealed(O)
-var isObject = __webpack_require__(7334);
-
-__webpack_require__(468)('isSealed', function ($isSealed) {
-  return function isSealed(it) {
-    return isObject(it) ? $isSealed ? $isSealed(it) : false : true;
-  };
-});
-
-
-/***/ }),
-
-/***/ 9020:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.3.10 Object.is(value1, value2)
-var $export = __webpack_require__(5772);
-$export($export.S, 'Object', { is: __webpack_require__(339) });
-
-
-/***/ }),
-
-/***/ 4978:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.2.14 Object.keys(O)
-var toObject = __webpack_require__(6033);
-var $keys = __webpack_require__(2912);
-
-__webpack_require__(468)('keys', function () {
-  return function keys(it) {
-    return $keys(toObject(it));
-  };
-});
-
-
-/***/ }),
-
-/***/ 3668:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.2.15 Object.preventExtensions(O)
-var isObject = __webpack_require__(7334);
-var meta = __webpack_require__(998).onFreeze;
-
-__webpack_require__(468)('preventExtensions', function ($preventExtensions) {
-  return function preventExtensions(it) {
-    return $preventExtensions && isObject(it) ? $preventExtensions(meta(it)) : it;
-  };
-});
-
-
-/***/ }),
-
-/***/ 7941:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.2.17 Object.seal(O)
-var isObject = __webpack_require__(7334);
-var meta = __webpack_require__(998).onFreeze;
-
-__webpack_require__(468)('seal', function ($seal) {
-  return function seal(it) {
-    return $seal && isObject(it) ? $seal(meta(it)) : it;
-  };
-});
-
-
-/***/ }),
-
-/***/ 4210:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 19.1.3.19 Object.setPrototypeOf(O, proto)
-var $export = __webpack_require__(5772);
-$export($export.S, 'Object', { setPrototypeOf: __webpack_require__(6095).set });
-
-
-/***/ }),
-
-/***/ 6139:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// 19.1.3.6 Object.prototype.toString()
-var classof = __webpack_require__(106);
-var test = {};
-test[__webpack_require__(2190)('toStringTag')] = 'z';
-if (test + '' != '[object z]') {
-  __webpack_require__(7738)(Object.prototype, 'toString', function toString() {
-    return '[object ' + classof(this) + ']';
-  }, true);
-}
-
-
-/***/ }),
-
-/***/ 5821:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var $export = __webpack_require__(5772);
-var $parseFloat = __webpack_require__(5575);
-// 18.2.4 parseFloat(string)
-$export($export.G + $export.F * (parseFloat != $parseFloat), { parseFloat: $parseFloat });
-
-
-/***/ }),
-
-/***/ 6130:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var $export = __webpack_require__(5772);
-var $parseInt = __webpack_require__(929);
-// 18.2.5 parseInt(string, radix)
-$export($export.G + $export.F * (parseInt != $parseInt), { parseInt: $parseInt });
-
-
-/***/ }),
-
-/***/ 2235:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var LIBRARY = __webpack_require__(1422);
-var global = __webpack_require__(8113);
-var ctx = __webpack_require__(1528);
-var classof = __webpack_require__(106);
-var $export = __webpack_require__(5772);
-var isObject = __webpack_require__(7334);
-var aFunction = __webpack_require__(2761);
-var anInstance = __webpack_require__(5824);
-var forOf = __webpack_require__(1891);
-var speciesConstructor = __webpack_require__(1987);
-var task = __webpack_require__(9124).set;
-var microtask = __webpack_require__(3492)();
-var newPromiseCapabilityModule = __webpack_require__(8577);
-var perform = __webpack_require__(9739);
-var userAgent = __webpack_require__(5822);
-var promiseResolve = __webpack_require__(5151);
-var PROMISE = 'Promise';
-var TypeError = global.TypeError;
-var process = global.process;
-var versions = process && process.versions;
-var v8 = versions && versions.v8 || '';
-var $Promise = global[PROMISE];
-var isNode = classof(process) == 'process';
-var empty = function () { /* empty */ };
-var Internal, newGenericPromiseCapability, OwnPromiseCapability, Wrapper;
-var newPromiseCapability = newGenericPromiseCapability = newPromiseCapabilityModule.f;
-
-var USE_NATIVE = !!function () {
-  try {
-    // correct subclassing with @@species support
-    var promise = $Promise.resolve(1);
-    var FakePromise = (promise.constructor = {})[__webpack_require__(2190)('species')] = function (exec) {
-      exec(empty, empty);
-    };
-    // unhandled rejections tracking support, NodeJS Promise without it fails @@species test
-    return (isNode || typeof PromiseRejectionEvent == 'function')
-      && promise.then(empty) instanceof FakePromise
-      // v8 6.6 (Node 10 and Chrome 66) have a bug with resolving custom thenables
-      // https://bugs.chromium.org/p/chromium/issues/detail?id=830565
-      // we can't detect it synchronously, so just check versions
-      && v8.indexOf('6.6') !== 0
-      && userAgent.indexOf('Chrome/66') === -1;
-  } catch (e) { /* empty */ }
-}();
-
-// helpers
-var isThenable = function (it) {
-  var then;
-  return isObject(it) && typeof (then = it.then) == 'function' ? then : false;
-};
-var notify = function (promise, isReject) {
-  if (promise._n) return;
-  promise._n = true;
-  var chain = promise._c;
-  microtask(function () {
-    var value = promise._v;
-    var ok = promise._s == 1;
-    var i = 0;
-    var run = function (reaction) {
-      var handler = ok ? reaction.ok : reaction.fail;
-      var resolve = reaction.resolve;
-      var reject = reaction.reject;
-      var domain = reaction.domain;
-      var result, then, exited;
-      try {
-        if (handler) {
-          if (!ok) {
-            if (promise._h == 2) onHandleUnhandled(promise);
-            promise._h = 1;
-          }
-          if (handler === true) result = value;
-          else {
-            if (domain) domain.enter();
-            result = handler(value); // may throw
-            if (domain) {
-              domain.exit();
-              exited = true;
-            }
-          }
-          if (result === reaction.promise) {
-            reject(TypeError('Promise-chain cycle'));
-          } else if (then = isThenable(result)) {
-            then.call(result, resolve, reject);
-          } else resolve(result);
-        } else reject(value);
-      } catch (e) {
-        if (domain && !exited) domain.exit();
-        reject(e);
-      }
-    };
-    while (chain.length > i) run(chain[i++]); // variable length - can't use forEach
-    promise._c = [];
-    promise._n = false;
-    if (isReject && !promise._h) onUnhandled(promise);
-  });
-};
-var onUnhandled = function (promise) {
-  task.call(global, function () {
-    var value = promise._v;
-    var unhandled = isUnhandled(promise);
-    var result, handler, console;
-    if (unhandled) {
-      result = perform(function () {
-        if (isNode) {
-          process.emit('unhandledRejection', value, promise);
-        } else if (handler = global.onunhandledrejection) {
-          handler({ promise: promise, reason: value });
-        } else if ((console = global.console) && console.error) {
-          console.error('Unhandled promise rejection', value);
-        }
-      });
-      // Browsers should not trigger `rejectionHandled` event if it was handled here, NodeJS - should
-      promise._h = isNode || isUnhandled(promise) ? 2 : 1;
-    } promise._a = undefined;
-    if (unhandled && result.e) throw result.v;
-  });
-};
-var isUnhandled = function (promise) {
-  return promise._h !== 1 && (promise._a || promise._c).length === 0;
-};
-var onHandleUnhandled = function (promise) {
-  task.call(global, function () {
-    var handler;
-    if (isNode) {
-      process.emit('rejectionHandled', promise);
-    } else if (handler = global.onrejectionhandled) {
-      handler({ promise: promise, reason: promise._v });
-    }
-  });
-};
-var $reject = function (value) {
-  var promise = this;
-  if (promise._d) return;
-  promise._d = true;
-  promise = promise._w || promise; // unwrap
-  promise._v = value;
-  promise._s = 2;
-  if (!promise._a) promise._a = promise._c.slice();
-  notify(promise, true);
-};
-var $resolve = function (value) {
-  var promise = this;
-  var then;
-  if (promise._d) return;
-  promise._d = true;
-  promise = promise._w || promise; // unwrap
-  try {
-    if (promise === value) throw TypeError("Promise can't be resolved itself");
-    if (then = isThenable(value)) {
-      microtask(function () {
-        var wrapper = { _w: promise, _d: false }; // wrap
+(function(self) {
+
+var irrelevant = (function (exports) {
+
+  var support = {
+    searchParams: 'URLSearchParams' in self,
+    iterable: 'Symbol' in self && 'iterator' in Symbol,
+    blob:
+      'FileReader' in self &&
+      'Blob' in self &&
+      (function() {
         try {
-          then.call(value, ctx($resolve, wrapper, 1), ctx($reject, wrapper, 1));
+          new Blob();
+          return true
         } catch (e) {
-          $reject.call(wrapper, e);
+          return false
         }
-      });
+      })(),
+    formData: 'FormData' in self,
+    arrayBuffer: 'ArrayBuffer' in self
+  };
+
+  function isDataView(obj) {
+    return obj && DataView.prototype.isPrototypeOf(obj)
+  }
+
+  if (support.arrayBuffer) {
+    var viewClasses = [
+      '[object Int8Array]',
+      '[object Uint8Array]',
+      '[object Uint8ClampedArray]',
+      '[object Int16Array]',
+      '[object Uint16Array]',
+      '[object Int32Array]',
+      '[object Uint32Array]',
+      '[object Float32Array]',
+      '[object Float64Array]'
+    ];
+
+    var isArrayBufferView =
+      ArrayBuffer.isView ||
+      function(obj) {
+        return obj && viewClasses.indexOf(Object.prototype.toString.call(obj)) > -1
+      };
+  }
+
+  function normalizeName(name) {
+    if (typeof name !== 'string') {
+      name = String(name);
+    }
+    if (/[^a-z0-9\-#$%&'*+.^_`|~]/i.test(name)) {
+      throw new TypeError('Invalid character in header field name')
+    }
+    return name.toLowerCase()
+  }
+
+  function normalizeValue(value) {
+    if (typeof value !== 'string') {
+      value = String(value);
+    }
+    return value
+  }
+
+  // Build a destructive iterator for the value list
+  function iteratorFor(items) {
+    var iterator = {
+      next: function() {
+        var value = items.shift();
+        return {done: value === undefined, value: value}
+      }
+    };
+
+    if (support.iterable) {
+      iterator[Symbol.iterator] = function() {
+        return iterator
+      };
+    }
+
+    return iterator
+  }
+
+  function Headers(headers) {
+    this.map = {};
+
+    if (headers instanceof Headers) {
+      headers.forEach(function(value, name) {
+        this.append(name, value);
+      }, this);
+    } else if (Array.isArray(headers)) {
+      headers.forEach(function(header) {
+        this.append(header[0], header[1]);
+      }, this);
+    } else if (headers) {
+      Object.getOwnPropertyNames(headers).forEach(function(name) {
+        this.append(name, headers[name]);
+      }, this);
+    }
+  }
+
+  Headers.prototype.append = function(name, value) {
+    name = normalizeName(name);
+    value = normalizeValue(value);
+    var oldValue = this.map[name];
+    this.map[name] = oldValue ? oldValue + ', ' + value : value;
+  };
+
+  Headers.prototype['delete'] = function(name) {
+    delete this.map[normalizeName(name)];
+  };
+
+  Headers.prototype.get = function(name) {
+    name = normalizeName(name);
+    return this.has(name) ? this.map[name] : null
+  };
+
+  Headers.prototype.has = function(name) {
+    return this.map.hasOwnProperty(normalizeName(name))
+  };
+
+  Headers.prototype.set = function(name, value) {
+    this.map[normalizeName(name)] = normalizeValue(value);
+  };
+
+  Headers.prototype.forEach = function(callback, thisArg) {
+    for (var name in this.map) {
+      if (this.map.hasOwnProperty(name)) {
+        callback.call(thisArg, this.map[name], name, this);
+      }
+    }
+  };
+
+  Headers.prototype.keys = function() {
+    var items = [];
+    this.forEach(function(value, name) {
+      items.push(name);
+    });
+    return iteratorFor(items)
+  };
+
+  Headers.prototype.values = function() {
+    var items = [];
+    this.forEach(function(value) {
+      items.push(value);
+    });
+    return iteratorFor(items)
+  };
+
+  Headers.prototype.entries = function() {
+    var items = [];
+    this.forEach(function(value, name) {
+      items.push([name, value]);
+    });
+    return iteratorFor(items)
+  };
+
+  if (support.iterable) {
+    Headers.prototype[Symbol.iterator] = Headers.prototype.entries;
+  }
+
+  function consumed(body) {
+    if (body.bodyUsed) {
+      return Promise.reject(new TypeError('Already read'))
+    }
+    body.bodyUsed = true;
+  }
+
+  function fileReaderReady(reader) {
+    return new Promise(function(resolve, reject) {
+      reader.onload = function() {
+        resolve(reader.result);
+      };
+      reader.onerror = function() {
+        reject(reader.error);
+      };
+    })
+  }
+
+  function readBlobAsArrayBuffer(blob) {
+    var reader = new FileReader();
+    var promise = fileReaderReady(reader);
+    reader.readAsArrayBuffer(blob);
+    return promise
+  }
+
+  function readBlobAsText(blob) {
+    var reader = new FileReader();
+    var promise = fileReaderReady(reader);
+    reader.readAsText(blob);
+    return promise
+  }
+
+  function readArrayBufferAsText(buf) {
+    var view = new Uint8Array(buf);
+    var chars = new Array(view.length);
+
+    for (var i = 0; i < view.length; i++) {
+      chars[i] = String.fromCharCode(view[i]);
+    }
+    return chars.join('')
+  }
+
+  function bufferClone(buf) {
+    if (buf.slice) {
+      return buf.slice(0)
     } else {
-      promise._v = value;
-      promise._s = 1;
-      notify(promise, false);
+      var view = new Uint8Array(buf.byteLength);
+      view.set(new Uint8Array(buf));
+      return view.buffer
     }
-  } catch (e) {
-    $reject.call({ _w: promise, _d: false }, e); // wrap
   }
-};
 
-// constructor polyfill
-if (!USE_NATIVE) {
-  // 25.4.3.1 Promise(executor)
-  $Promise = function Promise(executor) {
-    anInstance(this, $Promise, PROMISE, '_h');
-    aFunction(executor);
-    Internal.call(this);
-    try {
-      executor(ctx($resolve, this, 1), ctx($reject, this, 1));
-    } catch (err) {
-      $reject.call(this, err);
-    }
-  };
-  // eslint-disable-next-line no-unused-vars
-  Internal = function Promise(executor) {
-    this._c = [];             // <- awaiting reactions
-    this._a = undefined;      // <- checked in isUnhandled reactions
-    this._s = 0;              // <- state
-    this._d = false;          // <- done
-    this._v = undefined;      // <- value
-    this._h = 0;              // <- rejection state, 0 - default, 1 - handled, 2 - unhandled
-    this._n = false;          // <- notify
-  };
-  Internal.prototype = __webpack_require__(2243)($Promise.prototype, {
-    // 25.4.5.3 Promise.prototype.then(onFulfilled, onRejected)
-    then: function then(onFulfilled, onRejected) {
-      var reaction = newPromiseCapability(speciesConstructor(this, $Promise));
-      reaction.ok = typeof onFulfilled == 'function' ? onFulfilled : true;
-      reaction.fail = typeof onRejected == 'function' && onRejected;
-      reaction.domain = isNode ? process.domain : undefined;
-      this._c.push(reaction);
-      if (this._a) this._a.push(reaction);
-      if (this._s) notify(this, false);
-      return reaction.promise;
-    },
-    // 25.4.5.1 Promise.prototype.catch(onRejected)
-    'catch': function (onRejected) {
-      return this.then(undefined, onRejected);
-    }
-  });
-  OwnPromiseCapability = function () {
-    var promise = new Internal();
-    this.promise = promise;
-    this.resolve = ctx($resolve, promise, 1);
-    this.reject = ctx($reject, promise, 1);
-  };
-  newPromiseCapabilityModule.f = newPromiseCapability = function (C) {
-    return C === $Promise || C === Wrapper
-      ? new OwnPromiseCapability(C)
-      : newGenericPromiseCapability(C);
-  };
-}
+  function Body() {
+    this.bodyUsed = false;
 
-$export($export.G + $export.W + $export.F * !USE_NATIVE, { Promise: $Promise });
-__webpack_require__(5727)($Promise, PROMISE);
-__webpack_require__(9766)(PROMISE);
-Wrapper = __webpack_require__(66)[PROMISE];
-
-// statics
-$export($export.S + $export.F * !USE_NATIVE, PROMISE, {
-  // 25.4.4.5 Promise.reject(r)
-  reject: function reject(r) {
-    var capability = newPromiseCapability(this);
-    var $$reject = capability.reject;
-    $$reject(r);
-    return capability.promise;
-  }
-});
-$export($export.S + $export.F * (LIBRARY || !USE_NATIVE), PROMISE, {
-  // 25.4.4.6 Promise.resolve(x)
-  resolve: function resolve(x) {
-    return promiseResolve(LIBRARY && this === Wrapper ? $Promise : this, x);
-  }
-});
-$export($export.S + $export.F * !(USE_NATIVE && __webpack_require__(3143)(function (iter) {
-  $Promise.all(iter)['catch'](empty);
-})), PROMISE, {
-  // 25.4.4.1 Promise.all(iterable)
-  all: function all(iterable) {
-    var C = this;
-    var capability = newPromiseCapability(C);
-    var resolve = capability.resolve;
-    var reject = capability.reject;
-    var result = perform(function () {
-      var values = [];
-      var index = 0;
-      var remaining = 1;
-      forOf(iterable, false, function (promise) {
-        var $index = index++;
-        var alreadyCalled = false;
-        values.push(undefined);
-        remaining++;
-        C.resolve(promise).then(function (value) {
-          if (alreadyCalled) return;
-          alreadyCalled = true;
-          values[$index] = value;
-          --remaining || resolve(values);
-        }, reject);
-      });
-      --remaining || resolve(values);
-    });
-    if (result.e) reject(result.v);
-    return capability.promise;
-  },
-  // 25.4.4.4 Promise.race(iterable)
-  race: function race(iterable) {
-    var C = this;
-    var capability = newPromiseCapability(C);
-    var reject = capability.reject;
-    var result = perform(function () {
-      forOf(iterable, false, function (promise) {
-        C.resolve(promise).then(capability.resolve, reject);
-      });
-    });
-    if (result.e) reject(result.v);
-    return capability.promise;
-  }
-});
-
-
-/***/ }),
-
-/***/ 1335:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 26.1.1 Reflect.apply(target, thisArgument, argumentsList)
-var $export = __webpack_require__(5772);
-var aFunction = __webpack_require__(2761);
-var anObject = __webpack_require__(6365);
-var rApply = (__webpack_require__(8113).Reflect || {}).apply;
-var fApply = Function.apply;
-// MS Edge argumentsList argument is optional
-$export($export.S + $export.F * !__webpack_require__(8625)(function () {
-  rApply(function () { /* empty */ });
-}), 'Reflect', {
-  apply: function apply(target, thisArgument, argumentsList) {
-    var T = aFunction(target);
-    var L = anObject(argumentsList);
-    return rApply ? rApply(T, thisArgument, L) : fApply.call(T, thisArgument, L);
-  }
-});
-
-
-/***/ }),
-
-/***/ 2603:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 26.1.2 Reflect.construct(target, argumentsList [, newTarget])
-var $export = __webpack_require__(5772);
-var create = __webpack_require__(2897);
-var aFunction = __webpack_require__(2761);
-var anObject = __webpack_require__(6365);
-var isObject = __webpack_require__(7334);
-var fails = __webpack_require__(8625);
-var bind = __webpack_require__(9337);
-var rConstruct = (__webpack_require__(8113).Reflect || {}).construct;
-
-// MS Edge supports only 2 arguments and argumentsList argument is optional
-// FF Nightly sets third argument as `new.target`, but does not create `this` from it
-var NEW_TARGET_BUG = fails(function () {
-  function F() { /* empty */ }
-  return !(rConstruct(function () { /* empty */ }, [], F) instanceof F);
-});
-var ARGS_BUG = !fails(function () {
-  rConstruct(function () { /* empty */ });
-});
-
-$export($export.S + $export.F * (NEW_TARGET_BUG || ARGS_BUG), 'Reflect', {
-  construct: function construct(Target, args /* , newTarget */) {
-    aFunction(Target);
-    anObject(args);
-    var newTarget = arguments.length < 3 ? Target : aFunction(arguments[2]);
-    if (ARGS_BUG && !NEW_TARGET_BUG) return rConstruct(Target, args, newTarget);
-    if (Target == newTarget) {
-      // w/o altered newTarget, optimization for 0-4 arguments
-      switch (args.length) {
-        case 0: return new Target();
-        case 1: return new Target(args[0]);
-        case 2: return new Target(args[0], args[1]);
-        case 3: return new Target(args[0], args[1], args[2]);
-        case 4: return new Target(args[0], args[1], args[2], args[3]);
+    this._initBody = function(body) {
+      this._bodyInit = body;
+      if (!body) {
+        this._bodyText = '';
+      } else if (typeof body === 'string') {
+        this._bodyText = body;
+      } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
+        this._bodyBlob = body;
+      } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {
+        this._bodyFormData = body;
+      } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+        this._bodyText = body.toString();
+      } else if (support.arrayBuffer && support.blob && isDataView(body)) {
+        this._bodyArrayBuffer = bufferClone(body.buffer);
+        // IE 10-11 can't handle a DataView body.
+        this._bodyInit = new Blob([this._bodyArrayBuffer]);
+      } else if (support.arrayBuffer && (ArrayBuffer.prototype.isPrototypeOf(body) || isArrayBufferView(body))) {
+        this._bodyArrayBuffer = bufferClone(body);
+      } else {
+        this._bodyText = body = Object.prototype.toString.call(body);
       }
-      // w/o altered newTarget, lot of arguments case
-      var $args = [null];
-      $args.push.apply($args, args);
-      return new (bind.apply(Target, $args))();
-    }
-    // with altered newTarget, not support built-in constructors
-    var proto = newTarget.prototype;
-    var instance = create(isObject(proto) ? proto : Object.prototype);
-    var result = Function.apply.call(Target, instance, args);
-    return isObject(result) ? result : instance;
-  }
-});
 
-
-/***/ }),
-
-/***/ 4460:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 26.1.3 Reflect.defineProperty(target, propertyKey, attributes)
-var dP = __webpack_require__(8558);
-var $export = __webpack_require__(5772);
-var anObject = __webpack_require__(6365);
-var toPrimitive = __webpack_require__(1382);
-
-// MS Edge has broken Reflect.defineProperty - throwing instead of returning false
-$export($export.S + $export.F * __webpack_require__(8625)(function () {
-  // eslint-disable-next-line no-undef
-  Reflect.defineProperty(dP.f({}, 1, { value: 1 }), 1, { value: 2 });
-}), 'Reflect', {
-  defineProperty: function defineProperty(target, propertyKey, attributes) {
-    anObject(target);
-    propertyKey = toPrimitive(propertyKey, true);
-    anObject(attributes);
-    try {
-      dP.f(target, propertyKey, attributes);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-});
-
-
-/***/ }),
-
-/***/ 5970:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 26.1.4 Reflect.deleteProperty(target, propertyKey)
-var $export = __webpack_require__(5772);
-var gOPD = __webpack_require__(4662).f;
-var anObject = __webpack_require__(6365);
-
-$export($export.S, 'Reflect', {
-  deleteProperty: function deleteProperty(target, propertyKey) {
-    var desc = gOPD(anObject(target), propertyKey);
-    return desc && !desc.configurable ? false : delete target[propertyKey];
-  }
-});
-
-
-/***/ }),
-
-/***/ 4288:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// 26.1.5 Reflect.enumerate(target)
-var $export = __webpack_require__(5772);
-var anObject = __webpack_require__(6365);
-var Enumerate = function (iterated) {
-  this._t = anObject(iterated); // target
-  this._i = 0;                  // next index
-  var keys = this._k = [];      // keys
-  var key;
-  for (key in iterated) keys.push(key);
-};
-__webpack_require__(6445)(Enumerate, 'Object', function () {
-  var that = this;
-  var keys = that._k;
-  var key;
-  do {
-    if (that._i >= keys.length) return { value: undefined, done: true };
-  } while (!((key = keys[that._i++]) in that._t));
-  return { value: key, done: false };
-});
-
-$export($export.S, 'Reflect', {
-  enumerate: function enumerate(target) {
-    return new Enumerate(target);
-  }
-});
-
-
-/***/ }),
-
-/***/ 4613:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 26.1.7 Reflect.getOwnPropertyDescriptor(target, propertyKey)
-var gOPD = __webpack_require__(4662);
-var $export = __webpack_require__(5772);
-var anObject = __webpack_require__(6365);
-
-$export($export.S, 'Reflect', {
-  getOwnPropertyDescriptor: function getOwnPropertyDescriptor(target, propertyKey) {
-    return gOPD.f(anObject(target), propertyKey);
-  }
-});
-
-
-/***/ }),
-
-/***/ 122:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 26.1.8 Reflect.getPrototypeOf(target)
-var $export = __webpack_require__(5772);
-var getProto = __webpack_require__(9002);
-var anObject = __webpack_require__(6365);
-
-$export($export.S, 'Reflect', {
-  getPrototypeOf: function getPrototypeOf(target) {
-    return getProto(anObject(target));
-  }
-});
-
-
-/***/ }),
-
-/***/ 2039:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 26.1.6 Reflect.get(target, propertyKey [, receiver])
-var gOPD = __webpack_require__(4662);
-var getPrototypeOf = __webpack_require__(9002);
-var has = __webpack_require__(4040);
-var $export = __webpack_require__(5772);
-var isObject = __webpack_require__(7334);
-var anObject = __webpack_require__(6365);
-
-function get(target, propertyKey /* , receiver */) {
-  var receiver = arguments.length < 3 ? target : arguments[2];
-  var desc, proto;
-  if (anObject(target) === receiver) return target[propertyKey];
-  if (desc = gOPD.f(target, propertyKey)) return has(desc, 'value')
-    ? desc.value
-    : desc.get !== undefined
-      ? desc.get.call(receiver)
-      : undefined;
-  if (isObject(proto = getPrototypeOf(target))) return get(proto, propertyKey, receiver);
-}
-
-$export($export.S, 'Reflect', { get: get });
-
-
-/***/ }),
-
-/***/ 9484:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 26.1.9 Reflect.has(target, propertyKey)
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Reflect', {
-  has: function has(target, propertyKey) {
-    return propertyKey in target;
-  }
-});
-
-
-/***/ }),
-
-/***/ 1014:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 26.1.10 Reflect.isExtensible(target)
-var $export = __webpack_require__(5772);
-var anObject = __webpack_require__(6365);
-var $isExtensible = Object.isExtensible;
-
-$export($export.S, 'Reflect', {
-  isExtensible: function isExtensible(target) {
-    anObject(target);
-    return $isExtensible ? $isExtensible(target) : true;
-  }
-});
-
-
-/***/ }),
-
-/***/ 7150:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 26.1.11 Reflect.ownKeys(target)
-var $export = __webpack_require__(5772);
-
-$export($export.S, 'Reflect', { ownKeys: __webpack_require__(6831) });
-
-
-/***/ }),
-
-/***/ 8982:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 26.1.12 Reflect.preventExtensions(target)
-var $export = __webpack_require__(5772);
-var anObject = __webpack_require__(6365);
-var $preventExtensions = Object.preventExtensions;
-
-$export($export.S, 'Reflect', {
-  preventExtensions: function preventExtensions(target) {
-    anObject(target);
-    try {
-      if ($preventExtensions) $preventExtensions(target);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-});
-
-
-/***/ }),
-
-/***/ 8633:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 26.1.14 Reflect.setPrototypeOf(target, proto)
-var $export = __webpack_require__(5772);
-var setProto = __webpack_require__(6095);
-
-if (setProto) $export($export.S, 'Reflect', {
-  setPrototypeOf: function setPrototypeOf(target, proto) {
-    setProto.check(target, proto);
-    try {
-      setProto.set(target, proto);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-});
-
-
-/***/ }),
-
-/***/ 8868:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 26.1.13 Reflect.set(target, propertyKey, V [, receiver])
-var dP = __webpack_require__(8558);
-var gOPD = __webpack_require__(4662);
-var getPrototypeOf = __webpack_require__(9002);
-var has = __webpack_require__(4040);
-var $export = __webpack_require__(5772);
-var createDesc = __webpack_require__(6061);
-var anObject = __webpack_require__(6365);
-var isObject = __webpack_require__(7334);
-
-function set(target, propertyKey, V /* , receiver */) {
-  var receiver = arguments.length < 4 ? target : arguments[3];
-  var ownDesc = gOPD.f(anObject(target), propertyKey);
-  var existingDescriptor, proto;
-  if (!ownDesc) {
-    if (isObject(proto = getPrototypeOf(target))) {
-      return set(proto, propertyKey, V, receiver);
-    }
-    ownDesc = createDesc(0);
-  }
-  if (has(ownDesc, 'value')) {
-    if (ownDesc.writable === false || !isObject(receiver)) return false;
-    if (existingDescriptor = gOPD.f(receiver, propertyKey)) {
-      if (existingDescriptor.get || existingDescriptor.set || existingDescriptor.writable === false) return false;
-      existingDescriptor.value = V;
-      dP.f(receiver, propertyKey, existingDescriptor);
-    } else dP.f(receiver, propertyKey, createDesc(0, V));
-    return true;
-  }
-  return ownDesc.set === undefined ? false : (ownDesc.set.call(receiver, V), true);
-}
-
-$export($export.S, 'Reflect', { set: set });
-
-
-/***/ }),
-
-/***/ 5506:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var global = __webpack_require__(8113);
-var inheritIfRequired = __webpack_require__(8938);
-var dP = __webpack_require__(8558).f;
-var gOPN = __webpack_require__(6604).f;
-var isRegExp = __webpack_require__(4587);
-var $flags = __webpack_require__(4859);
-var $RegExp = global.RegExp;
-var Base = $RegExp;
-var proto = $RegExp.prototype;
-var re1 = /a/g;
-var re2 = /a/g;
-// "new" creates a new object, old webkit buggy here
-var CORRECT_NEW = new $RegExp(re1) !== re1;
-
-if (__webpack_require__(6628) && (!CORRECT_NEW || __webpack_require__(8625)(function () {
-  re2[__webpack_require__(2190)('match')] = false;
-  // RegExp constructor can alter flags and IsRegExp works correct with @@match
-  return $RegExp(re1) != re1 || $RegExp(re2) == re2 || $RegExp(re1, 'i') != '/a/i';
-}))) {
-  $RegExp = function RegExp(p, f) {
-    var tiRE = this instanceof $RegExp;
-    var piRE = isRegExp(p);
-    var fiU = f === undefined;
-    return !tiRE && piRE && p.constructor === $RegExp && fiU ? p
-      : inheritIfRequired(CORRECT_NEW
-        ? new Base(piRE && !fiU ? p.source : p, f)
-        : Base((piRE = p instanceof $RegExp) ? p.source : p, piRE && fiU ? $flags.call(p) : f)
-      , tiRE ? this : proto, $RegExp);
-  };
-  var proxy = function (key) {
-    key in $RegExp || dP($RegExp, key, {
-      configurable: true,
-      get: function () { return Base[key]; },
-      set: function (it) { Base[key] = it; }
-    });
-  };
-  for (var keys = gOPN(Base), i = 0; keys.length > i;) proxy(keys[i++]);
-  proto.constructor = $RegExp;
-  $RegExp.prototype = proto;
-  __webpack_require__(7738)(global, 'RegExp', $RegExp);
-}
-
-__webpack_require__(9766)('RegExp');
-
-
-/***/ }),
-
-/***/ 5846:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var regexpExec = __webpack_require__(3288);
-__webpack_require__(5772)({
-  target: 'RegExp',
-  proto: true,
-  forced: regexpExec !== /./.exec
-}, {
-  exec: regexpExec
-});
-
-
-/***/ }),
-
-/***/ 751:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// 21.2.5.3 get RegExp.prototype.flags()
-if (__webpack_require__(6628) && /./g.flags != 'g') __webpack_require__(8558).f(RegExp.prototype, 'flags', {
-  configurable: true,
-  get: __webpack_require__(4859)
-});
-
-
-/***/ }),
-
-/***/ 4828:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var anObject = __webpack_require__(6365);
-var toLength = __webpack_require__(6078);
-var advanceStringIndex = __webpack_require__(8492);
-var regExpExec = __webpack_require__(2404);
-
-// @@match logic
-__webpack_require__(8897)('match', 1, function (defined, MATCH, $match, maybeCallNative) {
-  return [
-    // `String.prototype.match` method
-    // https://tc39.github.io/ecma262/#sec-string.prototype.match
-    function match(regexp) {
-      var O = defined(this);
-      var fn = regexp == undefined ? undefined : regexp[MATCH];
-      return fn !== undefined ? fn.call(regexp, O) : new RegExp(regexp)[MATCH](String(O));
-    },
-    // `RegExp.prototype[@@match]` method
-    // https://tc39.github.io/ecma262/#sec-regexp.prototype-@@match
-    function (regexp) {
-      var res = maybeCallNative($match, regexp, this);
-      if (res.done) return res.value;
-      var rx = anObject(regexp);
-      var S = String(this);
-      if (!rx.global) return regExpExec(rx, S);
-      var fullUnicode = rx.unicode;
-      rx.lastIndex = 0;
-      var A = [];
-      var n = 0;
-      var result;
-      while ((result = regExpExec(rx, S)) !== null) {
-        var matchStr = String(result[0]);
-        A[n] = matchStr;
-        if (matchStr === '') rx.lastIndex = advanceStringIndex(S, toLength(rx.lastIndex), fullUnicode);
-        n++;
-      }
-      return n === 0 ? null : A;
-    }
-  ];
-});
-
-
-/***/ }),
-
-/***/ 4208:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var anObject = __webpack_require__(6365);
-var toObject = __webpack_require__(6033);
-var toLength = __webpack_require__(6078);
-var toInteger = __webpack_require__(3338);
-var advanceStringIndex = __webpack_require__(8492);
-var regExpExec = __webpack_require__(2404);
-var max = Math.max;
-var min = Math.min;
-var floor = Math.floor;
-var SUBSTITUTION_SYMBOLS = /\$([$&`']|\d\d?|<[^>]*>)/g;
-var SUBSTITUTION_SYMBOLS_NO_NAMED = /\$([$&`']|\d\d?)/g;
-
-var maybeToString = function (it) {
-  return it === undefined ? it : String(it);
-};
-
-// @@replace logic
-__webpack_require__(8897)('replace', 2, function (defined, REPLACE, $replace, maybeCallNative) {
-  return [
-    // `String.prototype.replace` method
-    // https://tc39.github.io/ecma262/#sec-string.prototype.replace
-    function replace(searchValue, replaceValue) {
-      var O = defined(this);
-      var fn = searchValue == undefined ? undefined : searchValue[REPLACE];
-      return fn !== undefined
-        ? fn.call(searchValue, O, replaceValue)
-        : $replace.call(String(O), searchValue, replaceValue);
-    },
-    // `RegExp.prototype[@@replace]` method
-    // https://tc39.github.io/ecma262/#sec-regexp.prototype-@@replace
-    function (regexp, replaceValue) {
-      var res = maybeCallNative($replace, regexp, this, replaceValue);
-      if (res.done) return res.value;
-
-      var rx = anObject(regexp);
-      var S = String(this);
-      var functionalReplace = typeof replaceValue === 'function';
-      if (!functionalReplace) replaceValue = String(replaceValue);
-      var global = rx.global;
-      if (global) {
-        var fullUnicode = rx.unicode;
-        rx.lastIndex = 0;
-      }
-      var results = [];
-      while (true) {
-        var result = regExpExec(rx, S);
-        if (result === null) break;
-        results.push(result);
-        if (!global) break;
-        var matchStr = String(result[0]);
-        if (matchStr === '') rx.lastIndex = advanceStringIndex(S, toLength(rx.lastIndex), fullUnicode);
-      }
-      var accumulatedResult = '';
-      var nextSourcePosition = 0;
-      for (var i = 0; i < results.length; i++) {
-        result = results[i];
-        var matched = String(result[0]);
-        var position = max(min(toInteger(result.index), S.length), 0);
-        var captures = [];
-        // NOTE: This is equivalent to
-        //   captures = result.slice(1).map(maybeToString)
-        // but for some reason `nativeSlice.call(result, 1, result.length)` (called in
-        // the slice polyfill when slicing native arrays) "doesn't work" in safari 9 and
-        // causes a crash (https://pastebin.com/N21QzeQA) when trying to debug it.
-        for (var j = 1; j < result.length; j++) captures.push(maybeToString(result[j]));
-        var namedCaptures = result.groups;
-        if (functionalReplace) {
-          var replacerArgs = [matched].concat(captures, position, S);
-          if (namedCaptures !== undefined) replacerArgs.push(namedCaptures);
-          var replacement = String(replaceValue.apply(undefined, replacerArgs));
-        } else {
-          replacement = getSubstitution(matched, S, position, captures, namedCaptures, replaceValue);
-        }
-        if (position >= nextSourcePosition) {
-          accumulatedResult += S.slice(nextSourcePosition, position) + replacement;
-          nextSourcePosition = position + matched.length;
+      if (!this.headers.get('content-type')) {
+        if (typeof body === 'string') {
+          this.headers.set('content-type', 'text/plain;charset=UTF-8');
+        } else if (this._bodyBlob && this._bodyBlob.type) {
+          this.headers.set('content-type', this._bodyBlob.type);
+        } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+          this.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
         }
       }
-      return accumulatedResult + S.slice(nextSourcePosition);
-    }
-  ];
-
-    // https://tc39.github.io/ecma262/#sec-getsubstitution
-  function getSubstitution(matched, str, position, captures, namedCaptures, replacement) {
-    var tailPos = position + matched.length;
-    var m = captures.length;
-    var symbols = SUBSTITUTION_SYMBOLS_NO_NAMED;
-    if (namedCaptures !== undefined) {
-      namedCaptures = toObject(namedCaptures);
-      symbols = SUBSTITUTION_SYMBOLS;
-    }
-    return $replace.call(replacement, symbols, function (match, ch) {
-      var capture;
-      switch (ch.charAt(0)) {
-        case '$': return '$';
-        case '&': return matched;
-        case '`': return str.slice(0, position);
-        case "'": return str.slice(tailPos);
-        case '<':
-          capture = namedCaptures[ch.slice(1, -1)];
-          break;
-        default: // \d\d?
-          var n = +ch;
-          if (n === 0) return match;
-          if (n > m) {
-            var f = floor(n / 10);
-            if (f === 0) return match;
-            if (f <= m) return captures[f - 1] === undefined ? ch.charAt(1) : captures[f - 1] + ch.charAt(1);
-            return match;
-          }
-          capture = captures[n - 1];
-      }
-      return capture === undefined ? '' : capture;
-    });
-  }
-});
-
-
-/***/ }),
-
-/***/ 2679:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var anObject = __webpack_require__(6365);
-var sameValue = __webpack_require__(339);
-var regExpExec = __webpack_require__(2404);
-
-// @@search logic
-__webpack_require__(8897)('search', 1, function (defined, SEARCH, $search, maybeCallNative) {
-  return [
-    // `String.prototype.search` method
-    // https://tc39.github.io/ecma262/#sec-string.prototype.search
-    function search(regexp) {
-      var O = defined(this);
-      var fn = regexp == undefined ? undefined : regexp[SEARCH];
-      return fn !== undefined ? fn.call(regexp, O) : new RegExp(regexp)[SEARCH](String(O));
-    },
-    // `RegExp.prototype[@@search]` method
-    // https://tc39.github.io/ecma262/#sec-regexp.prototype-@@search
-    function (regexp) {
-      var res = maybeCallNative($search, regexp, this);
-      if (res.done) return res.value;
-      var rx = anObject(regexp);
-      var S = String(this);
-      var previousLastIndex = rx.lastIndex;
-      if (!sameValue(previousLastIndex, 0)) rx.lastIndex = 0;
-      var result = regExpExec(rx, S);
-      if (!sameValue(rx.lastIndex, previousLastIndex)) rx.lastIndex = previousLastIndex;
-      return result === null ? -1 : result.index;
-    }
-  ];
-});
-
-
-/***/ }),
-
-/***/ 9236:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-
-var isRegExp = __webpack_require__(4587);
-var anObject = __webpack_require__(6365);
-var speciesConstructor = __webpack_require__(1987);
-var advanceStringIndex = __webpack_require__(8492);
-var toLength = __webpack_require__(6078);
-var callRegExpExec = __webpack_require__(2404);
-var regexpExec = __webpack_require__(3288);
-var fails = __webpack_require__(8625);
-var $min = Math.min;
-var $push = [].push;
-var $SPLIT = 'split';
-var LENGTH = 'length';
-var LAST_INDEX = 'lastIndex';
-var MAX_UINT32 = 0xffffffff;
-
-// babel-minify transpiles RegExp('x', 'y') -> /x/y and it causes SyntaxError
-var SUPPORTS_Y = !fails(function () { RegExp(MAX_UINT32, 'y'); });
-
-// @@split logic
-__webpack_require__(8897)('split', 2, function (defined, SPLIT, $split, maybeCallNative) {
-  var internalSplit;
-  if (
-    'abbc'[$SPLIT](/(b)*/)[1] == 'c' ||
-    'test'[$SPLIT](/(?:)/, -1)[LENGTH] != 4 ||
-    'ab'[$SPLIT](/(?:ab)*/)[LENGTH] != 2 ||
-    '.'[$SPLIT](/(.?)(.?)/)[LENGTH] != 4 ||
-    '.'[$SPLIT](/()()/)[LENGTH] > 1 ||
-    ''[$SPLIT](/.?/)[LENGTH]
-  ) {
-    // based on es5-shim implementation, need to rework it
-    internalSplit = function (separator, limit) {
-      var string = String(this);
-      if (separator === undefined && limit === 0) return [];
-      // If `separator` is not a regex, use native split
-      if (!isRegExp(separator)) return $split.call(string, separator, limit);
-      var output = [];
-      var flags = (separator.ignoreCase ? 'i' : '') +
-                  (separator.multiline ? 'm' : '') +
-                  (separator.unicode ? 'u' : '') +
-                  (separator.sticky ? 'y' : '');
-      var lastLastIndex = 0;
-      var splitLimit = limit === undefined ? MAX_UINT32 : limit >>> 0;
-      // Make `global` and avoid `lastIndex` issues by working with a copy
-      var separatorCopy = new RegExp(separator.source, flags + 'g');
-      var match, lastIndex, lastLength;
-      while (match = regexpExec.call(separatorCopy, string)) {
-        lastIndex = separatorCopy[LAST_INDEX];
-        if (lastIndex > lastLastIndex) {
-          output.push(string.slice(lastLastIndex, match.index));
-          if (match[LENGTH] > 1 && match.index < string[LENGTH]) $push.apply(output, match.slice(1));
-          lastLength = match[0][LENGTH];
-          lastLastIndex = lastIndex;
-          if (output[LENGTH] >= splitLimit) break;
-        }
-        if (separatorCopy[LAST_INDEX] === match.index) separatorCopy[LAST_INDEX]++; // Avoid an infinite loop
-      }
-      if (lastLastIndex === string[LENGTH]) {
-        if (lastLength || !separatorCopy.test('')) output.push('');
-      } else output.push(string.slice(lastLastIndex));
-      return output[LENGTH] > splitLimit ? output.slice(0, splitLimit) : output;
     };
-  // Chakra, V8
-  } else if ('0'[$SPLIT](undefined, 0)[LENGTH]) {
-    internalSplit = function (separator, limit) {
-      return separator === undefined && limit === 0 ? [] : $split.call(this, separator, limit);
-    };
-  } else {
-    internalSplit = $split;
-  }
 
-  return [
-    // `String.prototype.split` method
-    // https://tc39.github.io/ecma262/#sec-string.prototype.split
-    function split(separator, limit) {
-      var O = defined(this);
-      var splitter = separator == undefined ? undefined : separator[SPLIT];
-      return splitter !== undefined
-        ? splitter.call(separator, O, limit)
-        : internalSplit.call(String(O), separator, limit);
-    },
-    // `RegExp.prototype[@@split]` method
-    // https://tc39.github.io/ecma262/#sec-regexp.prototype-@@split
-    //
-    // NOTE: This cannot be properly polyfilled in engines that don't support
-    // the 'y' flag.
-    function (regexp, limit) {
-      var res = maybeCallNative(internalSplit, regexp, this, limit, internalSplit !== $split);
-      if (res.done) return res.value;
-
-      var rx = anObject(regexp);
-      var S = String(this);
-      var C = speciesConstructor(rx, RegExp);
-
-      var unicodeMatching = rx.unicode;
-      var flags = (rx.ignoreCase ? 'i' : '') +
-                  (rx.multiline ? 'm' : '') +
-                  (rx.unicode ? 'u' : '') +
-                  (SUPPORTS_Y ? 'y' : 'g');
-
-      // ^(? + rx + ) is needed, in combination with some S slicing, to
-      // simulate the 'y' flag.
-      var splitter = new C(SUPPORTS_Y ? rx : '^(?:' + rx.source + ')', flags);
-      var lim = limit === undefined ? MAX_UINT32 : limit >>> 0;
-      if (lim === 0) return [];
-      if (S.length === 0) return callRegExpExec(splitter, S) === null ? [S] : [];
-      var p = 0;
-      var q = 0;
-      var A = [];
-      while (q < S.length) {
-        splitter.lastIndex = SUPPORTS_Y ? q : 0;
-        var z = callRegExpExec(splitter, SUPPORTS_Y ? S : S.slice(q));
-        var e;
-        if (
-          z === null ||
-          (e = $min(toLength(splitter.lastIndex + (SUPPORTS_Y ? 0 : q)), S.length)) === p
-        ) {
-          q = advanceStringIndex(S, q, unicodeMatching);
-        } else {
-          A.push(S.slice(p, q));
-          if (A.length === lim) return A;
-          for (var i = 1; i <= z.length - 1; i++) {
-            A.push(z[i]);
-            if (A.length === lim) return A;
-          }
-          q = p = e;
+    if (support.blob) {
+      this.blob = function() {
+        var rejected = consumed(this);
+        if (rejected) {
+          return rejected
         }
-      }
-      A.push(S.slice(p));
-      return A;
+
+        if (this._bodyBlob) {
+          return Promise.resolve(this._bodyBlob)
+        } else if (this._bodyArrayBuffer) {
+          return Promise.resolve(new Blob([this._bodyArrayBuffer]))
+        } else if (this._bodyFormData) {
+          throw new Error('could not read FormData body as blob')
+        } else {
+          return Promise.resolve(new Blob([this._bodyText]))
+        }
+      };
+
+      this.arrayBuffer = function() {
+        if (this._bodyArrayBuffer) {
+          return consumed(this) || Promise.resolve(this._bodyArrayBuffer)
+        } else {
+          return this.blob().then(readBlobAsArrayBuffer)
+        }
+      };
     }
-  ];
-});
 
+    this.text = function() {
+      var rejected = consumed(this);
+      if (rejected) {
+        return rejected
+      }
 
-/***/ }),
+      if (this._bodyBlob) {
+        return readBlobAsText(this._bodyBlob)
+      } else if (this._bodyArrayBuffer) {
+        return Promise.resolve(readArrayBufferAsText(this._bodyArrayBuffer))
+      } else if (this._bodyFormData) {
+        throw new Error('could not read FormData body as text')
+      } else {
+        return Promise.resolve(this._bodyText)
+      }
+    };
 
-/***/ 4321:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
+    if (support.formData) {
+      this.formData = function() {
+        return this.text().then(decode)
+      };
+    }
 
-"use strict";
+    this.json = function() {
+      return this.text().then(JSON.parse)
+    };
 
-__webpack_require__(751);
-var anObject = __webpack_require__(6365);
-var $flags = __webpack_require__(4859);
-var DESCRIPTORS = __webpack_require__(6628);
-var TO_STRING = 'toString';
-var $toString = /./[TO_STRING];
-
-var define = function (fn) {
-  __webpack_require__(7738)(RegExp.prototype, TO_STRING, fn, true);
-};
-
-// 21.2.5.14 RegExp.prototype.toString()
-if (__webpack_require__(8625)(function () { return $toString.call({ source: 'a', flags: 'b' }) != '/a/b'; })) {
-  define(function toString() {
-    var R = anObject(this);
-    return '/'.concat(R.source, '/',
-      'flags' in R ? R.flags : !DESCRIPTORS && R instanceof RegExp ? $flags.call(R) : undefined);
-  });
-// FF44- RegExp#toString has a wrong name
-} else if ($toString.name != TO_STRING) {
-  define(function toString() {
-    return $toString.call(this);
-  });
-}
-
-
-/***/ }),
-
-/***/ 8392:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var strong = __webpack_require__(8156);
-var validate = __webpack_require__(9060);
-var SET = 'Set';
-
-// 23.2 Set Objects
-module.exports = __webpack_require__(7611)(SET, function (get) {
-  return function Set() { return get(this, arguments.length > 0 ? arguments[0] : undefined); };
-}, {
-  // 23.2.3.1 Set.prototype.add(value)
-  add: function add(value) {
-    return strong.def(validate(this, SET), value = value === 0 ? 0 : value, value);
+    return this
   }
-}, strong);
 
+  // HTTP methods whose capitalization should be normalized
+  var methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT'];
 
-/***/ }),
-
-/***/ 513:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// B.2.3.2 String.prototype.anchor(name)
-__webpack_require__(5776)('anchor', function (createHTML) {
-  return function anchor(name) {
-    return createHTML(this, 'a', 'name', name);
-  };
-});
-
-
-/***/ }),
-
-/***/ 4186:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// B.2.3.3 String.prototype.big()
-__webpack_require__(5776)('big', function (createHTML) {
-  return function big() {
-    return createHTML(this, 'big', '', '');
-  };
-});
-
-
-/***/ }),
-
-/***/ 5502:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// B.2.3.4 String.prototype.blink()
-__webpack_require__(5776)('blink', function (createHTML) {
-  return function blink() {
-    return createHTML(this, 'blink', '', '');
-  };
-});
-
-
-/***/ }),
-
-/***/ 6213:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// B.2.3.5 String.prototype.bold()
-__webpack_require__(5776)('bold', function (createHTML) {
-  return function bold() {
-    return createHTML(this, 'b', '', '');
-  };
-});
-
-
-/***/ }),
-
-/***/ 516:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var $at = __webpack_require__(2070)(false);
-$export($export.P, 'String', {
-  // 21.1.3.3 String.prototype.codePointAt(pos)
-  codePointAt: function codePointAt(pos) {
-    return $at(this, pos);
+  function normalizeMethod(method) {
+    var upcased = method.toUpperCase();
+    return methods.indexOf(upcased) > -1 ? upcased : method
   }
-});
 
-
-/***/ }),
-
-/***/ 427:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-// 21.1.3.6 String.prototype.endsWith(searchString [, endPosition])
-
-var $export = __webpack_require__(5772);
-var toLength = __webpack_require__(6078);
-var context = __webpack_require__(465);
-var ENDS_WITH = 'endsWith';
-var $endsWith = ''[ENDS_WITH];
-
-$export($export.P + $export.F * __webpack_require__(6570)(ENDS_WITH), 'String', {
-  endsWith: function endsWith(searchString /* , endPosition = @length */) {
-    var that = context(this, searchString, ENDS_WITH);
-    var endPosition = arguments.length > 1 ? arguments[1] : undefined;
-    var len = toLength(that.length);
-    var end = endPosition === undefined ? len : Math.min(toLength(endPosition), len);
-    var search = String(searchString);
-    return $endsWith
-      ? $endsWith.call(that, search, end)
-      : that.slice(end - search.length, end) === search;
-  }
-});
-
-
-/***/ }),
-
-/***/ 9457:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// B.2.3.6 String.prototype.fixed()
-__webpack_require__(5776)('fixed', function (createHTML) {
-  return function fixed() {
-    return createHTML(this, 'tt', '', '');
-  };
-});
-
-
-/***/ }),
-
-/***/ 9876:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// B.2.3.7 String.prototype.fontcolor(color)
-__webpack_require__(5776)('fontcolor', function (createHTML) {
-  return function fontcolor(color) {
-    return createHTML(this, 'font', 'color', color);
-  };
-});
-
-
-/***/ }),
-
-/***/ 9772:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// B.2.3.8 String.prototype.fontsize(size)
-__webpack_require__(5776)('fontsize', function (createHTML) {
-  return function fontsize(size) {
-    return createHTML(this, 'font', 'size', size);
-  };
-});
-
-
-/***/ }),
-
-/***/ 2763:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var $export = __webpack_require__(5772);
-var toAbsoluteIndex = __webpack_require__(8615);
-var fromCharCode = String.fromCharCode;
-var $fromCodePoint = String.fromCodePoint;
-
-// length should be 1, old FF problem
-$export($export.S + $export.F * (!!$fromCodePoint && $fromCodePoint.length != 1), 'String', {
-  // 21.1.2.2 String.fromCodePoint(...codePoints)
-  fromCodePoint: function fromCodePoint(x) { // eslint-disable-line no-unused-vars
-    var res = [];
-    var aLen = arguments.length;
-    var i = 0;
-    var code;
-    while (aLen > i) {
-      code = +arguments[i++];
-      if (toAbsoluteIndex(code, 0x10ffff) !== code) throw RangeError(code + ' is not a valid code point');
-      res.push(code < 0x10000
-        ? fromCharCode(code)
-        : fromCharCode(((code -= 0x10000) >> 10) + 0xd800, code % 0x400 + 0xdc00)
-      );
-    } return res.join('');
-  }
-});
-
-
-/***/ }),
-
-/***/ 3777:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-// 21.1.3.7 String.prototype.includes(searchString, position = 0)
-
-var $export = __webpack_require__(5772);
-var context = __webpack_require__(465);
-var INCLUDES = 'includes';
-
-$export($export.P + $export.F * __webpack_require__(6570)(INCLUDES), 'String', {
-  includes: function includes(searchString /* , position = 0 */) {
-    return !!~context(this, searchString, INCLUDES)
-      .indexOf(searchString, arguments.length > 1 ? arguments[1] : undefined);
-  }
-});
-
-
-/***/ }),
-
-/***/ 7174:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// B.2.3.9 String.prototype.italics()
-__webpack_require__(5776)('italics', function (createHTML) {
-  return function italics() {
-    return createHTML(this, 'i', '', '');
-  };
-});
-
-
-/***/ }),
-
-/***/ 7472:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $at = __webpack_require__(2070)(true);
-
-// 21.1.3.27 String.prototype[@@iterator]()
-__webpack_require__(1195)(String, 'String', function (iterated) {
-  this._t = String(iterated); // target
-  this._i = 0;                // next index
-// 21.1.5.2.1 %StringIteratorPrototype%.next()
-}, function () {
-  var O = this._t;
-  var index = this._i;
-  var point;
-  if (index >= O.length) return { value: undefined, done: true };
-  point = $at(O, index);
-  this._i += point.length;
-  return { value: point, done: false };
-});
-
-
-/***/ }),
-
-/***/ 5251:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// B.2.3.10 String.prototype.link(url)
-__webpack_require__(5776)('link', function (createHTML) {
-  return function link(url) {
-    return createHTML(this, 'a', 'href', url);
-  };
-});
-
-
-/***/ }),
-
-/***/ 1711:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var $export = __webpack_require__(5772);
-var toIObject = __webpack_require__(5703);
-var toLength = __webpack_require__(6078);
-
-$export($export.S, 'String', {
-  // 21.1.2.4 String.raw(callSite, ...substitutions)
-  raw: function raw(callSite) {
-    var tpl = toIObject(callSite.raw);
-    var len = toLength(tpl.length);
-    var aLen = arguments.length;
-    var res = [];
-    var i = 0;
-    while (len > i) {
-      res.push(String(tpl[i++]));
-      if (i < aLen) res.push(String(arguments[i]));
-    } return res.join('');
-  }
-});
-
-
-/***/ }),
-
-/***/ 7238:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var $export = __webpack_require__(5772);
-
-$export($export.P, 'String', {
-  // 21.1.3.13 String.prototype.repeat(count)
-  repeat: __webpack_require__(7160)
-});
-
-
-/***/ }),
-
-/***/ 7984:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// B.2.3.11 String.prototype.small()
-__webpack_require__(5776)('small', function (createHTML) {
-  return function small() {
-    return createHTML(this, 'small', '', '');
-  };
-});
-
-
-/***/ }),
-
-/***/ 5942:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-// 21.1.3.18 String.prototype.startsWith(searchString [, position ])
-
-var $export = __webpack_require__(5772);
-var toLength = __webpack_require__(6078);
-var context = __webpack_require__(465);
-var STARTS_WITH = 'startsWith';
-var $startsWith = ''[STARTS_WITH];
-
-$export($export.P + $export.F * __webpack_require__(6570)(STARTS_WITH), 'String', {
-  startsWith: function startsWith(searchString /* , position = 0 */) {
-    var that = context(this, searchString, STARTS_WITH);
-    var index = toLength(Math.min(arguments.length > 1 ? arguments[1] : undefined, that.length));
-    var search = String(searchString);
-    return $startsWith
-      ? $startsWith.call(that, search, index)
-      : that.slice(index, index + search.length) === search;
-  }
-});
-
-
-/***/ }),
-
-/***/ 3359:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// B.2.3.12 String.prototype.strike()
-__webpack_require__(5776)('strike', function (createHTML) {
-  return function strike() {
-    return createHTML(this, 'strike', '', '');
-  };
-});
-
-
-/***/ }),
-
-/***/ 195:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// B.2.3.13 String.prototype.sub()
-__webpack_require__(5776)('sub', function (createHTML) {
-  return function sub() {
-    return createHTML(this, 'sub', '', '');
-  };
-});
-
-
-/***/ }),
-
-/***/ 8586:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// B.2.3.14 String.prototype.sup()
-__webpack_require__(5776)('sup', function (createHTML) {
-  return function sup() {
-    return createHTML(this, 'sup', '', '');
-  };
-});
-
-
-/***/ }),
-
-/***/ 183:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// 21.1.3.25 String.prototype.trim()
-__webpack_require__(8487)('trim', function ($trim) {
-  return function trim() {
-    return $trim(this, 3);
-  };
-});
-
-
-/***/ }),
-
-/***/ 9823:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// ECMAScript 6 symbols shim
-var global = __webpack_require__(8113);
-var has = __webpack_require__(4040);
-var DESCRIPTORS = __webpack_require__(6628);
-var $export = __webpack_require__(5772);
-var redefine = __webpack_require__(7738);
-var META = __webpack_require__(998).KEY;
-var $fails = __webpack_require__(8625);
-var shared = __webpack_require__(8655);
-var setToStringTag = __webpack_require__(5727);
-var uid = __webpack_require__(5078);
-var wks = __webpack_require__(2190);
-var wksExt = __webpack_require__(9669);
-var wksDefine = __webpack_require__(5660);
-var enumKeys = __webpack_require__(7820);
-var isArray = __webpack_require__(9141);
-var anObject = __webpack_require__(6365);
-var isObject = __webpack_require__(7334);
-var toObject = __webpack_require__(6033);
-var toIObject = __webpack_require__(5703);
-var toPrimitive = __webpack_require__(1382);
-var createDesc = __webpack_require__(6061);
-var _create = __webpack_require__(2897);
-var gOPNExt = __webpack_require__(5259);
-var $GOPD = __webpack_require__(4662);
-var $GOPS = __webpack_require__(7957);
-var $DP = __webpack_require__(8558);
-var $keys = __webpack_require__(2912);
-var gOPD = $GOPD.f;
-var dP = $DP.f;
-var gOPN = gOPNExt.f;
-var $Symbol = global.Symbol;
-var $JSON = global.JSON;
-var _stringify = $JSON && $JSON.stringify;
-var PROTOTYPE = 'prototype';
-var HIDDEN = wks('_hidden');
-var TO_PRIMITIVE = wks('toPrimitive');
-var isEnum = {}.propertyIsEnumerable;
-var SymbolRegistry = shared('symbol-registry');
-var AllSymbols = shared('symbols');
-var OPSymbols = shared('op-symbols');
-var ObjectProto = Object[PROTOTYPE];
-var USE_NATIVE = typeof $Symbol == 'function' && !!$GOPS.f;
-var QObject = global.QObject;
-// Don't use setters in Qt Script, https://github.com/zloirock/core-js/issues/173
-var setter = !QObject || !QObject[PROTOTYPE] || !QObject[PROTOTYPE].findChild;
-
-// fallback for old Android, https://code.google.com/p/v8/issues/detail?id=687
-var setSymbolDesc = DESCRIPTORS && $fails(function () {
-  return _create(dP({}, 'a', {
-    get: function () { return dP(this, 'a', { value: 7 }).a; }
-  })).a != 7;
-}) ? function (it, key, D) {
-  var protoDesc = gOPD(ObjectProto, key);
-  if (protoDesc) delete ObjectProto[key];
-  dP(it, key, D);
-  if (protoDesc && it !== ObjectProto) dP(ObjectProto, key, protoDesc);
-} : dP;
-
-var wrap = function (tag) {
-  var sym = AllSymbols[tag] = _create($Symbol[PROTOTYPE]);
-  sym._k = tag;
-  return sym;
-};
-
-var isSymbol = USE_NATIVE && typeof $Symbol.iterator == 'symbol' ? function (it) {
-  return typeof it == 'symbol';
-} : function (it) {
-  return it instanceof $Symbol;
-};
-
-var $defineProperty = function defineProperty(it, key, D) {
-  if (it === ObjectProto) $defineProperty(OPSymbols, key, D);
-  anObject(it);
-  key = toPrimitive(key, true);
-  anObject(D);
-  if (has(AllSymbols, key)) {
-    if (!D.enumerable) {
-      if (!has(it, HIDDEN)) dP(it, HIDDEN, createDesc(1, {}));
-      it[HIDDEN][key] = true;
+  function Request(input, options) {
+    options = options || {};
+    var body = options.body;
+
+    if (input instanceof Request) {
+      if (input.bodyUsed) {
+        throw new TypeError('Already read')
+      }
+      this.url = input.url;
+      this.credentials = input.credentials;
+      if (!options.headers) {
+        this.headers = new Headers(input.headers);
+      }
+      this.method = input.method;
+      this.mode = input.mode;
+      this.signal = input.signal;
+      if (!body && input._bodyInit != null) {
+        body = input._bodyInit;
+        input.bodyUsed = true;
+      }
     } else {
-      if (has(it, HIDDEN) && it[HIDDEN][key]) it[HIDDEN][key] = false;
-      D = _create(D, { enumerable: createDesc(0, false) });
-    } return setSymbolDesc(it, key, D);
-  } return dP(it, key, D);
-};
-var $defineProperties = function defineProperties(it, P) {
-  anObject(it);
-  var keys = enumKeys(P = toIObject(P));
-  var i = 0;
-  var l = keys.length;
-  var key;
-  while (l > i) $defineProperty(it, key = keys[i++], P[key]);
-  return it;
-};
-var $create = function create(it, P) {
-  return P === undefined ? _create(it) : $defineProperties(_create(it), P);
-};
-var $propertyIsEnumerable = function propertyIsEnumerable(key) {
-  var E = isEnum.call(this, key = toPrimitive(key, true));
-  if (this === ObjectProto && has(AllSymbols, key) && !has(OPSymbols, key)) return false;
-  return E || !has(this, key) || !has(AllSymbols, key) || has(this, HIDDEN) && this[HIDDEN][key] ? E : true;
-};
-var $getOwnPropertyDescriptor = function getOwnPropertyDescriptor(it, key) {
-  it = toIObject(it);
-  key = toPrimitive(key, true);
-  if (it === ObjectProto && has(AllSymbols, key) && !has(OPSymbols, key)) return;
-  var D = gOPD(it, key);
-  if (D && has(AllSymbols, key) && !(has(it, HIDDEN) && it[HIDDEN][key])) D.enumerable = true;
-  return D;
-};
-var $getOwnPropertyNames = function getOwnPropertyNames(it) {
-  var names = gOPN(toIObject(it));
-  var result = [];
-  var i = 0;
-  var key;
-  while (names.length > i) {
-    if (!has(AllSymbols, key = names[i++]) && key != HIDDEN && key != META) result.push(key);
-  } return result;
-};
-var $getOwnPropertySymbols = function getOwnPropertySymbols(it) {
-  var IS_OP = it === ObjectProto;
-  var names = gOPN(IS_OP ? OPSymbols : toIObject(it));
-  var result = [];
-  var i = 0;
-  var key;
-  while (names.length > i) {
-    if (has(AllSymbols, key = names[i++]) && (IS_OP ? has(ObjectProto, key) : true)) result.push(AllSymbols[key]);
-  } return result;
-};
-
-// 19.4.1.1 Symbol([description])
-if (!USE_NATIVE) {
-  $Symbol = function Symbol() {
-    if (this instanceof $Symbol) throw TypeError('Symbol is not a constructor!');
-    var tag = uid(arguments.length > 0 ? arguments[0] : undefined);
-    var $set = function (value) {
-      if (this === ObjectProto) $set.call(OPSymbols, value);
-      if (has(this, HIDDEN) && has(this[HIDDEN], tag)) this[HIDDEN][tag] = false;
-      setSymbolDesc(this, tag, createDesc(1, value));
-    };
-    if (DESCRIPTORS && setter) setSymbolDesc(ObjectProto, tag, { configurable: true, set: $set });
-    return wrap(tag);
-  };
-  redefine($Symbol[PROTOTYPE], 'toString', function toString() {
-    return this._k;
-  });
-
-  $GOPD.f = $getOwnPropertyDescriptor;
-  $DP.f = $defineProperty;
-  __webpack_require__(6604).f = gOPNExt.f = $getOwnPropertyNames;
-  __webpack_require__(5873).f = $propertyIsEnumerable;
-  $GOPS.f = $getOwnPropertySymbols;
-
-  if (DESCRIPTORS && !__webpack_require__(1422)) {
-    redefine(ObjectProto, 'propertyIsEnumerable', $propertyIsEnumerable, true);
-  }
-
-  wksExt.f = function (name) {
-    return wrap(wks(name));
-  };
-}
-
-$export($export.G + $export.W + $export.F * !USE_NATIVE, { Symbol: $Symbol });
-
-for (var es6Symbols = (
-  // 19.4.2.2, 19.4.2.3, 19.4.2.4, 19.4.2.6, 19.4.2.8, 19.4.2.9, 19.4.2.10, 19.4.2.11, 19.4.2.12, 19.4.2.13, 19.4.2.14
-  'hasInstance,isConcatSpreadable,iterator,match,replace,search,species,split,toPrimitive,toStringTag,unscopables'
-).split(','), j = 0; es6Symbols.length > j;)wks(es6Symbols[j++]);
-
-for (var wellKnownSymbols = $keys(wks.store), k = 0; wellKnownSymbols.length > k;) wksDefine(wellKnownSymbols[k++]);
-
-$export($export.S + $export.F * !USE_NATIVE, 'Symbol', {
-  // 19.4.2.1 Symbol.for(key)
-  'for': function (key) {
-    return has(SymbolRegistry, key += '')
-      ? SymbolRegistry[key]
-      : SymbolRegistry[key] = $Symbol(key);
-  },
-  // 19.4.2.5 Symbol.keyFor(sym)
-  keyFor: function keyFor(sym) {
-    if (!isSymbol(sym)) throw TypeError(sym + ' is not a symbol!');
-    for (var key in SymbolRegistry) if (SymbolRegistry[key] === sym) return key;
-  },
-  useSetter: function () { setter = true; },
-  useSimple: function () { setter = false; }
-});
-
-$export($export.S + $export.F * !USE_NATIVE, 'Object', {
-  // 19.1.2.2 Object.create(O [, Properties])
-  create: $create,
-  // 19.1.2.4 Object.defineProperty(O, P, Attributes)
-  defineProperty: $defineProperty,
-  // 19.1.2.3 Object.defineProperties(O, Properties)
-  defineProperties: $defineProperties,
-  // 19.1.2.6 Object.getOwnPropertyDescriptor(O, P)
-  getOwnPropertyDescriptor: $getOwnPropertyDescriptor,
-  // 19.1.2.7 Object.getOwnPropertyNames(O)
-  getOwnPropertyNames: $getOwnPropertyNames,
-  // 19.1.2.8 Object.getOwnPropertySymbols(O)
-  getOwnPropertySymbols: $getOwnPropertySymbols
-});
-
-// Chrome 38 and 39 `Object.getOwnPropertySymbols` fails on primitives
-// https://bugs.chromium.org/p/v8/issues/detail?id=3443
-var FAILS_ON_PRIMITIVES = $fails(function () { $GOPS.f(1); });
-
-$export($export.S + $export.F * FAILS_ON_PRIMITIVES, 'Object', {
-  getOwnPropertySymbols: function getOwnPropertySymbols(it) {
-    return $GOPS.f(toObject(it));
-  }
-});
-
-// 24.3.2 JSON.stringify(value [, replacer [, space]])
-$JSON && $export($export.S + $export.F * (!USE_NATIVE || $fails(function () {
-  var S = $Symbol();
-  // MS Edge converts symbol values to JSON as {}
-  // WebKit converts symbol values to JSON as null
-  // V8 throws on boxed symbols
-  return _stringify([S]) != '[null]' || _stringify({ a: S }) != '{}' || _stringify(Object(S)) != '{}';
-})), 'JSON', {
-  stringify: function stringify(it) {
-    var args = [it];
-    var i = 1;
-    var replacer, $replacer;
-    while (arguments.length > i) args.push(arguments[i++]);
-    $replacer = replacer = args[1];
-    if (!isObject(replacer) && it === undefined || isSymbol(it)) return; // IE8 returns string on undefined
-    if (!isArray(replacer)) replacer = function (key, value) {
-      if (typeof $replacer == 'function') value = $replacer.call(this, key, value);
-      if (!isSymbol(value)) return value;
-    };
-    args[1] = replacer;
-    return _stringify.apply($JSON, args);
-  }
-});
-
-// 19.4.3.4 Symbol.prototype[@@toPrimitive](hint)
-$Symbol[PROTOTYPE][TO_PRIMITIVE] || __webpack_require__(4216)($Symbol[PROTOTYPE], TO_PRIMITIVE, $Symbol[PROTOTYPE].valueOf);
-// 19.4.3.5 Symbol.prototype[@@toStringTag]
-setToStringTag($Symbol, 'Symbol');
-// 20.2.1.9 Math[@@toStringTag]
-setToStringTag(Math, 'Math', true);
-// 24.3.3 JSON[@@toStringTag]
-setToStringTag(global.JSON, 'JSON', true);
-
-
-/***/ }),
-
-/***/ 345:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var $export = __webpack_require__(5772);
-var $typed = __webpack_require__(5949);
-var buffer = __webpack_require__(4972);
-var anObject = __webpack_require__(6365);
-var toAbsoluteIndex = __webpack_require__(8615);
-var toLength = __webpack_require__(6078);
-var isObject = __webpack_require__(7334);
-var ArrayBuffer = __webpack_require__(8113).ArrayBuffer;
-var speciesConstructor = __webpack_require__(1987);
-var $ArrayBuffer = buffer.ArrayBuffer;
-var $DataView = buffer.DataView;
-var $isView = $typed.ABV && ArrayBuffer.isView;
-var $slice = $ArrayBuffer.prototype.slice;
-var VIEW = $typed.VIEW;
-var ARRAY_BUFFER = 'ArrayBuffer';
-
-$export($export.G + $export.W + $export.F * (ArrayBuffer !== $ArrayBuffer), { ArrayBuffer: $ArrayBuffer });
-
-$export($export.S + $export.F * !$typed.CONSTR, ARRAY_BUFFER, {
-  // 24.1.3.1 ArrayBuffer.isView(arg)
-  isView: function isView(it) {
-    return $isView && $isView(it) || isObject(it) && VIEW in it;
-  }
-});
-
-$export($export.P + $export.U + $export.F * __webpack_require__(8625)(function () {
-  return !new $ArrayBuffer(2).slice(1, undefined).byteLength;
-}), ARRAY_BUFFER, {
-  // 24.1.4.3 ArrayBuffer.prototype.slice(start, end)
-  slice: function slice(start, end) {
-    if ($slice !== undefined && end === undefined) return $slice.call(anObject(this), start); // FF fix
-    var len = anObject(this).byteLength;
-    var first = toAbsoluteIndex(start, len);
-    var fin = toAbsoluteIndex(end === undefined ? len : end, len);
-    var result = new (speciesConstructor(this, $ArrayBuffer))(toLength(fin - first));
-    var viewS = new $DataView(this);
-    var viewT = new $DataView(result);
-    var index = 0;
-    while (first < fin) {
-      viewT.setUint8(index++, viewS.getUint8(first++));
-    } return result;
-  }
-});
-
-__webpack_require__(9766)(ARRAY_BUFFER);
-
-
-/***/ }),
-
-/***/ 8460:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var $export = __webpack_require__(5772);
-$export($export.G + $export.W + $export.F * !__webpack_require__(5949).ABV, {
-  DataView: __webpack_require__(4972).DataView
-});
-
-
-/***/ }),
-
-/***/ 3149:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(7978)('Float32', 4, function (init) {
-  return function Float32Array(data, byteOffset, length) {
-    return init(this, data, byteOffset, length);
-  };
-});
-
-
-/***/ }),
-
-/***/ 4637:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(7978)('Float64', 8, function (init) {
-  return function Float64Array(data, byteOffset, length) {
-    return init(this, data, byteOffset, length);
-  };
-});
-
-
-/***/ }),
-
-/***/ 3958:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(7978)('Int16', 2, function (init) {
-  return function Int16Array(data, byteOffset, length) {
-    return init(this, data, byteOffset, length);
-  };
-});
-
-
-/***/ }),
-
-/***/ 5469:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(7978)('Int32', 4, function (init) {
-  return function Int32Array(data, byteOffset, length) {
-    return init(this, data, byteOffset, length);
-  };
-});
-
-
-/***/ }),
-
-/***/ 6788:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(7978)('Int8', 1, function (init) {
-  return function Int8Array(data, byteOffset, length) {
-    return init(this, data, byteOffset, length);
-  };
-});
-
-
-/***/ }),
-
-/***/ 1592:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(7978)('Uint16', 2, function (init) {
-  return function Uint16Array(data, byteOffset, length) {
-    return init(this, data, byteOffset, length);
-  };
-});
-
-
-/***/ }),
-
-/***/ 6471:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(7978)('Uint32', 4, function (init) {
-  return function Uint32Array(data, byteOffset, length) {
-    return init(this, data, byteOffset, length);
-  };
-});
-
-
-/***/ }),
-
-/***/ 6780:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(7978)('Uint8', 1, function (init) {
-  return function Uint8Array(data, byteOffset, length) {
-    return init(this, data, byteOffset, length);
-  };
-});
-
-
-/***/ }),
-
-/***/ 3620:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-__webpack_require__(7978)('Uint8', 1, function (init) {
-  return function Uint8ClampedArray(data, byteOffset, length) {
-    return init(this, data, byteOffset, length);
-  };
-}, true);
-
-
-/***/ }),
-
-/***/ 773:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var global = __webpack_require__(8113);
-var each = __webpack_require__(8309)(0);
-var redefine = __webpack_require__(7738);
-var meta = __webpack_require__(998);
-var assign = __webpack_require__(7029);
-var weak = __webpack_require__(6339);
-var isObject = __webpack_require__(7334);
-var validate = __webpack_require__(9060);
-var NATIVE_WEAK_MAP = __webpack_require__(9060);
-var IS_IE11 = !global.ActiveXObject && 'ActiveXObject' in global;
-var WEAK_MAP = 'WeakMap';
-var getWeak = meta.getWeak;
-var isExtensible = Object.isExtensible;
-var uncaughtFrozenStore = weak.ufstore;
-var InternalMap;
-
-var wrapper = function (get) {
-  return function WeakMap() {
-    return get(this, arguments.length > 0 ? arguments[0] : undefined);
-  };
-};
-
-var methods = {
-  // 23.3.3.3 WeakMap.prototype.get(key)
-  get: function get(key) {
-    if (isObject(key)) {
-      var data = getWeak(key);
-      if (data === true) return uncaughtFrozenStore(validate(this, WEAK_MAP)).get(key);
-      return data ? data[this._i] : undefined;
+      this.url = String(input);
     }
-  },
-  // 23.3.3.5 WeakMap.prototype.set(key, value)
-  set: function set(key, value) {
-    return weak.def(validate(this, WEAK_MAP), key, value);
+
+    this.credentials = options.credentials || this.credentials || 'same-origin';
+    if (options.headers || !this.headers) {
+      this.headers = new Headers(options.headers);
+    }
+    this.method = normalizeMethod(options.method || this.method || 'GET');
+    this.mode = options.mode || this.mode || null;
+    this.signal = options.signal || this.signal;
+    this.referrer = null;
+
+    if ((this.method === 'GET' || this.method === 'HEAD') && body) {
+      throw new TypeError('Body not allowed for GET or HEAD requests')
+    }
+    this._initBody(body);
   }
-};
 
-// 23.3 WeakMap Objects
-var $WeakMap = module.exports = __webpack_require__(7611)(WEAK_MAP, wrapper, methods, weak, true, true);
+  Request.prototype.clone = function() {
+    return new Request(this, {body: this._bodyInit})
+  };
 
-// IE11 WeakMap frozen keys fix
-if (NATIVE_WEAK_MAP && IS_IE11) {
-  InternalMap = weak.getConstructor(wrapper, WEAK_MAP);
-  assign(InternalMap.prototype, methods);
-  meta.NEED = true;
-  each(['delete', 'has', 'get', 'set'], function (key) {
-    var proto = $WeakMap.prototype;
-    var method = proto[key];
-    redefine(proto, key, function (a, b) {
-      // store frozen objects on internal weakmap shim
-      if (isObject(a) && !isExtensible(a)) {
-        if (!this._f) this._f = new InternalMap();
-        var result = this._f[key](a, b);
-        return key == 'set' ? this : result;
-      // store all the rest on native weakmap
-      } return method.call(this, a, b);
+  function decode(body) {
+    var form = new FormData();
+    body
+      .trim()
+      .split('&')
+      .forEach(function(bytes) {
+        if (bytes) {
+          var split = bytes.split('=');
+          var name = split.shift().replace(/\+/g, ' ');
+          var value = split.join('=').replace(/\+/g, ' ');
+          form.append(decodeURIComponent(name), decodeURIComponent(value));
+        }
+      });
+    return form
+  }
+
+  function parseHeaders(rawHeaders) {
+    var headers = new Headers();
+    // Replace instances of \r\n and \n followed by at least one space or horizontal tab with a space
+    // https://tools.ietf.org/html/rfc7230#section-3.2
+    var preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/g, ' ');
+    preProcessedHeaders.split(/\r?\n/).forEach(function(line) {
+      var parts = line.split(':');
+      var key = parts.shift().trim();
+      if (key) {
+        var value = parts.join(':').trim();
+        headers.append(key, value);
+      }
     });
-  });
-}
-
-
-/***/ }),
-
-/***/ 3623:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-var weak = __webpack_require__(6339);
-var validate = __webpack_require__(9060);
-var WEAK_SET = 'WeakSet';
-
-// 23.4 WeakSet Objects
-__webpack_require__(7611)(WEAK_SET, function (get) {
-  return function WeakSet() { return get(this, arguments.length > 0 ? arguments[0] : undefined); };
-}, {
-  // 23.4.3.1 WeakSet.prototype.add(value)
-  add: function add(value) {
-    return weak.def(validate(this, WEAK_SET), value, true);
+    return headers
   }
-}, weak, false, true);
 
+  Body.call(Request.prototype);
 
-/***/ }),
-
-/***/ 7328:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// https://tc39.github.io/proposal-flatMap/#sec-Array.prototype.flatMap
-var $export = __webpack_require__(5772);
-var flattenIntoArray = __webpack_require__(2674);
-var toObject = __webpack_require__(6033);
-var toLength = __webpack_require__(6078);
-var aFunction = __webpack_require__(2761);
-var arraySpeciesCreate = __webpack_require__(3531);
-
-$export($export.P, 'Array', {
-  flatMap: function flatMap(callbackfn /* , thisArg */) {
-    var O = toObject(this);
-    var sourceLen, A;
-    aFunction(callbackfn);
-    sourceLen = toLength(O.length);
-    A = arraySpeciesCreate(O, 0);
-    flattenIntoArray(A, O, O, sourceLen, 0, 1, callbackfn, arguments[1]);
-    return A;
-  }
-});
-
-__webpack_require__(2094)('flatMap');
-
-
-/***/ }),
-
-/***/ 8081:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// https://github.com/tc39/Array.prototype.includes
-var $export = __webpack_require__(5772);
-var $includes = __webpack_require__(9021)(true);
-
-$export($export.P, 'Array', {
-  includes: function includes(el /* , fromIndex = 0 */) {
-    return $includes(this, el, arguments.length > 1 ? arguments[1] : undefined);
-  }
-});
-
-__webpack_require__(2094)('includes');
-
-
-/***/ }),
-
-/***/ 9716:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// https://github.com/tc39/proposal-object-values-entries
-var $export = __webpack_require__(5772);
-var $entries = __webpack_require__(758)(true);
-
-$export($export.S, 'Object', {
-  entries: function entries(it) {
-    return $entries(it);
-  }
-});
-
-
-/***/ }),
-
-/***/ 7453:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// https://github.com/tc39/proposal-object-getownpropertydescriptors
-var $export = __webpack_require__(5772);
-var ownKeys = __webpack_require__(6831);
-var toIObject = __webpack_require__(5703);
-var gOPD = __webpack_require__(4662);
-var createProperty = __webpack_require__(6644);
-
-$export($export.S, 'Object', {
-  getOwnPropertyDescriptors: function getOwnPropertyDescriptors(object) {
-    var O = toIObject(object);
-    var getDesc = gOPD.f;
-    var keys = ownKeys(O);
-    var result = {};
-    var i = 0;
-    var key, desc;
-    while (keys.length > i) {
-      desc = getDesc(O, key = keys[i++]);
-      if (desc !== undefined) createProperty(result, key, desc);
+  function Response(bodyInit, options) {
+    if (!options) {
+      options = {};
     }
-    return result;
+
+    this.type = 'default';
+    this.status = options.status === undefined ? 200 : options.status;
+    this.ok = this.status >= 200 && this.status < 300;
+    this.statusText = 'statusText' in options ? options.statusText : 'OK';
+    this.headers = new Headers(options.headers);
+    this.url = options.url || '';
+    this._initBody(bodyInit);
   }
-});
 
+  Body.call(Response.prototype);
 
-/***/ }),
-
-/***/ 27:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-// https://github.com/tc39/proposal-object-values-entries
-var $export = __webpack_require__(5772);
-var $values = __webpack_require__(758)(false);
-
-$export($export.S, 'Object', {
-  values: function values(it) {
-    return $values(it);
-  }
-});
-
-
-/***/ }),
-
-/***/ 6632:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-// https://github.com/tc39/proposal-promise-finally
-
-var $export = __webpack_require__(5772);
-var core = __webpack_require__(66);
-var global = __webpack_require__(8113);
-var speciesConstructor = __webpack_require__(1987);
-var promiseResolve = __webpack_require__(5151);
-
-$export($export.P + $export.R, 'Promise', { 'finally': function (onFinally) {
-  var C = speciesConstructor(this, core.Promise || global.Promise);
-  var isFunction = typeof onFinally == 'function';
-  return this.then(
-    isFunction ? function (x) {
-      return promiseResolve(C, onFinally()).then(function () { return x; });
-    } : onFinally,
-    isFunction ? function (e) {
-      return promiseResolve(C, onFinally()).then(function () { throw e; });
-    } : onFinally
-  );
-} });
-
-
-/***/ }),
-
-/***/ 8302:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// https://github.com/tc39/proposal-string-pad-start-end
-var $export = __webpack_require__(5772);
-var $pad = __webpack_require__(6283);
-var userAgent = __webpack_require__(5822);
-
-// https://github.com/zloirock/core-js/issues/280
-var WEBKIT_BUG = /Version\/10\.\d+(\.\d+)?( Mobile\/\w+)? Safari\//.test(userAgent);
-
-$export($export.P + $export.F * WEBKIT_BUG, 'String', {
-  padEnd: function padEnd(maxLength /* , fillString = ' ' */) {
-    return $pad(this, maxLength, arguments.length > 1 ? arguments[1] : undefined, false);
-  }
-});
-
-
-/***/ }),
-
-/***/ 9447:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// https://github.com/tc39/proposal-string-pad-start-end
-var $export = __webpack_require__(5772);
-var $pad = __webpack_require__(6283);
-var userAgent = __webpack_require__(5822);
-
-// https://github.com/zloirock/core-js/issues/280
-var WEBKIT_BUG = /Version\/10\.\d+(\.\d+)?( Mobile\/\w+)? Safari\//.test(userAgent);
-
-$export($export.P + $export.F * WEBKIT_BUG, 'String', {
-  padStart: function padStart(maxLength /* , fillString = ' ' */) {
-    return $pad(this, maxLength, arguments.length > 1 ? arguments[1] : undefined, true);
-  }
-});
-
-
-/***/ }),
-
-/***/ 9324:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// https://github.com/sebmarkbage/ecmascript-string-left-right-trim
-__webpack_require__(8487)('trimLeft', function ($trim) {
-  return function trimLeft() {
-    return $trim(this, 1);
+  Response.prototype.clone = function() {
+    return new Response(this._bodyInit, {
+      status: this.status,
+      statusText: this.statusText,
+      headers: new Headers(this.headers),
+      url: this.url
+    })
   };
-}, 'trimStart');
 
-
-/***/ }),
-
-/***/ 152:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-"use strict";
-
-// https://github.com/sebmarkbage/ecmascript-string-left-right-trim
-__webpack_require__(8487)('trimRight', function ($trim) {
-  return function trimRight() {
-    return $trim(this, 2);
+  Response.error = function() {
+    var response = new Response(null, {status: 0, statusText: ''});
+    response.type = 'error';
+    return response
   };
-}, 'trimEnd');
 
+  var redirectStatuses = [301, 302, 303, 307, 308];
 
-/***/ }),
+  Response.redirect = function(url, status) {
+    if (redirectStatuses.indexOf(status) === -1) {
+      throw new RangeError('Invalid status code')
+    }
 
-/***/ 3756:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
+    return new Response(null, {status: status, headers: {location: url}})
+  };
 
-__webpack_require__(5660)('asyncIterator');
-
-
-/***/ }),
-
-/***/ 3085:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-var $iterators = __webpack_require__(7680);
-var getKeys = __webpack_require__(2912);
-var redefine = __webpack_require__(7738);
-var global = __webpack_require__(8113);
-var hide = __webpack_require__(4216);
-var Iterators = __webpack_require__(3988);
-var wks = __webpack_require__(2190);
-var ITERATOR = wks('iterator');
-var TO_STRING_TAG = wks('toStringTag');
-var ArrayValues = Iterators.Array;
-
-var DOMIterables = {
-  CSSRuleList: true, // TODO: Not spec compliant, should be false.
-  CSSStyleDeclaration: false,
-  CSSValueList: false,
-  ClientRectList: false,
-  DOMRectList: false,
-  DOMStringList: false,
-  DOMTokenList: true,
-  DataTransferItemList: false,
-  FileList: false,
-  HTMLAllCollection: false,
-  HTMLCollection: false,
-  HTMLFormElement: false,
-  HTMLSelectElement: false,
-  MediaList: true, // TODO: Not spec compliant, should be false.
-  MimeTypeArray: false,
-  NamedNodeMap: false,
-  NodeList: true,
-  PaintRequestList: false,
-  Plugin: false,
-  PluginArray: false,
-  SVGLengthList: false,
-  SVGNumberList: false,
-  SVGPathSegList: false,
-  SVGPointList: false,
-  SVGStringList: false,
-  SVGTransformList: false,
-  SourceBufferList: false,
-  StyleSheetList: true, // TODO: Not spec compliant, should be false.
-  TextTrackCueList: false,
-  TextTrackList: false,
-  TouchList: false
-};
-
-for (var collections = getKeys(DOMIterables), i = 0; i < collections.length; i++) {
-  var NAME = collections[i];
-  var explicit = DOMIterables[NAME];
-  var Collection = global[NAME];
-  var proto = Collection && Collection.prototype;
-  var key;
-  if (proto) {
-    if (!proto[ITERATOR]) hide(proto, ITERATOR, ArrayValues);
-    if (!proto[TO_STRING_TAG]) hide(proto, TO_STRING_TAG, NAME);
-    Iterators[NAME] = ArrayValues;
-    if (explicit) for (key in $iterators) if (!proto[key]) redefine(proto, key, $iterators[key], true);
+  exports.DOMException = self.DOMException;
+  try {
+    new exports.DOMException();
+  } catch (err) {
+    exports.DOMException = function(message, name) {
+      this.message = message;
+      this.name = name;
+      var error = Error(message);
+      this.stack = error.stack;
+    };
+    exports.DOMException.prototype = Object.create(Error.prototype);
+    exports.DOMException.prototype.constructor = exports.DOMException;
   }
-}
 
+  function fetch(input, init) {
+    return new Promise(function(resolve, reject) {
+      var request = new Request(input, init);
 
-/***/ }),
+      if (request.signal && request.signal.aborted) {
+        return reject(new exports.DOMException('Aborted', 'AbortError'))
+      }
 
-/***/ 6282:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
+      var xhr = new XMLHttpRequest();
 
-var $export = __webpack_require__(5772);
-var $task = __webpack_require__(9124);
-$export($export.G + $export.B, {
-  setImmediate: $task.set,
-  clearImmediate: $task.clear
-});
+      function abortXhr() {
+        xhr.abort();
+      }
 
+      xhr.onload = function() {
+        var options = {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          headers: parseHeaders(xhr.getAllResponseHeaders() || '')
+        };
+        options.url = 'responseURL' in xhr ? xhr.responseURL : options.headers.get('X-Request-URL');
+        var body = 'response' in xhr ? xhr.response : xhr.responseText;
+        resolve(new Response(body, options));
+      };
 
-/***/ }),
+      xhr.onerror = function() {
+        reject(new TypeError('Network request failed'));
+      };
 
-/***/ 6252:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
+      xhr.ontimeout = function() {
+        reject(new TypeError('Network request failed'));
+      };
 
-// ie9- setTimeout & setInterval additional parameters fix
-var global = __webpack_require__(8113);
-var $export = __webpack_require__(5772);
-var userAgent = __webpack_require__(5822);
-var slice = [].slice;
-var MSIE = /MSIE .\./.test(userAgent); // <- dirty ie9- check
-var wrap = function (set) {
-  return function (fn, time /* , ...args */) {
-    var boundArgs = arguments.length > 2;
-    var args = boundArgs ? slice.call(arguments, 2) : false;
-    return set(boundArgs ? function () {
-      // eslint-disable-next-line no-new-func
-      (typeof fn == 'function' ? fn : Function(fn)).apply(this, args);
-    } : fn, time);
-  };
-};
-$export($export.G + $export.B + $export.F * MSIE, {
-  setTimeout: wrap(global.setTimeout),
-  setInterval: wrap(global.setInterval)
-});
+      xhr.onabort = function() {
+        reject(new exports.DOMException('Aborted', 'AbortError'));
+      };
 
+      xhr.open(request.method, request.url, true);
 
-/***/ }),
+      if (request.credentials === 'include') {
+        xhr.withCredentials = true;
+      } else if (request.credentials === 'omit') {
+        xhr.withCredentials = false;
+      }
 
-/***/ 1497:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+      if ('responseType' in xhr && support.blob) {
+        xhr.responseType = 'blob';
+      }
 
-__webpack_require__(6252);
-__webpack_require__(6282);
-__webpack_require__(3085);
-module.exports = __webpack_require__(66);
+      request.headers.forEach(function(value, name) {
+        xhr.setRequestHeader(name, value);
+      });
+
+      if (request.signal) {
+        request.signal.addEventListener('abort', abortXhr);
+
+        xhr.onreadystatechange = function() {
+          // DONE (success or failure)
+          if (xhr.readyState === 4) {
+            request.signal.removeEventListener('abort', abortXhr);
+          }
+        };
+      }
+
+      xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit);
+    })
+  }
+
+  fetch.polyfill = true;
+
+  if (!self.fetch) {
+    self.fetch = fetch;
+    self.Headers = Headers;
+    self.Request = Request;
+    self.Response = Response;
+  }
+
+  exports.Headers = Headers;
+  exports.Request = Request;
+  exports.Response = Response;
+  exports.fetch = fetch;
+
+  Object.defineProperty(exports, '__esModule', { value: true });
+
+  return exports;
+
+}({}));
+})(__self__);
+__self__.fetch.ponyfill = true;
+// Remove "polyfill" property added by whatwg-fetch
+delete __self__.fetch.polyfill;
+// Choose between native implementation (global) or custom implementation (__self__)
+// var ctx = global.fetch ? global : __self__;
+var ctx = __self__; // this line disable service worker support temporarily
+exports = ctx.fetch // To enable: import fetch from 'cross-fetch'
+exports.default = ctx.fetch // For TypeScript consumers without esModuleInterop.
+exports.fetch = ctx.fetch // To enable: import {fetch} from 'cross-fetch'
+exports.Headers = ctx.Headers
+exports.Request = ctx.Request
+exports.Response = ctx.Response
+module.exports = exports
 
 
 /***/ }),
@@ -22704,6 +18557,489 @@ module.exports = generateRequest;
 
 /***/ }),
 
+/***/ 338:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+/* provided dependency */ var process = __webpack_require__(7061);
+/**
+ * [js-sha3]{@link https://github.com/emn178/js-sha3}
+ *
+ * @version 0.5.7
+ * @author Chen, Yi-Cyuan [emn178@gmail.com]
+ * @copyright Chen, Yi-Cyuan 2015-2016
+ * @license MIT
+ */
+/*jslint bitwise: true */
+(function () {
+  'use strict';
+
+  var root = typeof window === 'object' ? window : {};
+  var NODE_JS = !root.JS_SHA3_NO_NODE_JS && typeof process === 'object' && process.versions && process.versions.node;
+  if (NODE_JS) {
+    root = __webpack_require__.g;
+  }
+  var COMMON_JS = !root.JS_SHA3_NO_COMMON_JS && "object" === 'object' && module.exports;
+  var HEX_CHARS = '0123456789abcdef'.split('');
+  var SHAKE_PADDING = [31, 7936, 2031616, 520093696];
+  var KECCAK_PADDING = [1, 256, 65536, 16777216];
+  var PADDING = [6, 1536, 393216, 100663296];
+  var SHIFT = [0, 8, 16, 24];
+  var RC = [1, 0, 32898, 0, 32906, 2147483648, 2147516416, 2147483648, 32907, 0, 2147483649,
+            0, 2147516545, 2147483648, 32777, 2147483648, 138, 0, 136, 0, 2147516425, 0,
+            2147483658, 0, 2147516555, 0, 139, 2147483648, 32905, 2147483648, 32771,
+            2147483648, 32770, 2147483648, 128, 2147483648, 32778, 0, 2147483658, 2147483648,
+            2147516545, 2147483648, 32896, 2147483648, 2147483649, 0, 2147516424, 2147483648];
+  var BITS = [224, 256, 384, 512];
+  var SHAKE_BITS = [128, 256];
+  var OUTPUT_TYPES = ['hex', 'buffer', 'arrayBuffer', 'array'];
+
+  var createOutputMethod = function (bits, padding, outputType) {
+    return function (message) {
+      return new Keccak(bits, padding, bits).update(message)[outputType]();
+    };
+  };
+
+  var createShakeOutputMethod = function (bits, padding, outputType) {
+    return function (message, outputBits) {
+      return new Keccak(bits, padding, outputBits).update(message)[outputType]();
+    };
+  };
+
+  var createMethod = function (bits, padding) {
+    var method = createOutputMethod(bits, padding, 'hex');
+    method.create = function () {
+      return new Keccak(bits, padding, bits);
+    };
+    method.update = function (message) {
+      return method.create().update(message);
+    };
+    for (var i = 0; i < OUTPUT_TYPES.length; ++i) {
+      var type = OUTPUT_TYPES[i];
+      method[type] = createOutputMethod(bits, padding, type);
+    }
+    return method;
+  };
+
+  var createShakeMethod = function (bits, padding) {
+    var method = createShakeOutputMethod(bits, padding, 'hex');
+    method.create = function (outputBits) {
+      return new Keccak(bits, padding, outputBits);
+    };
+    method.update = function (message, outputBits) {
+      return method.create(outputBits).update(message);
+    };
+    for (var i = 0; i < OUTPUT_TYPES.length; ++i) {
+      var type = OUTPUT_TYPES[i];
+      method[type] = createShakeOutputMethod(bits, padding, type);
+    }
+    return method;
+  };
+
+  var algorithms = [
+    {name: 'keccak', padding: KECCAK_PADDING, bits: BITS, createMethod: createMethod},
+    {name: 'sha3', padding: PADDING, bits: BITS, createMethod: createMethod},
+    {name: 'shake', padding: SHAKE_PADDING, bits: SHAKE_BITS, createMethod: createShakeMethod}
+  ];
+
+  var methods = {}, methodNames = [];
+
+  for (var i = 0; i < algorithms.length; ++i) {
+    var algorithm = algorithms[i];
+    var bits  = algorithm.bits;
+    for (var j = 0; j < bits.length; ++j) {
+      var methodName = algorithm.name +'_' + bits[j];
+      methodNames.push(methodName);
+      methods[methodName] = algorithm.createMethod(bits[j], algorithm.padding);
+    }
+  }
+
+  function Keccak(bits, padding, outputBits) {
+    this.blocks = [];
+    this.s = [];
+    this.padding = padding;
+    this.outputBits = outputBits;
+    this.reset = true;
+    this.block = 0;
+    this.start = 0;
+    this.blockCount = (1600 - (bits << 1)) >> 5;
+    this.byteCount = this.blockCount << 2;
+    this.outputBlocks = outputBits >> 5;
+    this.extraBytes = (outputBits & 31) >> 3;
+
+    for (var i = 0; i < 50; ++i) {
+      this.s[i] = 0;
+    }
+  }
+
+  Keccak.prototype.update = function (message) {
+    var notString = typeof message !== 'string';
+    if (notString && message.constructor === ArrayBuffer) {
+      message = new Uint8Array(message);
+    }
+    var length = message.length, blocks = this.blocks, byteCount = this.byteCount,
+      blockCount = this.blockCount, index = 0, s = this.s, i, code;
+
+    while (index < length) {
+      if (this.reset) {
+        this.reset = false;
+        blocks[0] = this.block;
+        for (i = 1; i < blockCount + 1; ++i) {
+          blocks[i] = 0;
+        }
+      }
+      if (notString) {
+        for (i = this.start; index < length && i < byteCount; ++index) {
+          blocks[i >> 2] |= message[index] << SHIFT[i++ & 3];
+        }
+      } else {
+        for (i = this.start; index < length && i < byteCount; ++index) {
+          code = message.charCodeAt(index);
+          if (code < 0x80) {
+            blocks[i >> 2] |= code << SHIFT[i++ & 3];
+          } else if (code < 0x800) {
+            blocks[i >> 2] |= (0xc0 | (code >> 6)) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3];
+          } else if (code < 0xd800 || code >= 0xe000) {
+            blocks[i >> 2] |= (0xe0 | (code >> 12)) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | ((code >> 6) & 0x3f)) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3];
+          } else {
+            code = 0x10000 + (((code & 0x3ff) << 10) | (message.charCodeAt(++index) & 0x3ff));
+            blocks[i >> 2] |= (0xf0 | (code >> 18)) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | ((code >> 12) & 0x3f)) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | ((code >> 6) & 0x3f)) << SHIFT[i++ & 3];
+            blocks[i >> 2] |= (0x80 | (code & 0x3f)) << SHIFT[i++ & 3];
+          }
+        }
+      }
+      this.lastByteIndex = i;
+      if (i >= byteCount) {
+        this.start = i - byteCount;
+        this.block = blocks[blockCount];
+        for (i = 0; i < blockCount; ++i) {
+          s[i] ^= blocks[i];
+        }
+        f(s);
+        this.reset = true;
+      } else {
+        this.start = i;
+      }
+    }
+    return this;
+  };
+
+  Keccak.prototype.finalize = function () {
+    var blocks = this.blocks, i = this.lastByteIndex, blockCount = this.blockCount, s = this.s;
+    blocks[i >> 2] |= this.padding[i & 3];
+    if (this.lastByteIndex === this.byteCount) {
+      blocks[0] = blocks[blockCount];
+      for (i = 1; i < blockCount + 1; ++i) {
+        blocks[i] = 0;
+      }
+    }
+    blocks[blockCount - 1] |= 0x80000000;
+    for (i = 0; i < blockCount; ++i) {
+      s[i] ^= blocks[i];
+    }
+    f(s);
+  };
+
+  Keccak.prototype.toString = Keccak.prototype.hex = function () {
+    this.finalize();
+
+    var blockCount = this.blockCount, s = this.s, outputBlocks = this.outputBlocks,
+        extraBytes = this.extraBytes, i = 0, j = 0;
+    var hex = '', block;
+    while (j < outputBlocks) {
+      for (i = 0; i < blockCount && j < outputBlocks; ++i, ++j) {
+        block = s[i];
+        hex += HEX_CHARS[(block >> 4) & 0x0F] + HEX_CHARS[block & 0x0F] +
+               HEX_CHARS[(block >> 12) & 0x0F] + HEX_CHARS[(block >> 8) & 0x0F] +
+               HEX_CHARS[(block >> 20) & 0x0F] + HEX_CHARS[(block >> 16) & 0x0F] +
+               HEX_CHARS[(block >> 28) & 0x0F] + HEX_CHARS[(block >> 24) & 0x0F];
+      }
+      if (j % blockCount === 0) {
+        f(s);
+        i = 0;
+      }
+    }
+    if (extraBytes) {
+      block = s[i];
+      if (extraBytes > 0) {
+        hex += HEX_CHARS[(block >> 4) & 0x0F] + HEX_CHARS[block & 0x0F];
+      }
+      if (extraBytes > 1) {
+        hex += HEX_CHARS[(block >> 12) & 0x0F] + HEX_CHARS[(block >> 8) & 0x0F];
+      }
+      if (extraBytes > 2) {
+        hex += HEX_CHARS[(block >> 20) & 0x0F] + HEX_CHARS[(block >> 16) & 0x0F];
+      }
+    }
+    return hex;
+  };
+
+  Keccak.prototype.arrayBuffer = function () {
+    this.finalize();
+
+    var blockCount = this.blockCount, s = this.s, outputBlocks = this.outputBlocks,
+        extraBytes = this.extraBytes, i = 0, j = 0;
+    var bytes = this.outputBits >> 3;
+    var buffer;
+    if (extraBytes) {
+      buffer = new ArrayBuffer((outputBlocks + 1) << 2);
+    } else {
+      buffer = new ArrayBuffer(bytes);
+    }
+    var array = new Uint32Array(buffer);
+    while (j < outputBlocks) {
+      for (i = 0; i < blockCount && j < outputBlocks; ++i, ++j) {
+        array[j] = s[i];
+      }
+      if (j % blockCount === 0) {
+        f(s);
+      }
+    }
+    if (extraBytes) {
+      array[i] = s[i];
+      buffer = buffer.slice(0, bytes);
+    }
+    return buffer;
+  };
+
+  Keccak.prototype.buffer = Keccak.prototype.arrayBuffer;
+
+  Keccak.prototype.digest = Keccak.prototype.array = function () {
+    this.finalize();
+
+    var blockCount = this.blockCount, s = this.s, outputBlocks = this.outputBlocks,
+        extraBytes = this.extraBytes, i = 0, j = 0;
+    var array = [], offset, block;
+    while (j < outputBlocks) {
+      for (i = 0; i < blockCount && j < outputBlocks; ++i, ++j) {
+        offset = j << 2;
+        block = s[i];
+        array[offset] = block & 0xFF;
+        array[offset + 1] = (block >> 8) & 0xFF;
+        array[offset + 2] = (block >> 16) & 0xFF;
+        array[offset + 3] = (block >> 24) & 0xFF;
+      }
+      if (j % blockCount === 0) {
+        f(s);
+      }
+    }
+    if (extraBytes) {
+      offset = j << 2;
+      block = s[i];
+      if (extraBytes > 0) {
+        array[offset] = block & 0xFF;
+      }
+      if (extraBytes > 1) {
+        array[offset + 1] = (block >> 8) & 0xFF;
+      }
+      if (extraBytes > 2) {
+        array[offset + 2] = (block >> 16) & 0xFF;
+      }
+    }
+    return array;
+  };
+
+  var f = function (s) {
+    var h, l, n, c0, c1, c2, c3, c4, c5, c6, c7, c8, c9,
+        b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17,
+        b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33,
+        b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47, b48, b49;
+    for (n = 0; n < 48; n += 2) {
+      c0 = s[0] ^ s[10] ^ s[20] ^ s[30] ^ s[40];
+      c1 = s[1] ^ s[11] ^ s[21] ^ s[31] ^ s[41];
+      c2 = s[2] ^ s[12] ^ s[22] ^ s[32] ^ s[42];
+      c3 = s[3] ^ s[13] ^ s[23] ^ s[33] ^ s[43];
+      c4 = s[4] ^ s[14] ^ s[24] ^ s[34] ^ s[44];
+      c5 = s[5] ^ s[15] ^ s[25] ^ s[35] ^ s[45];
+      c6 = s[6] ^ s[16] ^ s[26] ^ s[36] ^ s[46];
+      c7 = s[7] ^ s[17] ^ s[27] ^ s[37] ^ s[47];
+      c8 = s[8] ^ s[18] ^ s[28] ^ s[38] ^ s[48];
+      c9 = s[9] ^ s[19] ^ s[29] ^ s[39] ^ s[49];
+
+      h = c8 ^ ((c2 << 1) | (c3 >>> 31));
+      l = c9 ^ ((c3 << 1) | (c2 >>> 31));
+      s[0] ^= h;
+      s[1] ^= l;
+      s[10] ^= h;
+      s[11] ^= l;
+      s[20] ^= h;
+      s[21] ^= l;
+      s[30] ^= h;
+      s[31] ^= l;
+      s[40] ^= h;
+      s[41] ^= l;
+      h = c0 ^ ((c4 << 1) | (c5 >>> 31));
+      l = c1 ^ ((c5 << 1) | (c4 >>> 31));
+      s[2] ^= h;
+      s[3] ^= l;
+      s[12] ^= h;
+      s[13] ^= l;
+      s[22] ^= h;
+      s[23] ^= l;
+      s[32] ^= h;
+      s[33] ^= l;
+      s[42] ^= h;
+      s[43] ^= l;
+      h = c2 ^ ((c6 << 1) | (c7 >>> 31));
+      l = c3 ^ ((c7 << 1) | (c6 >>> 31));
+      s[4] ^= h;
+      s[5] ^= l;
+      s[14] ^= h;
+      s[15] ^= l;
+      s[24] ^= h;
+      s[25] ^= l;
+      s[34] ^= h;
+      s[35] ^= l;
+      s[44] ^= h;
+      s[45] ^= l;
+      h = c4 ^ ((c8 << 1) | (c9 >>> 31));
+      l = c5 ^ ((c9 << 1) | (c8 >>> 31));
+      s[6] ^= h;
+      s[7] ^= l;
+      s[16] ^= h;
+      s[17] ^= l;
+      s[26] ^= h;
+      s[27] ^= l;
+      s[36] ^= h;
+      s[37] ^= l;
+      s[46] ^= h;
+      s[47] ^= l;
+      h = c6 ^ ((c0 << 1) | (c1 >>> 31));
+      l = c7 ^ ((c1 << 1) | (c0 >>> 31));
+      s[8] ^= h;
+      s[9] ^= l;
+      s[18] ^= h;
+      s[19] ^= l;
+      s[28] ^= h;
+      s[29] ^= l;
+      s[38] ^= h;
+      s[39] ^= l;
+      s[48] ^= h;
+      s[49] ^= l;
+
+      b0 = s[0];
+      b1 = s[1];
+      b32 = (s[11] << 4) | (s[10] >>> 28);
+      b33 = (s[10] << 4) | (s[11] >>> 28);
+      b14 = (s[20] << 3) | (s[21] >>> 29);
+      b15 = (s[21] << 3) | (s[20] >>> 29);
+      b46 = (s[31] << 9) | (s[30] >>> 23);
+      b47 = (s[30] << 9) | (s[31] >>> 23);
+      b28 = (s[40] << 18) | (s[41] >>> 14);
+      b29 = (s[41] << 18) | (s[40] >>> 14);
+      b20 = (s[2] << 1) | (s[3] >>> 31);
+      b21 = (s[3] << 1) | (s[2] >>> 31);
+      b2 = (s[13] << 12) | (s[12] >>> 20);
+      b3 = (s[12] << 12) | (s[13] >>> 20);
+      b34 = (s[22] << 10) | (s[23] >>> 22);
+      b35 = (s[23] << 10) | (s[22] >>> 22);
+      b16 = (s[33] << 13) | (s[32] >>> 19);
+      b17 = (s[32] << 13) | (s[33] >>> 19);
+      b48 = (s[42] << 2) | (s[43] >>> 30);
+      b49 = (s[43] << 2) | (s[42] >>> 30);
+      b40 = (s[5] << 30) | (s[4] >>> 2);
+      b41 = (s[4] << 30) | (s[5] >>> 2);
+      b22 = (s[14] << 6) | (s[15] >>> 26);
+      b23 = (s[15] << 6) | (s[14] >>> 26);
+      b4 = (s[25] << 11) | (s[24] >>> 21);
+      b5 = (s[24] << 11) | (s[25] >>> 21);
+      b36 = (s[34] << 15) | (s[35] >>> 17);
+      b37 = (s[35] << 15) | (s[34] >>> 17);
+      b18 = (s[45] << 29) | (s[44] >>> 3);
+      b19 = (s[44] << 29) | (s[45] >>> 3);
+      b10 = (s[6] << 28) | (s[7] >>> 4);
+      b11 = (s[7] << 28) | (s[6] >>> 4);
+      b42 = (s[17] << 23) | (s[16] >>> 9);
+      b43 = (s[16] << 23) | (s[17] >>> 9);
+      b24 = (s[26] << 25) | (s[27] >>> 7);
+      b25 = (s[27] << 25) | (s[26] >>> 7);
+      b6 = (s[36] << 21) | (s[37] >>> 11);
+      b7 = (s[37] << 21) | (s[36] >>> 11);
+      b38 = (s[47] << 24) | (s[46] >>> 8);
+      b39 = (s[46] << 24) | (s[47] >>> 8);
+      b30 = (s[8] << 27) | (s[9] >>> 5);
+      b31 = (s[9] << 27) | (s[8] >>> 5);
+      b12 = (s[18] << 20) | (s[19] >>> 12);
+      b13 = (s[19] << 20) | (s[18] >>> 12);
+      b44 = (s[29] << 7) | (s[28] >>> 25);
+      b45 = (s[28] << 7) | (s[29] >>> 25);
+      b26 = (s[38] << 8) | (s[39] >>> 24);
+      b27 = (s[39] << 8) | (s[38] >>> 24);
+      b8 = (s[48] << 14) | (s[49] >>> 18);
+      b9 = (s[49] << 14) | (s[48] >>> 18);
+
+      s[0] = b0 ^ (~b2 & b4);
+      s[1] = b1 ^ (~b3 & b5);
+      s[10] = b10 ^ (~b12 & b14);
+      s[11] = b11 ^ (~b13 & b15);
+      s[20] = b20 ^ (~b22 & b24);
+      s[21] = b21 ^ (~b23 & b25);
+      s[30] = b30 ^ (~b32 & b34);
+      s[31] = b31 ^ (~b33 & b35);
+      s[40] = b40 ^ (~b42 & b44);
+      s[41] = b41 ^ (~b43 & b45);
+      s[2] = b2 ^ (~b4 & b6);
+      s[3] = b3 ^ (~b5 & b7);
+      s[12] = b12 ^ (~b14 & b16);
+      s[13] = b13 ^ (~b15 & b17);
+      s[22] = b22 ^ (~b24 & b26);
+      s[23] = b23 ^ (~b25 & b27);
+      s[32] = b32 ^ (~b34 & b36);
+      s[33] = b33 ^ (~b35 & b37);
+      s[42] = b42 ^ (~b44 & b46);
+      s[43] = b43 ^ (~b45 & b47);
+      s[4] = b4 ^ (~b6 & b8);
+      s[5] = b5 ^ (~b7 & b9);
+      s[14] = b14 ^ (~b16 & b18);
+      s[15] = b15 ^ (~b17 & b19);
+      s[24] = b24 ^ (~b26 & b28);
+      s[25] = b25 ^ (~b27 & b29);
+      s[34] = b34 ^ (~b36 & b38);
+      s[35] = b35 ^ (~b37 & b39);
+      s[44] = b44 ^ (~b46 & b48);
+      s[45] = b45 ^ (~b47 & b49);
+      s[6] = b6 ^ (~b8 & b0);
+      s[7] = b7 ^ (~b9 & b1);
+      s[16] = b16 ^ (~b18 & b10);
+      s[17] = b17 ^ (~b19 & b11);
+      s[26] = b26 ^ (~b28 & b20);
+      s[27] = b27 ^ (~b29 & b21);
+      s[36] = b36 ^ (~b38 & b30);
+      s[37] = b37 ^ (~b39 & b31);
+      s[46] = b46 ^ (~b48 & b40);
+      s[47] = b47 ^ (~b49 & b41);
+      s[8] = b8 ^ (~b0 & b2);
+      s[9] = b9 ^ (~b1 & b3);
+      s[18] = b18 ^ (~b10 & b12);
+      s[19] = b19 ^ (~b11 & b13);
+      s[28] = b28 ^ (~b20 & b22);
+      s[29] = b29 ^ (~b21 & b23);
+      s[38] = b38 ^ (~b30 & b32);
+      s[39] = b39 ^ (~b31 & b33);
+      s[48] = b48 ^ (~b40 & b42);
+      s[49] = b49 ^ (~b41 & b43);
+
+      s[0] ^= RC[n];
+      s[1] ^= RC[n + 1];
+    }
+  };
+
+  if (COMMON_JS) {
+    module.exports = methods;
+  } else {
+    for (var i = 0; i < methodNames.length; ++i) {
+      root[methodNames[i]] = methods[methodNames[i]];
+    }
+  }
+})();
+
+
+/***/ }),
+
 /***/ 1798:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
@@ -23548,7 +19884,7 @@ function intToHex(i) {
 
 /***/ }),
 
-/***/ 458:
+/***/ 3133:
 /***/ ((module) => {
 
 assert.notEqual = notEqual
@@ -27530,761 +23866,6 @@ function randomBytes (size, cb) {
   }
 
   return bytes
-}
-
-
-/***/ }),
-
-/***/ 6248:
-/***/ ((module) => {
-
-/**
- * Copyright (c) 2014-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
-var runtime = (function (exports) {
-  "use strict";
-
-  var Op = Object.prototype;
-  var hasOwn = Op.hasOwnProperty;
-  var undefined; // More compressible than void 0.
-  var $Symbol = typeof Symbol === "function" ? Symbol : {};
-  var iteratorSymbol = $Symbol.iterator || "@@iterator";
-  var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
-  var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
-
-  function define(obj, key, value) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-    return obj[key];
-  }
-  try {
-    // IE 8 has a broken Object.defineProperty that only works on DOM objects.
-    define({}, "");
-  } catch (err) {
-    define = function(obj, key, value) {
-      return obj[key] = value;
-    };
-  }
-
-  function wrap(innerFn, outerFn, self, tryLocsList) {
-    // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
-    var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
-    var generator = Object.create(protoGenerator.prototype);
-    var context = new Context(tryLocsList || []);
-
-    // The ._invoke method unifies the implementations of the .next,
-    // .throw, and .return methods.
-    generator._invoke = makeInvokeMethod(innerFn, self, context);
-
-    return generator;
-  }
-  exports.wrap = wrap;
-
-  // Try/catch helper to minimize deoptimizations. Returns a completion
-  // record like context.tryEntries[i].completion. This interface could
-  // have been (and was previously) designed to take a closure to be
-  // invoked without arguments, but in all the cases we care about we
-  // already have an existing method we want to call, so there's no need
-  // to create a new function object. We can even get away with assuming
-  // the method takes exactly one argument, since that happens to be true
-  // in every case, so we don't have to touch the arguments object. The
-  // only additional allocation required is the completion record, which
-  // has a stable shape and so hopefully should be cheap to allocate.
-  function tryCatch(fn, obj, arg) {
-    try {
-      return { type: "normal", arg: fn.call(obj, arg) };
-    } catch (err) {
-      return { type: "throw", arg: err };
-    }
-  }
-
-  var GenStateSuspendedStart = "suspendedStart";
-  var GenStateSuspendedYield = "suspendedYield";
-  var GenStateExecuting = "executing";
-  var GenStateCompleted = "completed";
-
-  // Returning this object from the innerFn has the same effect as
-  // breaking out of the dispatch switch statement.
-  var ContinueSentinel = {};
-
-  // Dummy constructor functions that we use as the .constructor and
-  // .constructor.prototype properties for functions that return Generator
-  // objects. For full spec compliance, you may wish to configure your
-  // minifier not to mangle the names of these two functions.
-  function Generator() {}
-  function GeneratorFunction() {}
-  function GeneratorFunctionPrototype() {}
-
-  // This is a polyfill for %IteratorPrototype% for environments that
-  // don't natively support it.
-  var IteratorPrototype = {};
-  IteratorPrototype[iteratorSymbol] = function () {
-    return this;
-  };
-
-  var getProto = Object.getPrototypeOf;
-  var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
-  if (NativeIteratorPrototype &&
-      NativeIteratorPrototype !== Op &&
-      hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
-    // This environment has a native %IteratorPrototype%; use it instead
-    // of the polyfill.
-    IteratorPrototype = NativeIteratorPrototype;
-  }
-
-  var Gp = GeneratorFunctionPrototype.prototype =
-    Generator.prototype = Object.create(IteratorPrototype);
-  GeneratorFunction.prototype = Gp.constructor = GeneratorFunctionPrototype;
-  GeneratorFunctionPrototype.constructor = GeneratorFunction;
-  GeneratorFunction.displayName = define(
-    GeneratorFunctionPrototype,
-    toStringTagSymbol,
-    "GeneratorFunction"
-  );
-
-  // Helper for defining the .next, .throw, and .return methods of the
-  // Iterator interface in terms of a single ._invoke method.
-  function defineIteratorMethods(prototype) {
-    ["next", "throw", "return"].forEach(function(method) {
-      define(prototype, method, function(arg) {
-        return this._invoke(method, arg);
-      });
-    });
-  }
-
-  exports.isGeneratorFunction = function(genFun) {
-    var ctor = typeof genFun === "function" && genFun.constructor;
-    return ctor
-      ? ctor === GeneratorFunction ||
-        // For the native GeneratorFunction constructor, the best we can
-        // do is to check its .name property.
-        (ctor.displayName || ctor.name) === "GeneratorFunction"
-      : false;
-  };
-
-  exports.mark = function(genFun) {
-    if (Object.setPrototypeOf) {
-      Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
-    } else {
-      genFun.__proto__ = GeneratorFunctionPrototype;
-      define(genFun, toStringTagSymbol, "GeneratorFunction");
-    }
-    genFun.prototype = Object.create(Gp);
-    return genFun;
-  };
-
-  // Within the body of any async function, `await x` is transformed to
-  // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
-  // `hasOwn.call(value, "__await")` to determine if the yielded value is
-  // meant to be awaited.
-  exports.awrap = function(arg) {
-    return { __await: arg };
-  };
-
-  function AsyncIterator(generator, PromiseImpl) {
-    function invoke(method, arg, resolve, reject) {
-      var record = tryCatch(generator[method], generator, arg);
-      if (record.type === "throw") {
-        reject(record.arg);
-      } else {
-        var result = record.arg;
-        var value = result.value;
-        if (value &&
-            typeof value === "object" &&
-            hasOwn.call(value, "__await")) {
-          return PromiseImpl.resolve(value.__await).then(function(value) {
-            invoke("next", value, resolve, reject);
-          }, function(err) {
-            invoke("throw", err, resolve, reject);
-          });
-        }
-
-        return PromiseImpl.resolve(value).then(function(unwrapped) {
-          // When a yielded Promise is resolved, its final value becomes
-          // the .value of the Promise<{value,done}> result for the
-          // current iteration.
-          result.value = unwrapped;
-          resolve(result);
-        }, function(error) {
-          // If a rejected Promise was yielded, throw the rejection back
-          // into the async generator function so it can be handled there.
-          return invoke("throw", error, resolve, reject);
-        });
-      }
-    }
-
-    var previousPromise;
-
-    function enqueue(method, arg) {
-      function callInvokeWithMethodAndArg() {
-        return new PromiseImpl(function(resolve, reject) {
-          invoke(method, arg, resolve, reject);
-        });
-      }
-
-      return previousPromise =
-        // If enqueue has been called before, then we want to wait until
-        // all previous Promises have been resolved before calling invoke,
-        // so that results are always delivered in the correct order. If
-        // enqueue has not been called before, then it is important to
-        // call invoke immediately, without waiting on a callback to fire,
-        // so that the async generator function has the opportunity to do
-        // any necessary setup in a predictable way. This predictability
-        // is why the Promise constructor synchronously invokes its
-        // executor callback, and why async functions synchronously
-        // execute code before the first await. Since we implement simple
-        // async functions in terms of async generators, it is especially
-        // important to get this right, even though it requires care.
-        previousPromise ? previousPromise.then(
-          callInvokeWithMethodAndArg,
-          // Avoid propagating failures to Promises returned by later
-          // invocations of the iterator.
-          callInvokeWithMethodAndArg
-        ) : callInvokeWithMethodAndArg();
-    }
-
-    // Define the unified helper method that is used to implement .next,
-    // .throw, and .return (see defineIteratorMethods).
-    this._invoke = enqueue;
-  }
-
-  defineIteratorMethods(AsyncIterator.prototype);
-  AsyncIterator.prototype[asyncIteratorSymbol] = function () {
-    return this;
-  };
-  exports.AsyncIterator = AsyncIterator;
-
-  // Note that simple async functions are implemented on top of
-  // AsyncIterator objects; they just return a Promise for the value of
-  // the final result produced by the iterator.
-  exports.async = function(innerFn, outerFn, self, tryLocsList, PromiseImpl) {
-    if (PromiseImpl === void 0) PromiseImpl = Promise;
-
-    var iter = new AsyncIterator(
-      wrap(innerFn, outerFn, self, tryLocsList),
-      PromiseImpl
-    );
-
-    return exports.isGeneratorFunction(outerFn)
-      ? iter // If outerFn is a generator, return the full iterator.
-      : iter.next().then(function(result) {
-          return result.done ? result.value : iter.next();
-        });
-  };
-
-  function makeInvokeMethod(innerFn, self, context) {
-    var state = GenStateSuspendedStart;
-
-    return function invoke(method, arg) {
-      if (state === GenStateExecuting) {
-        throw new Error("Generator is already running");
-      }
-
-      if (state === GenStateCompleted) {
-        if (method === "throw") {
-          throw arg;
-        }
-
-        // Be forgiving, per 25.3.3.3.3 of the spec:
-        // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
-        return doneResult();
-      }
-
-      context.method = method;
-      context.arg = arg;
-
-      while (true) {
-        var delegate = context.delegate;
-        if (delegate) {
-          var delegateResult = maybeInvokeDelegate(delegate, context);
-          if (delegateResult) {
-            if (delegateResult === ContinueSentinel) continue;
-            return delegateResult;
-          }
-        }
-
-        if (context.method === "next") {
-          // Setting context._sent for legacy support of Babel's
-          // function.sent implementation.
-          context.sent = context._sent = context.arg;
-
-        } else if (context.method === "throw") {
-          if (state === GenStateSuspendedStart) {
-            state = GenStateCompleted;
-            throw context.arg;
-          }
-
-          context.dispatchException(context.arg);
-
-        } else if (context.method === "return") {
-          context.abrupt("return", context.arg);
-        }
-
-        state = GenStateExecuting;
-
-        var record = tryCatch(innerFn, self, context);
-        if (record.type === "normal") {
-          // If an exception is thrown from innerFn, we leave state ===
-          // GenStateExecuting and loop back for another invocation.
-          state = context.done
-            ? GenStateCompleted
-            : GenStateSuspendedYield;
-
-          if (record.arg === ContinueSentinel) {
-            continue;
-          }
-
-          return {
-            value: record.arg,
-            done: context.done
-          };
-
-        } else if (record.type === "throw") {
-          state = GenStateCompleted;
-          // Dispatch the exception by looping back around to the
-          // context.dispatchException(context.arg) call above.
-          context.method = "throw";
-          context.arg = record.arg;
-        }
-      }
-    };
-  }
-
-  // Call delegate.iterator[context.method](context.arg) and handle the
-  // result, either by returning a { value, done } result from the
-  // delegate iterator, or by modifying context.method and context.arg,
-  // setting context.delegate to null, and returning the ContinueSentinel.
-  function maybeInvokeDelegate(delegate, context) {
-    var method = delegate.iterator[context.method];
-    if (method === undefined) {
-      // A .throw or .return when the delegate iterator has no .throw
-      // method always terminates the yield* loop.
-      context.delegate = null;
-
-      if (context.method === "throw") {
-        // Note: ["return"] must be used for ES3 parsing compatibility.
-        if (delegate.iterator["return"]) {
-          // If the delegate iterator has a return method, give it a
-          // chance to clean up.
-          context.method = "return";
-          context.arg = undefined;
-          maybeInvokeDelegate(delegate, context);
-
-          if (context.method === "throw") {
-            // If maybeInvokeDelegate(context) changed context.method from
-            // "return" to "throw", let that override the TypeError below.
-            return ContinueSentinel;
-          }
-        }
-
-        context.method = "throw";
-        context.arg = new TypeError(
-          "The iterator does not provide a 'throw' method");
-      }
-
-      return ContinueSentinel;
-    }
-
-    var record = tryCatch(method, delegate.iterator, context.arg);
-
-    if (record.type === "throw") {
-      context.method = "throw";
-      context.arg = record.arg;
-      context.delegate = null;
-      return ContinueSentinel;
-    }
-
-    var info = record.arg;
-
-    if (! info) {
-      context.method = "throw";
-      context.arg = new TypeError("iterator result is not an object");
-      context.delegate = null;
-      return ContinueSentinel;
-    }
-
-    if (info.done) {
-      // Assign the result of the finished delegate to the temporary
-      // variable specified by delegate.resultName (see delegateYield).
-      context[delegate.resultName] = info.value;
-
-      // Resume execution at the desired location (see delegateYield).
-      context.next = delegate.nextLoc;
-
-      // If context.method was "throw" but the delegate handled the
-      // exception, let the outer generator proceed normally. If
-      // context.method was "next", forget context.arg since it has been
-      // "consumed" by the delegate iterator. If context.method was
-      // "return", allow the original .return call to continue in the
-      // outer generator.
-      if (context.method !== "return") {
-        context.method = "next";
-        context.arg = undefined;
-      }
-
-    } else {
-      // Re-yield the result returned by the delegate method.
-      return info;
-    }
-
-    // The delegate iterator is finished, so forget it and continue with
-    // the outer generator.
-    context.delegate = null;
-    return ContinueSentinel;
-  }
-
-  // Define Generator.prototype.{next,throw,return} in terms of the
-  // unified ._invoke helper method.
-  defineIteratorMethods(Gp);
-
-  define(Gp, toStringTagSymbol, "Generator");
-
-  // A Generator should always return itself as the iterator object when the
-  // @@iterator function is called on it. Some browsers' implementations of the
-  // iterator prototype chain incorrectly implement this, causing the Generator
-  // object to not be returned from this call. This ensures that doesn't happen.
-  // See https://github.com/facebook/regenerator/issues/274 for more details.
-  Gp[iteratorSymbol] = function() {
-    return this;
-  };
-
-  Gp.toString = function() {
-    return "[object Generator]";
-  };
-
-  function pushTryEntry(locs) {
-    var entry = { tryLoc: locs[0] };
-
-    if (1 in locs) {
-      entry.catchLoc = locs[1];
-    }
-
-    if (2 in locs) {
-      entry.finallyLoc = locs[2];
-      entry.afterLoc = locs[3];
-    }
-
-    this.tryEntries.push(entry);
-  }
-
-  function resetTryEntry(entry) {
-    var record = entry.completion || {};
-    record.type = "normal";
-    delete record.arg;
-    entry.completion = record;
-  }
-
-  function Context(tryLocsList) {
-    // The root entry object (effectively a try statement without a catch
-    // or a finally block) gives us a place to store values thrown from
-    // locations where there is no enclosing try statement.
-    this.tryEntries = [{ tryLoc: "root" }];
-    tryLocsList.forEach(pushTryEntry, this);
-    this.reset(true);
-  }
-
-  exports.keys = function(object) {
-    var keys = [];
-    for (var key in object) {
-      keys.push(key);
-    }
-    keys.reverse();
-
-    // Rather than returning an object with a next method, we keep
-    // things simple and return the next function itself.
-    return function next() {
-      while (keys.length) {
-        var key = keys.pop();
-        if (key in object) {
-          next.value = key;
-          next.done = false;
-          return next;
-        }
-      }
-
-      // To avoid creating an additional object, we just hang the .value
-      // and .done properties off the next function object itself. This
-      // also ensures that the minifier will not anonymize the function.
-      next.done = true;
-      return next;
-    };
-  };
-
-  function values(iterable) {
-    if (iterable) {
-      var iteratorMethod = iterable[iteratorSymbol];
-      if (iteratorMethod) {
-        return iteratorMethod.call(iterable);
-      }
-
-      if (typeof iterable.next === "function") {
-        return iterable;
-      }
-
-      if (!isNaN(iterable.length)) {
-        var i = -1, next = function next() {
-          while (++i < iterable.length) {
-            if (hasOwn.call(iterable, i)) {
-              next.value = iterable[i];
-              next.done = false;
-              return next;
-            }
-          }
-
-          next.value = undefined;
-          next.done = true;
-
-          return next;
-        };
-
-        return next.next = next;
-      }
-    }
-
-    // Return an iterator with no values.
-    return { next: doneResult };
-  }
-  exports.values = values;
-
-  function doneResult() {
-    return { value: undefined, done: true };
-  }
-
-  Context.prototype = {
-    constructor: Context,
-
-    reset: function(skipTempReset) {
-      this.prev = 0;
-      this.next = 0;
-      // Resetting context._sent for legacy support of Babel's
-      // function.sent implementation.
-      this.sent = this._sent = undefined;
-      this.done = false;
-      this.delegate = null;
-
-      this.method = "next";
-      this.arg = undefined;
-
-      this.tryEntries.forEach(resetTryEntry);
-
-      if (!skipTempReset) {
-        for (var name in this) {
-          // Not sure about the optimal order of these conditions:
-          if (name.charAt(0) === "t" &&
-              hasOwn.call(this, name) &&
-              !isNaN(+name.slice(1))) {
-            this[name] = undefined;
-          }
-        }
-      }
-    },
-
-    stop: function() {
-      this.done = true;
-
-      var rootEntry = this.tryEntries[0];
-      var rootRecord = rootEntry.completion;
-      if (rootRecord.type === "throw") {
-        throw rootRecord.arg;
-      }
-
-      return this.rval;
-    },
-
-    dispatchException: function(exception) {
-      if (this.done) {
-        throw exception;
-      }
-
-      var context = this;
-      function handle(loc, caught) {
-        record.type = "throw";
-        record.arg = exception;
-        context.next = loc;
-
-        if (caught) {
-          // If the dispatched exception was caught by a catch block,
-          // then let that catch block handle the exception normally.
-          context.method = "next";
-          context.arg = undefined;
-        }
-
-        return !! caught;
-      }
-
-      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-        var entry = this.tryEntries[i];
-        var record = entry.completion;
-
-        if (entry.tryLoc === "root") {
-          // Exception thrown outside of any try block that could handle
-          // it, so set the completion value of the entire function to
-          // throw the exception.
-          return handle("end");
-        }
-
-        if (entry.tryLoc <= this.prev) {
-          var hasCatch = hasOwn.call(entry, "catchLoc");
-          var hasFinally = hasOwn.call(entry, "finallyLoc");
-
-          if (hasCatch && hasFinally) {
-            if (this.prev < entry.catchLoc) {
-              return handle(entry.catchLoc, true);
-            } else if (this.prev < entry.finallyLoc) {
-              return handle(entry.finallyLoc);
-            }
-
-          } else if (hasCatch) {
-            if (this.prev < entry.catchLoc) {
-              return handle(entry.catchLoc, true);
-            }
-
-          } else if (hasFinally) {
-            if (this.prev < entry.finallyLoc) {
-              return handle(entry.finallyLoc);
-            }
-
-          } else {
-            throw new Error("try statement without catch or finally");
-          }
-        }
-      }
-    },
-
-    abrupt: function(type, arg) {
-      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-        var entry = this.tryEntries[i];
-        if (entry.tryLoc <= this.prev &&
-            hasOwn.call(entry, "finallyLoc") &&
-            this.prev < entry.finallyLoc) {
-          var finallyEntry = entry;
-          break;
-        }
-      }
-
-      if (finallyEntry &&
-          (type === "break" ||
-           type === "continue") &&
-          finallyEntry.tryLoc <= arg &&
-          arg <= finallyEntry.finallyLoc) {
-        // Ignore the finally entry if control is not jumping to a
-        // location outside the try/catch block.
-        finallyEntry = null;
-      }
-
-      var record = finallyEntry ? finallyEntry.completion : {};
-      record.type = type;
-      record.arg = arg;
-
-      if (finallyEntry) {
-        this.method = "next";
-        this.next = finallyEntry.finallyLoc;
-        return ContinueSentinel;
-      }
-
-      return this.complete(record);
-    },
-
-    complete: function(record, afterLoc) {
-      if (record.type === "throw") {
-        throw record.arg;
-      }
-
-      if (record.type === "break" ||
-          record.type === "continue") {
-        this.next = record.arg;
-      } else if (record.type === "return") {
-        this.rval = this.arg = record.arg;
-        this.method = "return";
-        this.next = "end";
-      } else if (record.type === "normal" && afterLoc) {
-        this.next = afterLoc;
-      }
-
-      return ContinueSentinel;
-    },
-
-    finish: function(finallyLoc) {
-      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-        var entry = this.tryEntries[i];
-        if (entry.finallyLoc === finallyLoc) {
-          this.complete(entry.completion, entry.afterLoc);
-          resetTryEntry(entry);
-          return ContinueSentinel;
-        }
-      }
-    },
-
-    "catch": function(tryLoc) {
-      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-        var entry = this.tryEntries[i];
-        if (entry.tryLoc === tryLoc) {
-          var record = entry.completion;
-          if (record.type === "throw") {
-            var thrown = record.arg;
-            resetTryEntry(entry);
-          }
-          return thrown;
-        }
-      }
-
-      // The context.catch method must only be called with a location
-      // argument that corresponds to a known catch block.
-      throw new Error("illegal catch attempt");
-    },
-
-    delegateYield: function(iterable, resultName, nextLoc) {
-      this.delegate = {
-        iterator: values(iterable),
-        resultName: resultName,
-        nextLoc: nextLoc
-      };
-
-      if (this.method === "next") {
-        // Deliberately forget the last sent value so that we don't
-        // accidentally pass it on to the delegate.
-        this.arg = undefined;
-      }
-
-      return ContinueSentinel;
-    }
-  };
-
-  // Regardless of whether this script is executing as a CommonJS module
-  // or not, return the runtime object so that we can declare the variable
-  // regeneratorRuntime in the outer scope, which allows this module to be
-  // injected easily by `bin/regenerator --include-runtime script.js`.
-  return exports;
-
-}(
-  // If this script is executing as a CommonJS module, use module.exports
-  // as the regeneratorRuntime namespace. Otherwise create a new empty
-  // object. Either way, the resulting object will be used to initialize
-  // the regeneratorRuntime variable at the top of this file.
-   true ? module.exports : 0
-));
-
-try {
-  regeneratorRuntime = runtime;
-} catch (accidentalStrictMode) {
-  // This module should not be running in strict mode, so the above
-  // assignment should always work unless something is misconfigured. Just
-  // in case runtime.js accidentally runs in strict mode, we can escape
-  // strict mode using a global Function call. This could conceivably fail
-  // if a Content Security Policy forbids using Function, but in that case
-  // the proper solution is to fix the accidental strict mode problem. If
-  // you've misconfigured your bundler to force strict mode and applied a
-  // CSP to forbid Function, and you're not willing to fix either of those
-  // problems, please detail your unique predicament in a GitHub issue.
-  Function("r", "regeneratorRuntime = r")(runtime);
 }
 
 
@@ -35946,12 +31527,160 @@ module.exports = function stripHexPrefix(str) {
 
 /***/ }),
 
+/***/ 4923:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Abi = void 0;
+const Web3EthAbi = __webpack_require__(7705);
+class Abi {
+    constructor(_abi_items) {
+        this.abi_items = [];
+        this.interested_methods = [];
+        this.interested_method_ids = {};
+        this.abi_items = _abi_items;
+        this.interested_methods = this.filter_interested_methods(this.abi_items);
+        this.interested_method_ids = this.get_method_ids(this.interested_methods);
+    }
+    get_method_ids(_abi_items) {
+        const method_ids = {};
+        for (let item of _abi_items) {
+            const id = Web3EthAbi.encodeFunctionSignature(item).slice(2);
+            method_ids[id] = item;
+        }
+        return method_ids;
+    }
+    filter_interested_methods(_abi_items) {
+        return _abi_items.filter((item) => item.type === "function" &&
+            (this.filter_interested_inputs(item).length > 0 || // at least one param is eth-address
+                this.filter_interested_outputs(item).length > 0) // at least one output return type is eth-address
+        );
+    }
+    filter_interested_inputs(_abiItem) {
+        return _abiItem.inputs.filter((input) => input.type === "address" || input.type === "address[]");
+    }
+    filter_interested_outputs(_abiItem) {
+        return _abiItem.outputs.filter((output) => output.type === "address" || output.type === "address[]");
+    }
+    get_interested_methods() {
+        return this.interested_methods;
+    }
+    get_abi_items() {
+        return this.abi_items;
+    }
+    decode_method(data) {
+        const method_id = data.slice(2, 10);
+        const abiItem = this.interested_method_ids[method_id];
+        if (abiItem) {
+            let decoded = Web3EthAbi.decodeParameters(abiItem.inputs, "0x" + data.slice(10));
+            let retData = {
+                name: abiItem.name,
+                params: [],
+            };
+            for (let i = 0; i < decoded.__length__; i++) {
+                let param = decoded[i];
+                let parsedParam = param;
+                const isUint = abiItem.inputs[i].type.indexOf("uint") === 0;
+                const isInt = abiItem.inputs[i].type.indexOf("int") === 0;
+                const isAddress = abiItem.inputs[i].type.indexOf("address") === 0;
+                if (isUint || isInt) {
+                    const isArray = Array.isArray(param);
+                    if (isArray) {
+                        parsedParam = param.map((val) => BigInt(val).toString());
+                    }
+                    else {
+                        parsedParam = BigInt(param).toString();
+                    }
+                }
+                // Addresses returned by web3 are randomly cased so we need to standardize and lowercase all
+                if (isAddress) {
+                    const isArray = Array.isArray(param);
+                    if (isArray) {
+                        parsedParam = param.map((_) => _.toLowerCase());
+                    }
+                    else {
+                        parsedParam = param.toLowerCase();
+                    }
+                }
+                retData.params.push({
+                    name: abiItem.inputs[i].name,
+                    value: parsedParam,
+                    type: abiItem.inputs[i].type,
+                });
+            }
+            return retData;
+        }
+    }
+    // todo: use this func to remove all repeated code.
+    // params: <data: eth tx's encode input data>
+    get_intereted_abi_item_by_encoded_data(data) {
+        const method_id = data.slice(2, 10);
+        const abi_item = this.interested_method_ids[method_id];
+        return abi_item;
+    }
+    // decode method data, if it is related with address type in inputs,
+    // replace the address params with godwoken_short_address
+    async refactor_data_with_short_address(data, calculate_short_address) {
+        const method_id = data.slice(2, 10);
+        const abi_item = this.interested_method_ids[method_id];
+        if (!abi_item)
+            return data;
+        const decode_data = this.decode_method(data);
+        const new_decode_data = decode_data.params.map(async (p) => {
+            if (p.type === "address" || p.type === "address[]") {
+                p.value = Array.isArray(p.value)
+                    ? await Promise.all(p.value.map(async (v) => await calculate_short_address(v)))
+                    : await calculate_short_address(p.value);
+                return p;
+            }
+            else {
+                return p;
+            }
+        });
+        const new_data = Web3EthAbi.encodeFunctionCall(abi_item, await Promise.all(new_decode_data.map(async (p) => (await p).value)));
+        return new_data;
+    }
+    // decode the run_result return value, and check:
+    // 	if it is related with address type, replace godwoken_short_address with eth_address.
+    //
+    // known-issue:
+    // 	- when the return value is EOA address and when it haven't create account on godowken,
+    //	  then we have no idea what the original eth_address is. we are not able to recover original address.
+    //	 thus we do not support return address type which is not exist here
+    async refactor_return_value_with_short_address(return_value, abi_item, calculate_short_address) {
+        const output_value_types = abi_item.outputs.map((item) => item.type);
+        var decoded_values = Web3EthAbi.decodeParameters(output_value_types, return_value);
+        const interested_value_indexs = output_value_types.map((t, index) => {
+            if (t === "address" || t === "address[]") {
+                return index;
+            }
+        });
+        for await (const index of interested_value_indexs) {
+            decoded_values[index + ""] = Array.isArray(decoded_values[index + ""])
+                ? await Promise.all(decoded_values[index + ""].map(async (v) => await calculate_short_address(v)))
+                : await calculate_short_address(decoded_values[index + ""]);
+        }
+        let decode_values_with_refactor = Object.values(decoded_values);
+        decode_values_with_refactor = decode_values_with_refactor.slice(0, decode_values_with_refactor.length - 1);
+        console.log(decode_values_with_refactor);
+        return Web3EthAbi.encodeParameters(output_value_types, decode_values_with_refactor);
+    }
+    // todo: support user providing an url path, and read the abi json from it
+    read_abi_from_json_file() { }
+}
+exports.Abi = Abi;
+
+
+/***/ }),
+
 /***/ 445:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 /* provided dependency */ var Buffer = __webpack_require__(816)["Buffer"];
 const { RPC, Reader } = __webpack_require__(9805);
-const { utils } = __webpack_require__(9985);
+const { utils } = __webpack_require__(9766);
 const keccak256 = __webpack_require__(2556);
 const { NormalizeL2Transaction, NormalizeRawL2Transaction, NormalizeCreateAccount, NormalizeWithdrawalRequest, NormalizeRawWithdrawalRequest, } = __webpack_require__(2197);
 const normalizer = __webpack_require__(2197);
@@ -36023,8 +31752,8 @@ class Godwoken {
     }
     async getBalance(sudt_id, account_id) {
         // TODO: maybe swap params later?
-        console.log('0x' + account_id.toString(16), '0x' + sudt_id.toString(16));
-        const hex = await this.rpc.get_balance('0x' + account_id.toString(16), '0x' + sudt_id.toString(16));
+        console.log("0x" + account_id.toString(16), "0x" + sudt_id.toString(16));
+        const hex = await this.rpc.get_balance("0x" + account_id.toString(16), "0x" + sudt_id.toString(16));
         return BigInt(hex);
     }
     async getStorageAt(account_id, key) {
@@ -36035,13 +31764,13 @@ class Godwoken {
     }
     async getNonce(account_id) {
         console.log(account_id.toString(16));
-        return await this.rpc.get_nonce('0x' + account_id.toString(16));
+        return await this.rpc.get_nonce("0x" + account_id.toString(16));
     }
     async getScript(script_hash) {
         return await this.rpc.get_script(script_hash);
     }
     async getScriptHash(account_id) {
-        return await this.rpc.get_script_hash('0x' + account_id.toString(16));
+        return await this.rpc.get_script_hash("0x" + account_id.toString(16));
     }
     async getData(data_hash) {
         return await this.rpc.get_data(data_hash);
@@ -36056,11 +31785,16 @@ class GodwokenUtils {
         const rollup_type_hash = Buffer.from(this.rollup_type_hash.slice(2), "hex");
         const sender_scirpt_hash = Buffer.from(_sender_scirpt_hash.slice(2), "hex");
         const receiver_script_hash = Buffer.from(_receiver_script_hash.slice(2), "hex");
-        const data = toArrayBuffer(Buffer.concat([rollup_type_hash, sender_scirpt_hash, receiver_script_hash, toBuffer(raw_tx_data)]));
+        const data = toArrayBuffer(Buffer.concat([
+            rollup_type_hash,
+            sender_scirpt_hash,
+            receiver_script_hash,
+            toBuffer(raw_tx_data),
+        ]));
         const message = utils.ckbHash(data).serializeJson();
         if (add_prefix === false) {
             // do not add `\x19Ethereum Signed Message:\n32` prefix when generating message
-            // set true when you want to pass message for metamask signing, 
+            // set true when you want to pass message for metamask signing,
             // metamask will add this automattically.
             return message;
         }
@@ -36306,3578 +32040,4529 @@ exports.NormalizeUnlockWithdrawalViaFinalize = NormalizeUnlockWithdrawalViaFinal
 /***/ }),
 
 /***/ 9243:
-/***/ (function(__unused_webpack_module, exports) {
+/***/ ((__unused_webpack_module, exports) => {
 
-(function (global, factory) {
-     true ? factory(exports) :
-        0;
-}(this, (function (exports) {
-    'use strict';
-    function dataLengthError(actual, required) {
-        throw new Error(`Invalid data length! Required: ${required}, actual: ${actual}`);
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SerializeUnlockWithdrawalWitness = exports.UnlockWithdrawalWitness = exports.SerializeWithdrawalLockArgs = exports.WithdrawalLockArgs = exports.SerializeUnlockCustodianViaRevertWitness = exports.UnlockCustodianViaRevertWitness = exports.SerializeCustodianLockArgs = exports.CustodianLockArgs = exports.SerializeDepositLockArgs = exports.DepositLockArgs = exports.SerializeBlockInfo = exports.BlockInfo = exports.SerializeKVPairVec = exports.KVPairVec = exports.SerializeKVPair = exports.KVPair = exports.SerializeWithdrawalRequest = exports.WithdrawalRequest = exports.SerializeWithdrawalRequestVec = exports.WithdrawalRequestVec = exports.SerializeRawWithdrawalRequest = exports.RawWithdrawalRequest = exports.SerializeDepositRequestVec = exports.DepositRequestVec = exports.SerializeDepositRequest = exports.DepositRequest = exports.SerializeL2Block = exports.L2Block = exports.SerializeRawL2BlockVec = exports.RawL2BlockVec = exports.SerializeRawL2Block = exports.RawL2Block = exports.SerializeSubmitWithdrawals = exports.SubmitWithdrawals = exports.SerializeSubmitTransactions = exports.SubmitTransactions = exports.SerializeL2TransactionVec = exports.L2TransactionVec = exports.SerializeL2Transaction = exports.L2Transaction = exports.SerializeRawL2Transaction = exports.RawL2Transaction = exports.SerializeRollupConfig = exports.RollupConfig = exports.SerializeGlobalState = exports.GlobalState = exports.SerializeAccountMerkleState = exports.AccountMerkleState = exports.SerializeBlockMerkleState = exports.BlockMerkleState = void 0;
+exports.SerializeRollupAction = exports.RollupAction = exports.SerializeRollupRevert = exports.RollupRevert = exports.SerializeRollupCancelChallenge = exports.RollupCancelChallenge = exports.SerializeRollupEnterChallenge = exports.RollupEnterChallenge = exports.SerializeRollupSubmitBlock = exports.RollupSubmitBlock = exports.SerializeVerifyWithdrawalWitness = exports.VerifyWithdrawalWitness = exports.SerializeVerifyTransactionSignatureWitness = exports.VerifyTransactionSignatureWitness = exports.SerializeVerifyTransactionSignatureContext = exports.VerifyTransactionSignatureContext = exports.SerializeVerifyTransactionWitness = exports.VerifyTransactionWitness = exports.SerializeVerifyTransactionContext = exports.VerifyTransactionContext = exports.SerializeBlockHashEntryVec = exports.BlockHashEntryVec = exports.SerializeBlockHashEntry = exports.BlockHashEntry = exports.SerializeScriptVec = exports.ScriptVec = exports.SerializeChallengeWitness = exports.ChallengeWitness = exports.SerializeChallengeLockArgs = exports.ChallengeLockArgs = exports.SerializeChallengeTarget = exports.ChallengeTarget = exports.SerializeSUDTTransfer = exports.SUDTTransfer = exports.SerializeSUDTQuery = exports.SUDTQuery = exports.SerializeSUDTArgs = exports.SUDTArgs = exports.SerializeCreateAccount = exports.CreateAccount = exports.SerializeMetaContractArgs = exports.MetaContractArgs = exports.SerializeStakeLockArgs = exports.StakeLockArgs = exports.SerializeUnlockWithdrawalViaTrade = exports.UnlockWithdrawalViaTrade = exports.SerializeUnlockWithdrawalViaRevert = exports.UnlockWithdrawalViaRevert = exports.SerializeUnlockWithdrawalViaFinalize = exports.UnlockWithdrawalViaFinalize = void 0;
+exports.SerializeTransaction = exports.Transaction = exports.SerializeRawTransaction = exports.RawTransaction = exports.SerializeCellDep = exports.CellDep = exports.SerializeCellOutput = exports.CellOutput = exports.SerializeCellInput = exports.CellInput = exports.SerializeOutPoint = exports.OutPoint = exports.SerializeScript = exports.Script = exports.SerializeCellOutputVec = exports.CellOutputVec = exports.SerializeCellInputVec = exports.CellInputVec = exports.SerializeCellDepVec = exports.CellDepVec = exports.SerializeProposalShortIdVec = exports.ProposalShortIdVec = exports.SerializeTransactionVec = exports.TransactionVec = exports.SerializeUncleBlockVec = exports.UncleBlockVec = exports.SerializeProposalShortId = exports.ProposalShortId = exports.SerializeScriptOpt = exports.ScriptOpt = exports.SerializeByte32Vec = exports.Byte32Vec = exports.SerializeBytesVec = exports.BytesVec = exports.SerializeBytesOpt = exports.BytesOpt = exports.SerializeBytes = exports.Bytes = exports.SerializeUint256 = exports.Uint256 = exports.SerializeByte32 = exports.Byte32 = exports.SerializeUint128 = exports.Uint128 = exports.SerializeUint64 = exports.Uint64 = exports.SerializeUint32 = exports.Uint32 = exports.SerializeUint16 = exports.Uint16 = void 0;
+exports.SerializeWitnessArgs = exports.WitnessArgs = exports.SerializeCellbaseWitness = exports.CellbaseWitness = exports.SerializeBlock = exports.Block = exports.SerializeUncleBlock = exports.UncleBlock = exports.SerializeHeader = exports.Header = exports.SerializeRawHeader = exports.RawHeader = void 0;
+function dataLengthError(actual, required) {
+    throw new Error(`Invalid data length! Required: ${required}, actual: ${actual}`);
+}
+function assertDataLength(actual, required) {
+    if (actual !== required) {
+        dataLengthError(actual, required);
     }
-    function assertDataLength(actual, required) {
-        if (actual !== required) {
-            dataLengthError(actual, required);
-        }
+}
+function assertArrayBuffer(reader) {
+    if (reader instanceof Object && reader.toArrayBuffer instanceof Function) {
+        reader = reader.toArrayBuffer();
     }
-    function assertArrayBuffer(reader) {
-        if (reader instanceof Object && reader.toArrayBuffer instanceof Function) {
-            reader = reader.toArrayBuffer();
-        }
-        if (!(reader instanceof ArrayBuffer)) {
-            throw new Error("Provided value must be an ArrayBuffer or can be transformed into ArrayBuffer!");
-        }
-        return reader;
+    if (!(reader instanceof ArrayBuffer)) {
+        throw new Error("Provided value must be an ArrayBuffer or can be transformed into ArrayBuffer!");
     }
-    function verifyAndExtractOffsets(view, expectedFieldCount, compatible) {
-        if (view.byteLength < 4) {
-            dataLengthError(view.byteLength, ">4");
-        }
-        const requiredByteLength = view.getUint32(0, true);
-        assertDataLength(view.byteLength, requiredByteLength);
-        if (requiredByteLength === 4) {
-            return [requiredByteLength];
-        }
-        if (requiredByteLength < 8) {
-            dataLengthError(view.byteLength, ">8");
-        }
-        const firstOffset = view.getUint32(4, true);
-        if (firstOffset % 4 !== 0 || firstOffset < 8) {
-            throw new Error(`Invalid first offset: ${firstOffset}`);
-        }
-        const itemCount = firstOffset / 4 - 1;
-        if (itemCount < expectedFieldCount) {
-            throw new Error(`Item count not enough! Required: ${expectedFieldCount}, actual: ${itemCount}`);
-        }
-        else if ((!compatible) && itemCount > expectedFieldCount) {
-            throw new Error(`Item count is more than required! Required: ${expectedFieldCount}, actual: ${itemCount}`);
-        }
-        if (requiredByteLength < firstOffset) {
-            throw new Error(`First offset is larger than byte length: ${firstOffset}`);
-        }
-        const offsets = [];
-        for (let i = 0; i < itemCount; i++) {
-            const start = 4 + i * 4;
-            offsets.push(view.getUint32(start, true));
-        }
-        offsets.push(requiredByteLength);
-        for (let i = 0; i < offsets.length - 1; i++) {
-            if (offsets[i] > offsets[i + 1]) {
-                throw new Error(`Offset index ${i}: ${offsets[i]} is larger than offset index ${i + 1}: ${offsets[i + 1]}`);
-            }
-        }
-        return offsets;
+    return reader;
+}
+function verifyAndExtractOffsets(view, expectedFieldCount, compatible) {
+    if (view.byteLength < 4) {
+        dataLengthError(view.byteLength, ">4");
     }
-    function serializeTable(buffers) {
-        const itemCount = buffers.length;
-        let totalSize = 4 * (itemCount + 1);
-        const offsets = [];
-        for (let i = 0; i < itemCount; i++) {
-            offsets.push(totalSize);
-            totalSize += buffers[i].byteLength;
-        }
-        const buffer = new ArrayBuffer(totalSize);
-        const array = new Uint8Array(buffer);
-        const view = new DataView(buffer);
-        view.setUint32(0, totalSize, true);
-        for (let i = 0; i < itemCount; i++) {
-            view.setUint32(4 + i * 4, offsets[i], true);
-            array.set(new Uint8Array(buffers[i]), offsets[i]);
-        }
-        return buffer;
+    const requiredByteLength = view.getUint32(0, true);
+    assertDataLength(view.byteLength, requiredByteLength);
+    if (requiredByteLength === 4) {
+        return [requiredByteLength];
     }
-    class Byte32Opt {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.hasValue()) {
-                this.value().validate(compatible);
-            }
-        }
-        value() {
-            return new Byte32(this.view.buffer, { validate: false });
-        }
-        hasValue() {
-            return this.view.byteLength > 0;
+    if (requiredByteLength < 8) {
+        dataLengthError(view.byteLength, ">8");
+    }
+    const firstOffset = view.getUint32(4, true);
+    if (firstOffset % 4 !== 0 || firstOffset < 8) {
+        throw new Error(`Invalid first offset: ${firstOffset}`);
+    }
+    const itemCount = firstOffset / 4 - 1;
+    if (itemCount < expectedFieldCount) {
+        throw new Error(`Item count not enough! Required: ${expectedFieldCount}, actual: ${itemCount}`);
+    }
+    else if (!compatible && itemCount > expectedFieldCount) {
+        throw new Error(`Item count is more than required! Required: ${expectedFieldCount}, actual: ${itemCount}`);
+    }
+    if (requiredByteLength < firstOffset) {
+        throw new Error(`First offset is larger than byte length: ${firstOffset}`);
+    }
+    const offsets = [];
+    for (let i = 0; i < itemCount; i++) {
+        const start = 4 + i * 4;
+        offsets.push(view.getUint32(start, true));
+    }
+    offsets.push(requiredByteLength);
+    for (let i = 0; i < offsets.length - 1; i++) {
+        if (offsets[i] > offsets[i + 1]) {
+            throw new Error(`Offset index ${i}: ${offsets[i]} is larger than offset index ${i + 1}: ${offsets[i + 1]}`);
         }
     }
-    function SerializeByte32Opt(value) {
-        if (value) {
-            return SerializeByte32(value);
+    return offsets;
+}
+function serializeTable(buffers) {
+    const itemCount = buffers.length;
+    let totalSize = 4 * (itemCount + 1);
+    const offsets = [];
+    for (let i = 0; i < itemCount; i++) {
+        offsets.push(totalSize);
+        totalSize += buffers[i].byteLength;
+    }
+    const buffer = new ArrayBuffer(totalSize);
+    const array = new Uint8Array(buffer);
+    const view = new DataView(buffer);
+    view.setUint32(0, totalSize, true);
+    for (let i = 0; i < itemCount; i++) {
+        view.setUint32(4 + i * 4, offsets[i], true);
+        array.set(new Uint8Array(buffers[i]), offsets[i]);
+    }
+    return buffer;
+}
+class BlockMerkleState {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getMerkleRoot() {
+        return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), {
+            validate: false,
+        });
+    }
+    getCount() {
+        return new Uint64(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Uint64.size()), { validate: false });
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, BlockMerkleState.size());
+        this.getMerkleRoot().validate(compatible);
+        this.getCount().validate(compatible);
+    }
+    static size() {
+        return 0 + Byte32.size() + Uint64.size();
+    }
+}
+exports.BlockMerkleState = BlockMerkleState;
+function SerializeBlockMerkleState(value) {
+    const array = new Uint8Array(0 + Byte32.size() + Uint64.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeByte32(value.merkle_root)), 0);
+    array.set(new Uint8Array(SerializeUint64(value.count)), 0 + Byte32.size());
+    return array.buffer;
+}
+exports.SerializeBlockMerkleState = SerializeBlockMerkleState;
+class AccountMerkleState {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getMerkleRoot() {
+        return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), {
+            validate: false,
+        });
+    }
+    getCount() {
+        return new Uint32(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Uint32.size()), { validate: false });
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, AccountMerkleState.size());
+        this.getMerkleRoot().validate(compatible);
+        this.getCount().validate(compatible);
+    }
+    static size() {
+        return 0 + Byte32.size() + Uint32.size();
+    }
+}
+exports.AccountMerkleState = AccountMerkleState;
+function SerializeAccountMerkleState(value) {
+    const array = new Uint8Array(0 + Byte32.size() + Uint32.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeByte32(value.merkle_root)), 0);
+    array.set(new Uint8Array(SerializeUint32(value.count)), 0 + Byte32.size());
+    return array.buffer;
+}
+exports.SerializeAccountMerkleState = SerializeAccountMerkleState;
+class GlobalState {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getRollupConfigHash() {
+        return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), {
+            validate: false,
+        });
+    }
+    getAccount() {
+        return new AccountMerkleState(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + AccountMerkleState.size()), { validate: false });
+    }
+    getBlock() {
+        return new BlockMerkleState(this.view.buffer.slice(0 + Byte32.size() + AccountMerkleState.size(), 0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size()), { validate: false });
+    }
+    getRevertedBlockRoot() {
+        return new Byte32(this.view.buffer.slice(0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size(), 0 +
+            Byte32.size() +
+            AccountMerkleState.size() +
+            BlockMerkleState.size() +
+            Byte32.size()), { validate: false });
+    }
+    getTipBlockHash() {
+        return new Byte32(this.view.buffer.slice(0 +
+            Byte32.size() +
+            AccountMerkleState.size() +
+            BlockMerkleState.size() +
+            Byte32.size(), 0 +
+            Byte32.size() +
+            AccountMerkleState.size() +
+            BlockMerkleState.size() +
+            Byte32.size() +
+            Byte32.size()), { validate: false });
+    }
+    getLastFinalizedBlockNumber() {
+        return new Uint64(this.view.buffer.slice(0 +
+            Byte32.size() +
+            AccountMerkleState.size() +
+            BlockMerkleState.size() +
+            Byte32.size() +
+            Byte32.size(), 0 +
+            Byte32.size() +
+            AccountMerkleState.size() +
+            BlockMerkleState.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Uint64.size()), { validate: false });
+    }
+    getStatus() {
+        return this.view.getUint8(0 +
+            Byte32.size() +
+            AccountMerkleState.size() +
+            BlockMerkleState.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Uint64.size());
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, GlobalState.size());
+        this.getRollupConfigHash().validate(compatible);
+        this.getAccount().validate(compatible);
+        this.getBlock().validate(compatible);
+        this.getRevertedBlockRoot().validate(compatible);
+        this.getTipBlockHash().validate(compatible);
+        this.getLastFinalizedBlockNumber().validate(compatible);
+    }
+    static size() {
+        return (0 +
+            Byte32.size() +
+            AccountMerkleState.size() +
+            BlockMerkleState.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Uint64.size() +
+            1);
+    }
+}
+exports.GlobalState = GlobalState;
+function SerializeGlobalState(value) {
+    const array = new Uint8Array(0 +
+        Byte32.size() +
+        AccountMerkleState.size() +
+        BlockMerkleState.size() +
+        Byte32.size() +
+        Byte32.size() +
+        Uint64.size() +
+        1);
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeByte32(value.rollup_config_hash)), 0);
+    array.set(new Uint8Array(SerializeAccountMerkleState(value.account)), 0 + Byte32.size());
+    array.set(new Uint8Array(SerializeBlockMerkleState(value.block)), 0 + Byte32.size() + AccountMerkleState.size());
+    array.set(new Uint8Array(SerializeByte32(value.reverted_block_root)), 0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size());
+    array.set(new Uint8Array(SerializeByte32(value.tip_block_hash)), 0 +
+        Byte32.size() +
+        AccountMerkleState.size() +
+        BlockMerkleState.size() +
+        Byte32.size());
+    array.set(new Uint8Array(SerializeUint64(value.last_finalized_block_number)), 0 +
+        Byte32.size() +
+        AccountMerkleState.size() +
+        BlockMerkleState.size() +
+        Byte32.size() +
+        Byte32.size());
+    view.setUint8(0 +
+        Byte32.size() +
+        AccountMerkleState.size() +
+        BlockMerkleState.size() +
+        Byte32.size() +
+        Byte32.size() +
+        Uint64.size(), value.status);
+    return array.buffer;
+}
+exports.SerializeGlobalState = SerializeGlobalState;
+class RollupConfig {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Byte32(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[3], offsets[4]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[4], offsets[5]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[5], offsets[6]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[6], offsets[7]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[7], offsets[8]), {
+            validate: false,
+        }).validate();
+        new Uint64(this.view.buffer.slice(offsets[8], offsets[9]), {
+            validate: false,
+        }).validate();
+        new Uint64(this.view.buffer.slice(offsets[9], offsets[10]), {
+            validate: false,
+        }).validate();
+        new Uint64(this.view.buffer.slice(offsets[10], offsets[11]), {
+            validate: false,
+        }).validate();
+        if (offsets[12] - offsets[11] !== 1) {
+            throw new Error(`Invalid offset for reward_burn_rate: ${offsets[11]} - ${offsets[12]}`);
+        }
+        new Byte32Vec(this.view.buffer.slice(offsets[12], offsets[13]), {
+            validate: false,
+        }).validate();
+        new Byte32Vec(this.view.buffer.slice(offsets[13], offsets[14]), {
+            validate: false,
+        }).validate();
+    }
+    getL1SudtScriptTypeHash() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getCustodianScriptTypeHash() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getDepositScriptTypeHash() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getWithdrawalScriptTypeHash() {
+        const start = 16;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getChallengeScriptTypeHash() {
+        const start = 20;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getStakeScriptTypeHash() {
+        const start = 24;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getL2SudtValidatorScriptTypeHash() {
+        const start = 28;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getBurnLockHash() {
+        const start = 32;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getRequiredStakingCapacity() {
+        const start = 36;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint64(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getChallengeMaturityBlocks() {
+        const start = 40;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint64(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getFinalityBlocks() {
+        const start = 44;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint64(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getRewardBurnRate() {
+        const start = 48;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new DataView(this.view.buffer.slice(offset, offset_end)).getUint8(0);
+    }
+    getAllowedEoaTypeHashes() {
+        const start = 52;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32Vec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getAllowedContractTypeHashes() {
+        const start = 56;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Byte32Vec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.RollupConfig = RollupConfig;
+function SerializeRollupConfig(value) {
+    const buffers = [];
+    buffers.push(SerializeByte32(value.l1_sudt_script_type_hash));
+    buffers.push(SerializeByte32(value.custodian_script_type_hash));
+    buffers.push(SerializeByte32(value.deposit_script_type_hash));
+    buffers.push(SerializeByte32(value.withdrawal_script_type_hash));
+    buffers.push(SerializeByte32(value.challenge_script_type_hash));
+    buffers.push(SerializeByte32(value.stake_script_type_hash));
+    buffers.push(SerializeByte32(value.l2_sudt_validator_script_type_hash));
+    buffers.push(SerializeByte32(value.burn_lock_hash));
+    buffers.push(SerializeUint64(value.required_staking_capacity));
+    buffers.push(SerializeUint64(value.challenge_maturity_blocks));
+    buffers.push(SerializeUint64(value.finality_blocks));
+    const rewardBurnRateView = new DataView(new ArrayBuffer(1));
+    rewardBurnRateView.setUint8(0, value.reward_burn_rate);
+    buffers.push(rewardBurnRateView.buffer);
+    buffers.push(SerializeByte32Vec(value.allowed_eoa_type_hashes));
+    buffers.push(SerializeByte32Vec(value.allowed_contract_type_hashes));
+    return serializeTable(buffers);
+}
+exports.SerializeRollupConfig = SerializeRollupConfig;
+class RawL2Transaction {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Uint32(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Uint32(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Uint32(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[3], offsets[4]), {
+            validate: false,
+        }).validate();
+    }
+    getFromId() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getToId() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getNonce() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getArgs() {
+        const start = 16;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.RawL2Transaction = RawL2Transaction;
+function SerializeRawL2Transaction(value) {
+    const buffers = [];
+    buffers.push(SerializeUint32(value.from_id));
+    buffers.push(SerializeUint32(value.to_id));
+    buffers.push(SerializeUint32(value.nonce));
+    buffers.push(SerializeBytes(value.args));
+    return serializeTable(buffers);
+}
+exports.SerializeRawL2Transaction = SerializeRawL2Transaction;
+class L2Transaction {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new RawL2Transaction(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+    }
+    getRaw() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new RawL2Transaction(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getSignature() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.L2Transaction = L2Transaction;
+function SerializeL2Transaction(value) {
+    const buffers = [];
+    buffers.push(SerializeRawL2Transaction(value.raw));
+    buffers.push(SerializeBytes(value.signature));
+    return serializeTable(buffers);
+}
+exports.SerializeL2Transaction = SerializeL2Transaction;
+class L2TransactionVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        for (let i = 0; i < len(offsets) - 1; i++) {
+            new L2Transaction(this.view.buffer.slice(offsets[i], offsets[i + 1]), {
+                validate: false,
+            }).validate();
+        }
+    }
+    length() {
+        if (this.view.byteLength < 8) {
+            return 0;
         }
         else {
-            return new ArrayBuffer(0);
-        }
-    }
-    class Byte20 {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, 20);
-        }
-        indexAt(i) {
-            return this.view.getUint8(i);
-        }
-        raw() {
-            return this.view.buffer;
-        }
-        static size() {
-            return 20;
-        }
-    }
-    function SerializeByte20(value) {
-        const buffer = assertArrayBuffer(value);
-        assertDataLength(buffer.byteLength, 20);
-        return buffer;
-    }
-    class Signature {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, 65);
-        }
-        indexAt(i) {
-            return this.view.getUint8(i);
-        }
-        raw() {
-            return this.view.buffer;
-        }
-        static size() {
-            return 65;
-        }
-    }
-    function SerializeSignature(value) {
-        const buffer = assertArrayBuffer(value);
-        assertDataLength(buffer.byteLength, 65);
-        return buffer;
-    }
-    class BlockMerkleState {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getMerkleRoot() {
-            return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), { validate: false });
-        }
-        getCount() {
-            return new Uint64(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Uint64.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, BlockMerkleState.size());
-            this.getMerkleRoot().validate(compatible);
-            this.getCount().validate(compatible);
-        }
-        static size() {
-            return 0 + Byte32.size() + Uint64.size();
-        }
-    }
-    function SerializeBlockMerkleState(value) {
-        const array = new Uint8Array(0 + Byte32.size() + Uint64.size());
-        array.set(new Uint8Array(SerializeByte32(value.merkle_root)), 0);
-        array.set(new Uint8Array(SerializeUint64(value.count)), 0 + Byte32.size());
-        return array.buffer;
-    }
-    class AccountMerkleState {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getMerkleRoot() {
-            return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), { validate: false });
-        }
-        getCount() {
-            return new Uint32(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Uint32.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, AccountMerkleState.size());
-            this.getMerkleRoot().validate(compatible);
-            this.getCount().validate(compatible);
-        }
-        static size() {
-            return 0 + Byte32.size() + Uint32.size();
-        }
-    }
-    function SerializeAccountMerkleState(value) {
-        const array = new Uint8Array(0 + Byte32.size() + Uint32.size());
-        array.set(new Uint8Array(SerializeByte32(value.merkle_root)), 0);
-        array.set(new Uint8Array(SerializeUint32(value.count)), 0 + Byte32.size());
-        return array.buffer;
-    }
-    class GlobalState {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getRollupConfigHash() {
-            return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), { validate: false });
-        }
-        getAccount() {
-            return new AccountMerkleState(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + AccountMerkleState.size()), { validate: false });
-        }
-        getBlock() {
-            return new BlockMerkleState(this.view.buffer.slice(0 + Byte32.size() + AccountMerkleState.size(), 0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size()), { validate: false });
-        }
-        getRevertedBlockRoot() {
-            return new Byte32(this.view.buffer.slice(0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size(), 0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size() + Byte32.size()), { validate: false });
-        }
-        getTipBlockHash() {
-            return new Byte32(this.view.buffer.slice(0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size() + Byte32.size(), 0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size() + Byte32.size() + Byte32.size()), { validate: false });
-        }
-        getLastFinalizedBlockNumber() {
-            return new Uint64(this.view.buffer.slice(0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size() + Byte32.size() + Byte32.size(), 0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size() + Byte32.size() + Byte32.size() + Uint64.size()), { validate: false });
-        }
-        getStatus() {
-            return this.view.getUint8(0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size() + Byte32.size() + Byte32.size() + Uint64.size());
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, GlobalState.size());
-            this.getRollupConfigHash().validate(compatible);
-            this.getAccount().validate(compatible);
-            this.getBlock().validate(compatible);
-            this.getRevertedBlockRoot().validate(compatible);
-            this.getTipBlockHash().validate(compatible);
-            this.getLastFinalizedBlockNumber().validate(compatible);
-        }
-        static size() {
-            return 0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size() + Byte32.size() + Byte32.size() + Uint64.size() + 1;
-        }
-    }
-    function SerializeGlobalState(value) {
-        const array = new Uint8Array(0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size() + Byte32.size() + Byte32.size() + Uint64.size() + 1);
-        const view = new DataView(array.buffer);
-        array.set(new Uint8Array(SerializeByte32(value.rollup_config_hash)), 0);
-        array.set(new Uint8Array(SerializeAccountMerkleState(value.account)), 0 + Byte32.size());
-        array.set(new Uint8Array(SerializeBlockMerkleState(value.block)), 0 + Byte32.size() + AccountMerkleState.size());
-        array.set(new Uint8Array(SerializeByte32(value.reverted_block_root)), 0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size());
-        array.set(new Uint8Array(SerializeByte32(value.tip_block_hash)), 0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size() + Byte32.size());
-        array.set(new Uint8Array(SerializeUint64(value.last_finalized_block_number)), 0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size() + Byte32.size() + Byte32.size());
-        view.setUint8(0 + Byte32.size() + AccountMerkleState.size() + BlockMerkleState.size() + Byte32.size() + Byte32.size() + Uint64.size(), value.status);
-        return array.buffer;
-    }
-    class RollupConfig {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Byte32(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[3], offsets[4]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[4], offsets[5]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[5], offsets[6]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[6], offsets[7]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[7], offsets[8]), { validate: false }).validate();
-            new Uint64(this.view.buffer.slice(offsets[8], offsets[9]), { validate: false }).validate();
-            new Uint64(this.view.buffer.slice(offsets[9], offsets[10]), { validate: false }).validate();
-            new Uint64(this.view.buffer.slice(offsets[10], offsets[11]), { validate: false }).validate();
-            new Uint32(this.view.buffer.slice(offsets[11], offsets[12]), { validate: false }).validate();
-            if (offsets[13] - offsets[12] !== 1) {
-                throw new Error(`Invalid offset for reward_burn_rate: ${offsets[12]} - ${offsets[13]}`);
-            }
-            new Byte32Vec(this.view.buffer.slice(offsets[13], offsets[14]), { validate: false }).validate();
-            new Byte32Vec(this.view.buffer.slice(offsets[14], offsets[15]), { validate: false }).validate();
-        }
-        getL1SudtScriptTypeHash() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getCustodianScriptTypeHash() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getDepositScriptTypeHash() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getWithdrawalScriptTypeHash() {
-            const start = 16;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getChallengeScriptTypeHash() {
-            const start = 20;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getStakeScriptTypeHash() {
-            const start = 24;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getL2SudtValidatorScriptTypeHash() {
-            const start = 28;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getBurnLockHash() {
-            const start = 32;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getRequiredStakingCapacity() {
-            const start = 36;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint64(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getChallengeMaturityBlocks() {
-            const start = 40;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint64(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getFinalityBlocks() {
-            const start = 44;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint64(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getCompatibleChainId() {
-            const start = 48;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getRewardBurnRate() {
-            const start = 52;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new DataView(this.view.buffer.slice(offset, offset_end)).getUint8(0);
-        }
-        getAllowedEoaTypeHashes() {
-            const start = 56;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32Vec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getAllowedContractTypeHashes() {
-            const start = 60;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Byte32Vec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeRollupConfig(value) {
-        const buffers = [];
-        buffers.push(SerializeByte32(value.l1_sudt_script_type_hash));
-        buffers.push(SerializeByte32(value.custodian_script_type_hash));
-        buffers.push(SerializeByte32(value.deposit_script_type_hash));
-        buffers.push(SerializeByte32(value.withdrawal_script_type_hash));
-        buffers.push(SerializeByte32(value.challenge_script_type_hash));
-        buffers.push(SerializeByte32(value.stake_script_type_hash));
-        buffers.push(SerializeByte32(value.l2_sudt_validator_script_type_hash));
-        buffers.push(SerializeByte32(value.burn_lock_hash));
-        buffers.push(SerializeUint64(value.required_staking_capacity));
-        buffers.push(SerializeUint64(value.challenge_maturity_blocks));
-        buffers.push(SerializeUint64(value.finality_blocks));
-        buffers.push(SerializeUint32(value.compatible_chain_id));
-        const rewardBurnRateView = new DataView(new ArrayBuffer(1));
-        rewardBurnRateView.setUint8(0, value.reward_burn_rate);
-        buffers.push(rewardBurnRateView.buffer);
-        buffers.push(SerializeByte32Vec(value.allowed_eoa_type_hashes));
-        buffers.push(SerializeByte32Vec(value.allowed_contract_type_hashes));
-        return serializeTable(buffers);
-    }
-    class RawL2Transaction {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Uint32(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Uint32(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new Uint32(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[3], offsets[4]), { validate: false }).validate();
-        }
-        getFromId() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getToId() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getNonce() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getArgs() {
-            const start = 16;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeRawL2Transaction(value) {
-        const buffers = [];
-        buffers.push(SerializeUint32(value.from_id));
-        buffers.push(SerializeUint32(value.to_id));
-        buffers.push(SerializeUint32(value.nonce));
-        buffers.push(SerializeBytes(value.args));
-        return serializeTable(buffers);
-    }
-    class L2Transaction {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new RawL2Transaction(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Signature(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-        }
-        getRaw() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new RawL2Transaction(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getSignature() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Signature(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeL2Transaction(value) {
-        const buffers = [];
-        buffers.push(SerializeRawL2Transaction(value.raw));
-        buffers.push(SerializeSignature(value.signature));
-        return serializeTable(buffers);
-    }
-    class L2TransactionVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            for (let i = 0; i < len(offsets) - 1; i++) {
-                new L2Transaction(this.view.buffer.slice(offsets[i], offsets[i + 1]), { validate: false }).validate();
-            }
-        }
-        length() {
-            if (this.view.byteLength < 8) {
-                return 0;
-            }
-            else {
-                return this.view.getUint32(4, true) / 4 - 1;
-            }
-        }
-        indexAt(i) {
-            const start = 4 + i * 4;
-            const offset = this.view.getUint32(start, true);
-            let offset_end = this.view.byteLength;
-            if (i + 1 < this.length()) {
-                offset_end = this.view.getUint32(start + 4, true);
-            }
-            return new L2Transaction(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeL2TransactionVec(value) {
-        return serializeTable(value.map(item => SerializeL2Transaction(item)));
-    }
-    class SubmitTransactions {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Byte32(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Uint32(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-        }
-        getTxWitnessRoot() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getTxCount() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getPrevStateCheckpoint() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeSubmitTransactions(value) {
-        const buffers = [];
-        buffers.push(SerializeByte32(value.tx_witness_root));
-        buffers.push(SerializeUint32(value.tx_count));
-        buffers.push(SerializeByte32(value.prev_state_checkpoint));
-        return serializeTable(buffers);
-    }
-    class SubmitWithdrawals {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getWithdrawalWitnessRoot() {
-            return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), { validate: false });
-        }
-        getWithdrawalCount() {
-            return new Uint32(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Uint32.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, SubmitWithdrawals.size());
-            this.getWithdrawalWitnessRoot().validate(compatible);
-            this.getWithdrawalCount().validate(compatible);
-        }
-        static size() {
-            return 0 + Byte32.size() + Uint32.size();
-        }
-    }
-    function SerializeSubmitWithdrawals(value) {
-        const array = new Uint8Array(0 + Byte32.size() + Uint32.size());
-        array.set(new Uint8Array(SerializeByte32(value.withdrawal_witness_root)), 0);
-        array.set(new Uint8Array(SerializeUint32(value.withdrawal_count)), 0 + Byte32.size());
-        return array.buffer;
-    }
-    class RawL2Block {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Uint64(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Uint32(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[3], offsets[4]), { validate: false }).validate();
-            new Uint64(this.view.buffer.slice(offsets[4], offsets[5]), { validate: false }).validate();
-            new AccountMerkleState(this.view.buffer.slice(offsets[5], offsets[6]), { validate: false }).validate();
-            new AccountMerkleState(this.view.buffer.slice(offsets[6], offsets[7]), { validate: false }).validate();
-            new Byte32Vec(this.view.buffer.slice(offsets[7], offsets[8]), { validate: false }).validate();
-            new SubmitWithdrawals(this.view.buffer.slice(offsets[8], offsets[9]), { validate: false }).validate();
-            new SubmitTransactions(this.view.buffer.slice(offsets[9], offsets[10]), { validate: false }).validate();
-        }
-        getNumber() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint64(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getBlockProducerId() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getParentBlockHash() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getStakeCellOwnerLockHash() {
-            const start = 16;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getTimestamp() {
-            const start = 20;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint64(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getPrevAccount() {
-            const start = 24;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new AccountMerkleState(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getPostAccount() {
-            const start = 28;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new AccountMerkleState(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getStateCheckpointList() {
-            const start = 32;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32Vec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getSubmitWithdrawals() {
-            const start = 36;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new SubmitWithdrawals(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getSubmitTransactions() {
-            const start = 40;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new SubmitTransactions(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeRawL2Block(value) {
-        const buffers = [];
-        buffers.push(SerializeUint64(value.number));
-        buffers.push(SerializeUint32(value.block_producer_id));
-        buffers.push(SerializeByte32(value.parent_block_hash));
-        buffers.push(SerializeByte32(value.stake_cell_owner_lock_hash));
-        buffers.push(SerializeUint64(value.timestamp));
-        buffers.push(SerializeAccountMerkleState(value.prev_account));
-        buffers.push(SerializeAccountMerkleState(value.post_account));
-        buffers.push(SerializeByte32Vec(value.state_checkpoint_list));
-        buffers.push(SerializeSubmitWithdrawals(value.submit_withdrawals));
-        buffers.push(SerializeSubmitTransactions(value.submit_transactions));
-        return serializeTable(buffers);
-    }
-    class RawL2BlockVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            for (let i = 0; i < len(offsets) - 1; i++) {
-                new RawL2Block(this.view.buffer.slice(offsets[i], offsets[i + 1]), { validate: false }).validate();
-            }
-        }
-        length() {
-            if (this.view.byteLength < 8) {
-                return 0;
-            }
-            else {
-                return this.view.getUint32(4, true) / 4 - 1;
-            }
-        }
-        indexAt(i) {
-            const start = 4 + i * 4;
-            const offset = this.view.getUint32(start, true);
-            let offset_end = this.view.byteLength;
-            if (i + 1 < this.length()) {
-                offset_end = this.view.getUint32(start + 4, true);
-            }
-            return new RawL2Block(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeRawL2BlockVec(value) {
-        return serializeTable(value.map(item => SerializeRawL2Block(item)));
-    }
-    class L2Block {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new RawL2Block(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new KVPairVec(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-            new L2TransactionVec(this.view.buffer.slice(offsets[3], offsets[4]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[4], offsets[5]), { validate: false }).validate();
-            new WithdrawalRequestVec(this.view.buffer.slice(offsets[5], offsets[6]), { validate: false }).validate();
-        }
-        getRaw() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new RawL2Block(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getKvState() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new KVPairVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getKvStateProof() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getTransactions() {
-            const start = 16;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new L2TransactionVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getBlockProof() {
-            const start = 20;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getWithdrawals() {
-            const start = 24;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new WithdrawalRequestVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeL2Block(value) {
-        const buffers = [];
-        buffers.push(SerializeRawL2Block(value.raw));
-        buffers.push(SerializeKVPairVec(value.kv_state));
-        buffers.push(SerializeBytes(value.kv_state_proof));
-        buffers.push(SerializeL2TransactionVec(value.transactions));
-        buffers.push(SerializeBytes(value.block_proof));
-        buffers.push(SerializeWithdrawalRequestVec(value.withdrawals));
-        return serializeTable(buffers);
-    }
-    class DepositRequest {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Uint64(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Uint128(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-            new Script(this.view.buffer.slice(offsets[3], offsets[4]), { validate: false }).validate();
-        }
-        getCapacity() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint64(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getAmount() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint128(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getSudtScriptHash() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getScript() {
-            const start = 16;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Script(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeDepositRequest(value) {
-        const buffers = [];
-        buffers.push(SerializeUint64(value.capacity));
-        buffers.push(SerializeUint128(value.amount));
-        buffers.push(SerializeByte32(value.sudt_script_hash));
-        buffers.push(SerializeScript(value.script));
-        return serializeTable(buffers);
-    }
-    class DepositRequestVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            for (let i = 0; i < len(offsets) - 1; i++) {
-                new DepositRequest(this.view.buffer.slice(offsets[i], offsets[i + 1]), { validate: false }).validate();
-            }
-        }
-        length() {
-            if (this.view.byteLength < 8) {
-                return 0;
-            }
-            else {
-                return this.view.getUint32(4, true) / 4 - 1;
-            }
-        }
-        indexAt(i) {
-            const start = 4 + i * 4;
-            const offset = this.view.getUint32(start, true);
-            let offset_end = this.view.byteLength;
-            if (i + 1 < this.length()) {
-                offset_end = this.view.getUint32(start + 4, true);
-            }
-            return new DepositRequest(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeDepositRequestVec(value) {
-        return serializeTable(value.map(item => SerializeDepositRequest(item)));
-    }
-    class RawWithdrawalRequest {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getNonce() {
-            return new Uint32(this.view.buffer.slice(0, 0 + Uint32.size()), { validate: false });
-        }
-        getCapacity() {
-            return new Uint64(this.view.buffer.slice(0 + Uint32.size(), 0 + Uint32.size() + Uint64.size()), { validate: false });
-        }
-        getAmount() {
-            return new Uint128(this.view.buffer.slice(0 + Uint32.size() + Uint64.size(), 0 + Uint32.size() + Uint64.size() + Uint128.size()), { validate: false });
-        }
-        getSudtScriptHash() {
-            return new Byte32(this.view.buffer.slice(0 + Uint32.size() + Uint64.size() + Uint128.size(), 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size()), { validate: false });
-        }
-        getAccountScriptHash() {
-            return new Byte32(this.view.buffer.slice(0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size(), 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size()), { validate: false });
-        }
-        getSellAmount() {
-            return new Uint128(this.view.buffer.slice(0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size(), 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Uint128.size()), { validate: false });
-        }
-        getSellCapacity() {
-            return new Uint64(this.view.buffer.slice(0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Uint128.size(), 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Uint128.size() + Uint64.size()), { validate: false });
-        }
-        getOwnerLockHash() {
-            return new Byte32(this.view.buffer.slice(0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Uint128.size() + Uint64.size(), 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Uint128.size() + Uint64.size() + Byte32.size()), { validate: false });
-        }
-        getPaymentLockHash() {
-            return new Byte32(this.view.buffer.slice(0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Uint128.size() + Uint64.size() + Byte32.size(), 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Uint128.size() + Uint64.size() + Byte32.size() + Byte32.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, RawWithdrawalRequest.size());
-            this.getNonce().validate(compatible);
-            this.getCapacity().validate(compatible);
-            this.getAmount().validate(compatible);
-            this.getSudtScriptHash().validate(compatible);
-            this.getAccountScriptHash().validate(compatible);
-            this.getSellAmount().validate(compatible);
-            this.getSellCapacity().validate(compatible);
-            this.getOwnerLockHash().validate(compatible);
-            this.getPaymentLockHash().validate(compatible);
-        }
-        static size() {
-            return 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Uint128.size() + Uint64.size() + Byte32.size() + Byte32.size();
-        }
-    }
-    function SerializeRawWithdrawalRequest(value) {
-        const array = new Uint8Array(0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Uint128.size() + Uint64.size() + Byte32.size() + Byte32.size());
-        array.set(new Uint8Array(SerializeUint32(value.nonce)), 0);
-        array.set(new Uint8Array(SerializeUint64(value.capacity)), 0 + Uint32.size());
-        array.set(new Uint8Array(SerializeUint128(value.amount)), 0 + Uint32.size() + Uint64.size());
-        array.set(new Uint8Array(SerializeByte32(value.sudt_script_hash)), 0 + Uint32.size() + Uint64.size() + Uint128.size());
-        array.set(new Uint8Array(SerializeByte32(value.account_script_hash)), 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size());
-        array.set(new Uint8Array(SerializeUint128(value.sell_amount)), 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size());
-        array.set(new Uint8Array(SerializeUint64(value.sell_capacity)), 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Uint128.size());
-        array.set(new Uint8Array(SerializeByte32(value.owner_lock_hash)), 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Uint128.size() + Uint64.size());
-        array.set(new Uint8Array(SerializeByte32(value.payment_lock_hash)), 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size() + Byte32.size() + Uint128.size() + Uint64.size() + Byte32.size());
-        return array.buffer;
-    }
-    class WithdrawalRequestVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.view.byteLength < 4) {
-                dataLengthError(this.view.byteLength, ">4");
-            }
-            const requiredByteLength = this.length() * WithdrawalRequest.size() + 4;
-            assertDataLength(this.view.byteLength, requiredByteLength);
-            for (let i = 0; i < 0; i++) {
-                const item = this.indexAt(i);
-                item.validate(compatible);
-            }
-        }
-        indexAt(i) {
-            return new WithdrawalRequest(this.view.buffer.slice(4 + i * WithdrawalRequest.size(), 4 + (i + 1) * WithdrawalRequest.size()), { validate: false });
-        }
-        length() {
-            return this.view.getUint32(0, true);
-        }
-    }
-    function SerializeWithdrawalRequestVec(value) {
-        const array = new Uint8Array(4 + WithdrawalRequest.size() * value.length);
-        (new DataView(array.buffer)).setUint32(0, value.length, true);
-        for (let i = 0; i < value.length; i++) {
-            const itemBuffer = SerializeWithdrawalRequest(value[i]);
-            array.set(new Uint8Array(itemBuffer), 4 + i * WithdrawalRequest.size());
-        }
-        return array.buffer;
-    }
-    class WithdrawalRequest {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getRaw() {
-            return new RawWithdrawalRequest(this.view.buffer.slice(0, 0 + RawWithdrawalRequest.size()), { validate: false });
-        }
-        getSignature() {
-            return new Signature(this.view.buffer.slice(0 + RawWithdrawalRequest.size(), 0 + RawWithdrawalRequest.size() + Signature.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, WithdrawalRequest.size());
-            this.getRaw().validate(compatible);
-            this.getSignature().validate(compatible);
-        }
-        static size() {
-            return 0 + RawWithdrawalRequest.size() + Signature.size();
-        }
-    }
-    function SerializeWithdrawalRequest(value) {
-        const array = new Uint8Array(0 + RawWithdrawalRequest.size() + Signature.size());
-        array.set(new Uint8Array(SerializeRawWithdrawalRequest(value.raw)), 0);
-        array.set(new Uint8Array(SerializeSignature(value.signature)), 0 + RawWithdrawalRequest.size());
-        return array.buffer;
-    }
-    class KVPair {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Byte32(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-        }
-        getK() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getV() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeKVPair(value) {
-        const buffers = [];
-        buffers.push(SerializeByte32(value.k));
-        buffers.push(SerializeByte32(value.v));
-        return serializeTable(buffers);
-    }
-    class KVPairVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            for (let i = 0; i < len(offsets) - 1; i++) {
-                new KVPair(this.view.buffer.slice(offsets[i], offsets[i + 1]), { validate: false }).validate();
-            }
-        }
-        length() {
-            if (this.view.byteLength < 8) {
-                return 0;
-            }
-            else {
-                return this.view.getUint32(4, true) / 4 - 1;
-            }
-        }
-        indexAt(i) {
-            const start = 4 + i * 4;
-            const offset = this.view.getUint32(start, true);
-            let offset_end = this.view.byteLength;
-            if (i + 1 < this.length()) {
-                offset_end = this.view.getUint32(start + 4, true);
-            }
-            return new KVPair(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeKVPairVec(value) {
-        return serializeTable(value.map(item => SerializeKVPair(item)));
-    }
-    class BlockInfo {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getBlockProducerId() {
-            return new Uint32(this.view.buffer.slice(0, 0 + Uint32.size()), { validate: false });
-        }
-        getNumber() {
-            return new Uint64(this.view.buffer.slice(0 + Uint32.size(), 0 + Uint32.size() + Uint64.size()), { validate: false });
-        }
-        getTimestamp() {
-            return new Uint64(this.view.buffer.slice(0 + Uint32.size() + Uint64.size(), 0 + Uint32.size() + Uint64.size() + Uint64.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, BlockInfo.size());
-            this.getBlockProducerId().validate(compatible);
-            this.getNumber().validate(compatible);
-            this.getTimestamp().validate(compatible);
-        }
-        static size() {
-            return 0 + Uint32.size() + Uint64.size() + Uint64.size();
-        }
-    }
-    function SerializeBlockInfo(value) {
-        const array = new Uint8Array(0 + Uint32.size() + Uint64.size() + Uint64.size());
-        array.set(new Uint8Array(SerializeUint32(value.block_producer_id)), 0);
-        array.set(new Uint8Array(SerializeUint64(value.number)), 0 + Uint32.size());
-        array.set(new Uint8Array(SerializeUint64(value.timestamp)), 0 + Uint32.size() + Uint64.size());
-        return array.buffer;
-    }
-    class DepositLockArgs {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Byte32(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Script(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new Uint64(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-        }
-        getOwnerLockHash() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getLayer2Lock() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Script(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getCancelTimeout() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Uint64(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeDepositLockArgs(value) {
-        const buffers = [];
-        buffers.push(SerializeByte32(value.owner_lock_hash));
-        buffers.push(SerializeScript(value.layer2_lock));
-        buffers.push(SerializeUint64(value.cancel_timeout));
-        return serializeTable(buffers);
-    }
-    class CustodianLockArgs {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new DepositLockArgs(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new Uint64(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-        }
-        getDepositLockArgs() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new DepositLockArgs(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getDepositBlockHash() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getDepositBlockNumber() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Uint64(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeCustodianLockArgs(value) {
-        const buffers = [];
-        buffers.push(SerializeDepositLockArgs(value.deposit_lock_args));
-        buffers.push(SerializeByte32(value.deposit_block_hash));
-        buffers.push(SerializeUint64(value.deposit_block_number));
-        return serializeTable(buffers);
-    }
-    class UnlockCustodianViaRevertWitness {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getDepositLockHash() {
-            return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, UnlockCustodianViaRevertWitness.size());
-            this.getDepositLockHash().validate(compatible);
-        }
-        static size() {
-            return 0 + Byte32.size();
-        }
-    }
-    function SerializeUnlockCustodianViaRevertWitness(value) {
-        const array = new Uint8Array(0 + Byte32.size());
-        array.set(new Uint8Array(SerializeByte32(value.deposit_lock_hash)), 0);
-        return array.buffer;
-    }
-    class WithdrawalLockArgs {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getAccountScriptHash() {
-            return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), { validate: false });
-        }
-        getWithdrawalBlockHash() {
-            return new Byte32(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Byte32.size()), { validate: false });
-        }
-        getWithdrawalBlockNumber() {
-            return new Uint64(this.view.buffer.slice(0 + Byte32.size() + Byte32.size(), 0 + Byte32.size() + Byte32.size() + Uint64.size()), { validate: false });
-        }
-        getSudtScriptHash() {
-            return new Byte32(this.view.buffer.slice(0 + Byte32.size() + Byte32.size() + Uint64.size(), 0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size()), { validate: false });
-        }
-        getSellAmount() {
-            return new Uint128(this.view.buffer.slice(0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size(), 0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size() + Uint128.size()), { validate: false });
-        }
-        getSellCapacity() {
-            return new Uint64(this.view.buffer.slice(0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size() + Uint128.size(), 0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size() + Uint128.size() + Uint64.size()), { validate: false });
-        }
-        getOwnerLockHash() {
-            return new Byte32(this.view.buffer.slice(0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size() + Uint128.size() + Uint64.size(), 0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size() + Uint128.size() + Uint64.size() + Byte32.size()), { validate: false });
-        }
-        getPaymentLockHash() {
-            return new Byte32(this.view.buffer.slice(0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size() + Uint128.size() + Uint64.size() + Byte32.size(), 0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size() + Uint128.size() + Uint64.size() + Byte32.size() + Byte32.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, WithdrawalLockArgs.size());
-            this.getAccountScriptHash().validate(compatible);
-            this.getWithdrawalBlockHash().validate(compatible);
-            this.getWithdrawalBlockNumber().validate(compatible);
-            this.getSudtScriptHash().validate(compatible);
-            this.getSellAmount().validate(compatible);
-            this.getSellCapacity().validate(compatible);
-            this.getOwnerLockHash().validate(compatible);
-            this.getPaymentLockHash().validate(compatible);
-        }
-        static size() {
-            return 0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size() + Uint128.size() + Uint64.size() + Byte32.size() + Byte32.size();
-        }
-    }
-    function SerializeWithdrawalLockArgs(value) {
-        const array = new Uint8Array(0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size() + Uint128.size() + Uint64.size() + Byte32.size() + Byte32.size());
-        array.set(new Uint8Array(SerializeByte32(value.account_script_hash)), 0);
-        array.set(new Uint8Array(SerializeByte32(value.withdrawal_block_hash)), 0 + Byte32.size());
-        array.set(new Uint8Array(SerializeUint64(value.withdrawal_block_number)), 0 + Byte32.size() + Byte32.size());
-        array.set(new Uint8Array(SerializeByte32(value.sudt_script_hash)), 0 + Byte32.size() + Byte32.size() + Uint64.size());
-        array.set(new Uint8Array(SerializeUint128(value.sell_amount)), 0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size());
-        array.set(new Uint8Array(SerializeUint64(value.sell_capacity)), 0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size() + Uint128.size());
-        array.set(new Uint8Array(SerializeByte32(value.owner_lock_hash)), 0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size() + Uint128.size() + Uint64.size());
-        array.set(new Uint8Array(SerializeByte32(value.payment_lock_hash)), 0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size() + Uint128.size() + Uint64.size() + Byte32.size());
-        return array.buffer;
-    }
-    class UnlockWithdrawalWitness {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.view.byteLength < 4) {
-                assertDataLength(this.view.byteLength, ">4");
-            }
-            const t = this.view.getUint32(0, true);
-            switch (t) {
-                case 0:
-                    new UnlockWithdrawalViaFinalize(this.view.buffer.slice(4), { validate: false }).validate();
-                    break;
-                case 1:
-                    new UnlockWithdrawalViaRevert(this.view.buffer.slice(4), { validate: false }).validate();
-                    break;
-                case 2:
-                    new UnlockWithdrawalViaTrade(this.view.buffer.slice(4), { validate: false }).validate();
-                    break;
-                default:
-                    throw new Error(`Invalid type: ${t}`);
-            }
-        }
-        unionType() {
-            const t = this.view.getUint32(0, true);
-            switch (t) {
-                case 0:
-                    return "UnlockWithdrawalViaFinalize";
-                case 1:
-                    return "UnlockWithdrawalViaRevert";
-                case 2:
-                    return "UnlockWithdrawalViaTrade";
-                default:
-                    throw new Error(`Invalid type: ${t}`);
-            }
-        }
-        value() {
-            const t = this.view.getUint32(0, true);
-            switch (t) {
-                case 0:
-                    return new UnlockWithdrawalViaFinalize(this.view.buffer.slice(4), { validate: false });
-                case 1:
-                    return new UnlockWithdrawalViaRevert(this.view.buffer.slice(4), { validate: false });
-                case 2:
-                    return new UnlockWithdrawalViaTrade(this.view.buffer.slice(4), { validate: false });
-                default:
-                    throw new Error(`Invalid type: ${t}`);
-            }
-        }
-    }
-    function SerializeUnlockWithdrawalWitness(value) {
-        switch (value.type) {
-            case "UnlockWithdrawalViaFinalize":
-                {
-                    const itemBuffer = SerializeUnlockWithdrawalViaFinalize(value.value);
-                    const array = new Uint8Array(4 + itemBuffer.byteLength);
-                    const view = new DataView(array.buffer);
-                    view.setUint32(0, 0, true);
-                    array.set(new Uint8Array(itemBuffer), 4);
-                    return array.buffer;
-                }
-            case "UnlockWithdrawalViaRevert":
-                {
-                    const itemBuffer = SerializeUnlockWithdrawalViaRevert(value.value);
-                    const array = new Uint8Array(4 + itemBuffer.byteLength);
-                    const view = new DataView(array.buffer);
-                    view.setUint32(0, 1, true);
-                    array.set(new Uint8Array(itemBuffer), 4);
-                    return array.buffer;
-                }
-            case "UnlockWithdrawalViaTrade":
-                {
-                    const itemBuffer = SerializeUnlockWithdrawalViaTrade(value.value);
-                    const array = new Uint8Array(4 + itemBuffer.byteLength);
-                    const view = new DataView(array.buffer);
-                    view.setUint32(0, 2, true);
-                    array.set(new Uint8Array(itemBuffer), 4);
-                    return array.buffer;
-                }
-            default:
-                throw new Error(`Invalid type: ${value.type}`);
-        }
-    }
-    class UnlockWithdrawalViaFinalize {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-        }
-    }
-    function SerializeUnlockWithdrawalViaFinalize(value) {
-        const buffers = [];
-        return serializeTable(buffers);
-    }
-    class UnlockWithdrawalViaRevert {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getCustodianLockHash() {
-            return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, UnlockWithdrawalViaRevert.size());
-            this.getCustodianLockHash().validate(compatible);
-        }
-        static size() {
-            return 0 + Byte32.size();
-        }
-    }
-    function SerializeUnlockWithdrawalViaRevert(value) {
-        const array = new Uint8Array(0 + Byte32.size());
-        array.set(new Uint8Array(SerializeByte32(value.custodian_lock_hash)), 0);
-        return array.buffer;
-    }
-    class UnlockWithdrawalViaTrade {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Script(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-        }
-        getOwnerLock() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Script(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeUnlockWithdrawalViaTrade(value) {
-        const buffers = [];
-        buffers.push(SerializeScript(value.owner_lock));
-        return serializeTable(buffers);
-    }
-    class StakeLockArgs {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getOwnerLockHash() {
-            return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), { validate: false });
-        }
-        getStakeBlockNumber() {
-            return new Uint64(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Uint64.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, StakeLockArgs.size());
-            this.getOwnerLockHash().validate(compatible);
-            this.getStakeBlockNumber().validate(compatible);
-        }
-        static size() {
-            return 0 + Byte32.size() + Uint64.size();
-        }
-    }
-    function SerializeStakeLockArgs(value) {
-        const array = new Uint8Array(0 + Byte32.size() + Uint64.size());
-        array.set(new Uint8Array(SerializeByte32(value.owner_lock_hash)), 0);
-        array.set(new Uint8Array(SerializeUint64(value.stake_block_number)), 0 + Byte32.size());
-        return array.buffer;
-    }
-    class MetaContractArgs {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.view.byteLength < 4) {
-                assertDataLength(this.view.byteLength, ">4");
-            }
-            const t = this.view.getUint32(0, true);
-            switch (t) {
-                case 0:
-                    new CreateAccount(this.view.buffer.slice(4), { validate: false }).validate();
-                    break;
-                default:
-                    throw new Error(`Invalid type: ${t}`);
-            }
-        }
-        unionType() {
-            const t = this.view.getUint32(0, true);
-            switch (t) {
-                case 0:
-                    return "CreateAccount";
-                default:
-                    throw new Error(`Invalid type: ${t}`);
-            }
-        }
-        value() {
-            const t = this.view.getUint32(0, true);
-            switch (t) {
-                case 0:
-                    return new CreateAccount(this.view.buffer.slice(4), { validate: false });
-                default:
-                    throw new Error(`Invalid type: ${t}`);
-            }
-        }
-    }
-    function SerializeMetaContractArgs(value) {
-        switch (value.type) {
-            case "CreateAccount":
-                {
-                    const itemBuffer = SerializeCreateAccount(value.value);
-                    const array = new Uint8Array(4 + itemBuffer.byteLength);
-                    const view = new DataView(array.buffer);
-                    view.setUint32(0, 0, true);
-                    array.set(new Uint8Array(itemBuffer), 4);
-                    return array.buffer;
-                }
-            default:
-                throw new Error(`Invalid type: ${value.type}`);
-        }
-    }
-    class CreateAccount {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Script(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-        }
-        getScript() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Script(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeCreateAccount(value) {
-        const buffers = [];
-        buffers.push(SerializeScript(value.script));
-        return serializeTable(buffers);
-    }
-    class SUDTArgs {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.view.byteLength < 4) {
-                assertDataLength(this.view.byteLength, ">4");
-            }
-            const t = this.view.getUint32(0, true);
-            switch (t) {
-                case 0:
-                    new SUDTQuery(this.view.buffer.slice(4), { validate: false }).validate();
-                    break;
-                case 1:
-                    new SUDTTransfer(this.view.buffer.slice(4), { validate: false }).validate();
-                    break;
-                default:
-                    throw new Error(`Invalid type: ${t}`);
-            }
-        }
-        unionType() {
-            const t = this.view.getUint32(0, true);
-            switch (t) {
-                case 0:
-                    return "SUDTQuery";
-                case 1:
-                    return "SUDTTransfer";
-                default:
-                    throw new Error(`Invalid type: ${t}`);
-            }
-        }
-        value() {
-            const t = this.view.getUint32(0, true);
-            switch (t) {
-                case 0:
-                    return new SUDTQuery(this.view.buffer.slice(4), { validate: false });
-                case 1:
-                    return new SUDTTransfer(this.view.buffer.slice(4), { validate: false });
-                default:
-                    throw new Error(`Invalid type: ${t}`);
-            }
-        }
-    }
-    function SerializeSUDTArgs(value) {
-        switch (value.type) {
-            case "SUDTQuery":
-                {
-                    const itemBuffer = SerializeSUDTQuery(value.value);
-                    const array = new Uint8Array(4 + itemBuffer.byteLength);
-                    const view = new DataView(array.buffer);
-                    view.setUint32(0, 0, true);
-                    array.set(new Uint8Array(itemBuffer), 4);
-                    return array.buffer;
-                }
-            case "SUDTTransfer":
-                {
-                    const itemBuffer = SerializeSUDTTransfer(value.value);
-                    const array = new Uint8Array(4 + itemBuffer.byteLength);
-                    const view = new DataView(array.buffer);
-                    view.setUint32(0, 1, true);
-                    array.set(new Uint8Array(itemBuffer), 4);
-                    return array.buffer;
-                }
-            default:
-                throw new Error(`Invalid type: ${value.type}`);
-        }
-    }
-    class SUDTQuery {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getAccountId() {
-            return new Uint32(this.view.buffer.slice(0, 0 + Uint32.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, SUDTQuery.size());
-            this.getAccountId().validate(compatible);
-        }
-        static size() {
-            return 0 + Uint32.size();
-        }
-    }
-    function SerializeSUDTQuery(value) {
-        const array = new Uint8Array(0 + Uint32.size());
-        array.set(new Uint8Array(SerializeUint32(value.account_id)), 0);
-        return array.buffer;
-    }
-    class SUDTTransfer {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getTo() {
-            return new Uint32(this.view.buffer.slice(0, 0 + Uint32.size()), { validate: false });
-        }
-        getAmount() {
-            return new Uint128(this.view.buffer.slice(0 + Uint32.size(), 0 + Uint32.size() + Uint128.size()), { validate: false });
-        }
-        getFee() {
-            return new Uint128(this.view.buffer.slice(0 + Uint32.size() + Uint128.size(), 0 + Uint32.size() + Uint128.size() + Uint128.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, SUDTTransfer.size());
-            this.getTo().validate(compatible);
-            this.getAmount().validate(compatible);
-            this.getFee().validate(compatible);
-        }
-        static size() {
-            return 0 + Uint32.size() + Uint128.size() + Uint128.size();
-        }
-    }
-    function SerializeSUDTTransfer(value) {
-        const array = new Uint8Array(0 + Uint32.size() + Uint128.size() + Uint128.size());
-        array.set(new Uint8Array(SerializeUint32(value.to)), 0);
-        array.set(new Uint8Array(SerializeUint128(value.amount)), 0 + Uint32.size());
-        array.set(new Uint8Array(SerializeUint128(value.fee)), 0 + Uint32.size() + Uint128.size());
-        return array.buffer;
-    }
-    class ChallengeTarget {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getBlockHash() {
-            return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), { validate: false });
-        }
-        getTargetIndex() {
-            return new Uint32(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Uint32.size()), { validate: false });
-        }
-        getTargetType() {
-            return this.view.getUint8(0 + Byte32.size() + Uint32.size());
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, ChallengeTarget.size());
-            this.getBlockHash().validate(compatible);
-            this.getTargetIndex().validate(compatible);
-        }
-        static size() {
-            return 0 + Byte32.size() + Uint32.size() + 1;
-        }
-    }
-    function SerializeChallengeTarget(value) {
-        const array = new Uint8Array(0 + Byte32.size() + Uint32.size() + 1);
-        const view = new DataView(array.buffer);
-        array.set(new Uint8Array(SerializeByte32(value.block_hash)), 0);
-        array.set(new Uint8Array(SerializeUint32(value.target_index)), 0 + Byte32.size());
-        view.setUint8(0 + Byte32.size() + Uint32.size(), value.target_type);
-        return array.buffer;
-    }
-    class ChallengeLockArgs {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new ChallengeTarget(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Script(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-        }
-        getTarget() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new ChallengeTarget(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getRewardsReceiverLock() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Script(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeChallengeLockArgs(value) {
-        const buffers = [];
-        buffers.push(SerializeChallengeTarget(value.target));
-        buffers.push(SerializeScript(value.rewards_receiver_lock));
-        return serializeTable(buffers);
-    }
-    class ChallengeWitness {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new RawL2Block(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-        }
-        getRawL2Block() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new RawL2Block(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getBlockProof() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeChallengeWitness(value) {
-        const buffers = [];
-        buffers.push(SerializeRawL2Block(value.raw_l2block));
-        buffers.push(SerializeBytes(value.block_proof));
-        return serializeTable(buffers);
-    }
-    class ScriptVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            for (let i = 0; i < len(offsets) - 1; i++) {
-                new Script(this.view.buffer.slice(offsets[i], offsets[i + 1]), { validate: false }).validate();
-            }
-        }
-        length() {
-            if (this.view.byteLength < 8) {
-                return 0;
-            }
-            else {
-                return this.view.getUint32(4, true) / 4 - 1;
-            }
-        }
-        indexAt(i) {
-            const start = 4 + i * 4;
-            const offset = this.view.getUint32(start, true);
-            let offset_end = this.view.byteLength;
-            if (i + 1 < this.length()) {
-                offset_end = this.view.getUint32(start + 4, true);
-            }
-            return new Script(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeScriptVec(value) {
-        return serializeTable(value.map(item => SerializeScript(item)));
-    }
-    class BlockHashEntry {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getNumber() {
-            return new Uint64(this.view.buffer.slice(0, 0 + Uint64.size()), { validate: false });
-        }
-        getHash() {
-            return new Byte32(this.view.buffer.slice(0 + Uint64.size(), 0 + Uint64.size() + Byte32.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, BlockHashEntry.size());
-            this.getNumber().validate(compatible);
-            this.getHash().validate(compatible);
-        }
-        static size() {
-            return 0 + Uint64.size() + Byte32.size();
-        }
-    }
-    function SerializeBlockHashEntry(value) {
-        const array = new Uint8Array(0 + Uint64.size() + Byte32.size());
-        array.set(new Uint8Array(SerializeUint64(value.number)), 0);
-        array.set(new Uint8Array(SerializeByte32(value.hash)), 0 + Uint64.size());
-        return array.buffer;
-    }
-    class BlockHashEntryVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.view.byteLength < 4) {
-                dataLengthError(this.view.byteLength, ">4");
-            }
-            const requiredByteLength = this.length() * BlockHashEntry.size() + 4;
-            assertDataLength(this.view.byteLength, requiredByteLength);
-            for (let i = 0; i < 0; i++) {
-                const item = this.indexAt(i);
-                item.validate(compatible);
-            }
-        }
-        indexAt(i) {
-            return new BlockHashEntry(this.view.buffer.slice(4 + i * BlockHashEntry.size(), 4 + (i + 1) * BlockHashEntry.size()), { validate: false });
-        }
-        length() {
-            return this.view.getUint32(0, true);
-        }
-    }
-    function SerializeBlockHashEntryVec(value) {
-        const array = new Uint8Array(4 + BlockHashEntry.size() * value.length);
-        (new DataView(array.buffer)).setUint32(0, value.length, true);
-        for (let i = 0; i < value.length; i++) {
-            const itemBuffer = SerializeBlockHashEntry(value[i]);
-            array.set(new Uint8Array(itemBuffer), 4 + i * BlockHashEntry.size());
-        }
-        return array.buffer;
-    }
-    class VerifyTransactionContext {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Uint32(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new KVPairVec(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new ScriptVec(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-            new Byte32(this.view.buffer.slice(offsets[3], offsets[4]), { validate: false }).validate();
-            new BlockHashEntryVec(this.view.buffer.slice(offsets[4], offsets[5]), { validate: false }).validate();
-        }
-        getAccountCount() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getKvState() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new KVPairVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getScripts() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new ScriptVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getReturnDataHash() {
-            const start = 16;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getBlockHashes() {
-            const start = 20;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new BlockHashEntryVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeVerifyTransactionContext(value) {
-        const buffers = [];
-        buffers.push(SerializeUint32(value.account_count));
-        buffers.push(SerializeKVPairVec(value.kv_state));
-        buffers.push(SerializeScriptVec(value.scripts));
-        buffers.push(SerializeByte32(value.return_data_hash));
-        buffers.push(SerializeBlockHashEntryVec(value.block_hashes));
-        return serializeTable(buffers);
-    }
-    class VerifyTransactionWitness {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new L2Transaction(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new RawL2Block(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[3], offsets[4]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[4], offsets[5]), { validate: false }).validate();
-            new VerifyTransactionContext(this.view.buffer.slice(offsets[5], offsets[6]), { validate: false }).validate();
-        }
-        getL2Tx() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new L2Transaction(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getRawL2Block() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new RawL2Block(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getTxProof() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getKvStateProof() {
-            const start = 16;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getBlockHashesProof() {
-            const start = 20;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getContext() {
-            const start = 24;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new VerifyTransactionContext(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeVerifyTransactionWitness(value) {
-        const buffers = [];
-        buffers.push(SerializeL2Transaction(value.l2tx));
-        buffers.push(SerializeRawL2Block(value.raw_l2block));
-        buffers.push(SerializeBytes(value.tx_proof));
-        buffers.push(SerializeBytes(value.kv_state_proof));
-        buffers.push(SerializeBytes(value.block_hashes_proof));
-        buffers.push(SerializeVerifyTransactionContext(value.context));
-        return serializeTable(buffers);
-    }
-    class VerifySignatureContext {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Uint32(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new KVPairVec(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new ScriptVec(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-        }
-        getAccountCount() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getKvState() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new KVPairVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getScripts() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new ScriptVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeVerifySignatureContext(value) {
-        const buffers = [];
-        buffers.push(SerializeUint32(value.account_count));
-        buffers.push(SerializeKVPairVec(value.kv_state));
-        buffers.push(SerializeScriptVec(value.scripts));
-        return serializeTable(buffers);
-    }
-    class VerifyTransactionSignatureWitness {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new L2Transaction(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new RawL2Block(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[3], offsets[4]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[4], offsets[5]), { validate: false }).validate();
-            new VerifySignatureContext(this.view.buffer.slice(offsets[5], offsets[6]), { validate: false }).validate();
-        }
-        getL2Tx() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new L2Transaction(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getRawL2Block() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new RawL2Block(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getTxProof() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getKvStateProof() {
-            const start = 16;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getBlockHashesProof() {
-            const start = 20;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getContext() {
-            const start = 24;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new VerifySignatureContext(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeVerifyTransactionSignatureWitness(value) {
-        const buffers = [];
-        buffers.push(SerializeL2Transaction(value.l2tx));
-        buffers.push(SerializeRawL2Block(value.raw_l2block));
-        buffers.push(SerializeBytes(value.tx_proof));
-        buffers.push(SerializeBytes(value.kv_state_proof));
-        buffers.push(SerializeBytes(value.block_hashes_proof));
-        buffers.push(SerializeVerifySignatureContext(value.context));
-        return serializeTable(buffers);
-    }
-    class VerifyWithdrawalWitness {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new RawL2Block(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new WithdrawalRequest(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[3], offsets[4]), { validate: false }).validate();
-            new VerifySignatureContext(this.view.buffer.slice(offsets[4], offsets[5]), { validate: false }).validate();
-        }
-        getRawL2Block() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new RawL2Block(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getKvStateProof() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getWithdrawalRequest() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new WithdrawalRequest(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getWithdrawalProof() {
-            const start = 16;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getContext() {
-            const start = 20;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new VerifySignatureContext(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeVerifyWithdrawalWitness(value) {
-        const buffers = [];
-        buffers.push(SerializeRawL2Block(value.raw_l2block));
-        buffers.push(SerializeBytes(value.kv_state_proof));
-        buffers.push(SerializeWithdrawalRequest(value.withdrawal_request));
-        buffers.push(SerializeBytes(value.withdrawal_proof));
-        buffers.push(SerializeVerifySignatureContext(value.context));
-        return serializeTable(buffers);
-    }
-    class RollupSubmitBlock {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new L2Block(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Byte32Vec(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-        }
-        getBlock() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new L2Block(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getRevertedBlockHashes() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32Vec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getRevertedBlockProof() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeRollupSubmitBlock(value) {
-        const buffers = [];
-        buffers.push(SerializeL2Block(value.block));
-        buffers.push(SerializeByte32Vec(value.reverted_block_hashes));
-        buffers.push(SerializeBytes(value.reverted_block_proof));
-        return serializeTable(buffers);
-    }
-    class RollupEnterChallenge {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new ChallengeWitness(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-        }
-        getWitness() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new ChallengeWitness(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeRollupEnterChallenge(value) {
-        const buffers = [];
-        buffers.push(SerializeChallengeWitness(value.witness));
-        return serializeTable(buffers);
-    }
-    class RollupCancelChallenge {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-        }
-    }
-    function SerializeRollupCancelChallenge(value) {
-        const buffers = [];
-        return serializeTable(buffers);
-    }
-    class RollupRevert {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new RawL2BlockVec(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-        }
-        getRevertedBlocks() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new RawL2BlockVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getBlockProof() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getRevertedBlockProof() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-    }
-    function SerializeRollupRevert(value) {
-        const buffers = [];
-        buffers.push(SerializeRawL2BlockVec(value.reverted_blocks));
-        buffers.push(SerializeBytes(value.block_proof));
-        buffers.push(SerializeBytes(value.reverted_block_proof));
-        return serializeTable(buffers);
-    }
-    class RollupAction {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.view.byteLength < 4) {
-                assertDataLength(this.view.byteLength, ">4");
-            }
-            const t = this.view.getUint32(0, true);
-            switch (t) {
-                case 0:
-                    new RollupSubmitBlock(this.view.buffer.slice(4), { validate: false }).validate();
-                    break;
-                case 1:
-                    new RollupEnterChallenge(this.view.buffer.slice(4), { validate: false }).validate();
-                    break;
-                case 2:
-                    new RollupCancelChallenge(this.view.buffer.slice(4), { validate: false }).validate();
-                    break;
-                case 3:
-                    new RollupRevert(this.view.buffer.slice(4), { validate: false }).validate();
-                    break;
-                default:
-                    throw new Error(`Invalid type: ${t}`);
-            }
-        }
-        unionType() {
-            const t = this.view.getUint32(0, true);
-            switch (t) {
-                case 0:
-                    return "RollupSubmitBlock";
-                case 1:
-                    return "RollupEnterChallenge";
-                case 2:
-                    return "RollupCancelChallenge";
-                case 3:
-                    return "RollupRevert";
-                default:
-                    throw new Error(`Invalid type: ${t}`);
-            }
-        }
-        value() {
-            const t = this.view.getUint32(0, true);
-            switch (t) {
-                case 0:
-                    return new RollupSubmitBlock(this.view.buffer.slice(4), { validate: false });
-                case 1:
-                    return new RollupEnterChallenge(this.view.buffer.slice(4), { validate: false });
-                case 2:
-                    return new RollupCancelChallenge(this.view.buffer.slice(4), { validate: false });
-                case 3:
-                    return new RollupRevert(this.view.buffer.slice(4), { validate: false });
-                default:
-                    throw new Error(`Invalid type: ${t}`);
-            }
-        }
-    }
-    function SerializeRollupAction(value) {
-        switch (value.type) {
-            case "RollupSubmitBlock":
-                {
-                    const itemBuffer = SerializeRollupSubmitBlock(value.value);
-                    const array = new Uint8Array(4 + itemBuffer.byteLength);
-                    const view = new DataView(array.buffer);
-                    view.setUint32(0, 0, true);
-                    array.set(new Uint8Array(itemBuffer), 4);
-                    return array.buffer;
-                }
-            case "RollupEnterChallenge":
-                {
-                    const itemBuffer = SerializeRollupEnterChallenge(value.value);
-                    const array = new Uint8Array(4 + itemBuffer.byteLength);
-                    const view = new DataView(array.buffer);
-                    view.setUint32(0, 1, true);
-                    array.set(new Uint8Array(itemBuffer), 4);
-                    return array.buffer;
-                }
-            case "RollupCancelChallenge":
-                {
-                    const itemBuffer = SerializeRollupCancelChallenge(value.value);
-                    const array = new Uint8Array(4 + itemBuffer.byteLength);
-                    const view = new DataView(array.buffer);
-                    view.setUint32(0, 2, true);
-                    array.set(new Uint8Array(itemBuffer), 4);
-                    return array.buffer;
-                }
-            case "RollupRevert":
-                {
-                    const itemBuffer = SerializeRollupRevert(value.value);
-                    const array = new Uint8Array(4 + itemBuffer.byteLength);
-                    const view = new DataView(array.buffer);
-                    view.setUint32(0, 3, true);
-                    array.set(new Uint8Array(itemBuffer), 4);
-                    return array.buffer;
-                }
-            default:
-                throw new Error(`Invalid type: ${value.type}`);
-        }
-    }
-    class Uint16 {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, 2);
-        }
-        indexAt(i) {
-            return this.view.getUint8(i);
-        }
-        raw() {
-            return this.view.buffer;
-        }
-        toBigEndianUint16() {
-            return this.view.getUint16(0, false);
-        }
-        toLittleEndianUint16() {
-            return this.view.getUint16(0, true);
-        }
-        static size() {
-            return 2;
-        }
-    }
-    function SerializeUint16(value) {
-        const buffer = assertArrayBuffer(value);
-        assertDataLength(buffer.byteLength, 2);
-        return buffer;
-    }
-    class Uint32 {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, 4);
-        }
-        indexAt(i) {
-            return this.view.getUint8(i);
-        }
-        raw() {
-            return this.view.buffer;
-        }
-        toBigEndianUint32() {
-            return this.view.getUint32(0, false);
-        }
-        toLittleEndianUint32() {
-            return this.view.getUint32(0, true);
-        }
-        static size() {
-            return 4;
-        }
-    }
-    function SerializeUint32(value) {
-        const buffer = assertArrayBuffer(value);
-        assertDataLength(buffer.byteLength, 4);
-        return buffer;
-    }
-    class Uint64 {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, 8);
-        }
-        indexAt(i) {
-            return this.view.getUint8(i);
-        }
-        raw() {
-            return this.view.buffer;
-        }
-        toBigEndianBigUint64() {
-            return this.view.getBigUint64(0, false);
-        }
-        toLittleEndianBigUint64() {
-            return this.view.getUint64(0, true);
-        }
-        static size() {
-            return 8;
-        }
-    }
-    function SerializeUint64(value) {
-        const buffer = assertArrayBuffer(value);
-        assertDataLength(buffer.byteLength, 8);
-        return buffer;
-    }
-    class Uint128 {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, 16);
-        }
-        indexAt(i) {
-            return this.view.getUint8(i);
-        }
-        raw() {
-            return this.view.buffer;
-        }
-        static size() {
-            return 16;
-        }
-    }
-    function SerializeUint128(value) {
-        const buffer = assertArrayBuffer(value);
-        assertDataLength(buffer.byteLength, 16);
-        return buffer;
-    }
-    class Byte32 {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, 32);
-        }
-        indexAt(i) {
-            return this.view.getUint8(i);
-        }
-        raw() {
-            return this.view.buffer;
-        }
-        static size() {
-            return 32;
-        }
-    }
-    function SerializeByte32(value) {
-        const buffer = assertArrayBuffer(value);
-        assertDataLength(buffer.byteLength, 32);
-        return buffer;
-    }
-    class Uint256 {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, 32);
-        }
-        indexAt(i) {
-            return this.view.getUint8(i);
-        }
-        raw() {
-            return this.view.buffer;
-        }
-        static size() {
-            return 32;
-        }
-    }
-    function SerializeUint256(value) {
-        const buffer = assertArrayBuffer(value);
-        assertDataLength(buffer.byteLength, 32);
-        return buffer;
-    }
-    class Bytes {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.view.byteLength < 4) {
-                dataLengthError(this.view.byteLength, ">4");
-            }
-            const requiredByteLength = this.length() + 4;
-            assertDataLength(this.view.byteLength, requiredByteLength);
-        }
-        raw() {
-            return this.view.buffer.slice(4);
-        }
-        indexAt(i) {
-            return this.view.getUint8(4 + i);
-        }
-        length() {
-            return this.view.getUint32(0, true);
-        }
-    }
-    function SerializeBytes(value) {
-        const item = assertArrayBuffer(value);
-        const array = new Uint8Array(4 + item.byteLength);
-        (new DataView(array.buffer)).setUint32(0, item.byteLength, true);
-        array.set(new Uint8Array(item), 4);
-        return array.buffer;
-    }
-    class BytesOpt {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.hasValue()) {
-                this.value().validate(compatible);
-            }
-        }
-        value() {
-            return new Bytes(this.view.buffer, { validate: false });
-        }
-        hasValue() {
-            return this.view.byteLength > 0;
-        }
-    }
-    function SerializeBytesOpt(value) {
-        if (value) {
-            return SerializeBytes(value);
+            return this.view.getUint32(4, true) / 4 - 1;
+        }
+    }
+    indexAt(i) {
+        const start = 4 + i * 4;
+        const offset = this.view.getUint32(start, true);
+        let offset_end = this.view.byteLength;
+        if (i + 1 < this.length()) {
+            offset_end = this.view.getUint32(start + 4, true);
+        }
+        return new L2Transaction(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.L2TransactionVec = L2TransactionVec;
+function SerializeL2TransactionVec(value) {
+    return serializeTable(value.map((item) => SerializeL2Transaction(item)));
+}
+exports.SerializeL2TransactionVec = SerializeL2TransactionVec;
+class SubmitTransactions {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Byte32(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Uint32(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+    }
+    getTxWitnessRoot() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getTxCount() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getPrevStateCheckpoint() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.SubmitTransactions = SubmitTransactions;
+function SerializeSubmitTransactions(value) {
+    const buffers = [];
+    buffers.push(SerializeByte32(value.tx_witness_root));
+    buffers.push(SerializeUint32(value.tx_count));
+    buffers.push(SerializeByte32(value.prev_state_checkpoint));
+    return serializeTable(buffers);
+}
+exports.SerializeSubmitTransactions = SerializeSubmitTransactions;
+class SubmitWithdrawals {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getWithdrawalWitnessRoot() {
+        return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), {
+            validate: false,
+        });
+    }
+    getWithdrawalCount() {
+        return new Uint32(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Uint32.size()), { validate: false });
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, SubmitWithdrawals.size());
+        this.getWithdrawalWitnessRoot().validate(compatible);
+        this.getWithdrawalCount().validate(compatible);
+    }
+    static size() {
+        return 0 + Byte32.size() + Uint32.size();
+    }
+}
+exports.SubmitWithdrawals = SubmitWithdrawals;
+function SerializeSubmitWithdrawals(value) {
+    const array = new Uint8Array(0 + Byte32.size() + Uint32.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeByte32(value.withdrawal_witness_root)), 0);
+    array.set(new Uint8Array(SerializeUint32(value.withdrawal_count)), 0 + Byte32.size());
+    return array.buffer;
+}
+exports.SerializeSubmitWithdrawals = SerializeSubmitWithdrawals;
+class RawL2Block {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Uint64(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Uint32(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[3], offsets[4]), {
+            validate: false,
+        }).validate();
+        new Uint64(this.view.buffer.slice(offsets[4], offsets[5]), {
+            validate: false,
+        }).validate();
+        new AccountMerkleState(this.view.buffer.slice(offsets[5], offsets[6]), {
+            validate: false,
+        }).validate();
+        new AccountMerkleState(this.view.buffer.slice(offsets[6], offsets[7]), {
+            validate: false,
+        }).validate();
+        new Byte32Vec(this.view.buffer.slice(offsets[7], offsets[8]), {
+            validate: false,
+        }).validate();
+        new SubmitWithdrawals(this.view.buffer.slice(offsets[8], offsets[9]), {
+            validate: false,
+        }).validate();
+        new SubmitTransactions(this.view.buffer.slice(offsets[9], offsets[10]), {
+            validate: false,
+        }).validate();
+    }
+    getNumber() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint64(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getBlockProducerId() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getParentBlockHash() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getStakeCellOwnerLockHash() {
+        const start = 16;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getTimestamp() {
+        const start = 20;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint64(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getPrevAccount() {
+        const start = 24;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new AccountMerkleState(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getPostAccount() {
+        const start = 28;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new AccountMerkleState(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getStateCheckpointList() {
+        const start = 32;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32Vec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getSubmitWithdrawals() {
+        const start = 36;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new SubmitWithdrawals(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getSubmitTransactions() {
+        const start = 40;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new SubmitTransactions(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.RawL2Block = RawL2Block;
+function SerializeRawL2Block(value) {
+    const buffers = [];
+    buffers.push(SerializeUint64(value.number));
+    buffers.push(SerializeUint32(value.block_producer_id));
+    buffers.push(SerializeByte32(value.parent_block_hash));
+    buffers.push(SerializeByte32(value.stake_cell_owner_lock_hash));
+    buffers.push(SerializeUint64(value.timestamp));
+    buffers.push(SerializeAccountMerkleState(value.prev_account));
+    buffers.push(SerializeAccountMerkleState(value.post_account));
+    buffers.push(SerializeByte32Vec(value.state_checkpoint_list));
+    buffers.push(SerializeSubmitWithdrawals(value.submit_withdrawals));
+    buffers.push(SerializeSubmitTransactions(value.submit_transactions));
+    return serializeTable(buffers);
+}
+exports.SerializeRawL2Block = SerializeRawL2Block;
+class RawL2BlockVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        for (let i = 0; i < len(offsets) - 1; i++) {
+            new RawL2Block(this.view.buffer.slice(offsets[i], offsets[i + 1]), {
+                validate: false,
+            }).validate();
+        }
+    }
+    length() {
+        if (this.view.byteLength < 8) {
+            return 0;
         }
         else {
-            return new ArrayBuffer(0);
+            return this.view.getUint32(4, true) / 4 - 1;
         }
     }
-    class BytesVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
+    indexAt(i) {
+        const start = 4 + i * 4;
+        const offset = this.view.getUint32(start, true);
+        let offset_end = this.view.byteLength;
+        if (i + 1 < this.length()) {
+            offset_end = this.view.getUint32(start + 4, true);
         }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            for (let i = 0; i < len(offsets) - 1; i++) {
-                new Bytes(this.view.buffer.slice(offsets[i], offsets[i + 1]), { validate: false }).validate();
-            }
-        }
-        length() {
-            if (this.view.byteLength < 8) {
-                return 0;
-            }
-            else {
-                return this.view.getUint32(4, true) / 4 - 1;
-            }
-        }
-        indexAt(i) {
-            const start = 4 + i * 4;
-            const offset = this.view.getUint32(start, true);
-            let offset_end = this.view.byteLength;
-            if (i + 1 < this.length()) {
-                offset_end = this.view.getUint32(start + 4, true);
-            }
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
+        return new RawL2Block(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.RawL2BlockVec = RawL2BlockVec;
+function SerializeRawL2BlockVec(value) {
+    return serializeTable(value.map((item) => SerializeRawL2Block(item)));
+}
+exports.SerializeRawL2BlockVec = SerializeRawL2BlockVec;
+class L2Block {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
         }
     }
-    function SerializeBytesVec(value) {
-        return serializeTable(value.map(item => SerializeBytes(item)));
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new RawL2Block(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new KVPairVec(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+        new L2TransactionVec(this.view.buffer.slice(offsets[3], offsets[4]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[4], offsets[5]), {
+            validate: false,
+        }).validate();
+        new WithdrawalRequestVec(this.view.buffer.slice(offsets[5], offsets[6]), {
+            validate: false,
+        }).validate();
     }
-    class Byte32Vec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.view.byteLength < 4) {
-                dataLengthError(this.view.byteLength, ">4");
-            }
-            const requiredByteLength = this.length() * Byte32.size() + 4;
-            assertDataLength(this.view.byteLength, requiredByteLength);
-            for (let i = 0; i < 0; i++) {
-                const item = this.indexAt(i);
-                item.validate(compatible);
-            }
-        }
-        indexAt(i) {
-            return new Byte32(this.view.buffer.slice(4 + i * Byte32.size(), 4 + (i + 1) * Byte32.size()), { validate: false });
-        }
-        length() {
-            return this.view.getUint32(0, true);
+    getRaw() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new RawL2Block(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getKvState() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new KVPairVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getKvStateProof() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getTransactions() {
+        const start = 16;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new L2TransactionVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getBlockProof() {
+        const start = 20;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getWithdrawals() {
+        const start = 24;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new WithdrawalRequestVec(this.view.buffer.slice(offset, offset_end), { validate: false });
+    }
+}
+exports.L2Block = L2Block;
+function SerializeL2Block(value) {
+    const buffers = [];
+    buffers.push(SerializeRawL2Block(value.raw));
+    buffers.push(SerializeKVPairVec(value.kv_state));
+    buffers.push(SerializeBytes(value.kv_state_proof));
+    buffers.push(SerializeL2TransactionVec(value.transactions));
+    buffers.push(SerializeBytes(value.block_proof));
+    buffers.push(SerializeWithdrawalRequestVec(value.withdrawals));
+    return serializeTable(buffers);
+}
+exports.SerializeL2Block = SerializeL2Block;
+class DepositRequest {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
         }
     }
-    function SerializeByte32Vec(value) {
-        const array = new Uint8Array(4 + Byte32.size() * value.length);
-        (new DataView(array.buffer)).setUint32(0, value.length, true);
-        for (let i = 0; i < value.length; i++) {
-            const itemBuffer = SerializeByte32(value[i]);
-            array.set(new Uint8Array(itemBuffer), 4 + i * Byte32.size());
-        }
-        return array.buffer;
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Uint64(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Uint128(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+        new Script(this.view.buffer.slice(offsets[3], offsets[4]), {
+            validate: false,
+        }).validate();
     }
-    class ScriptOpt {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.hasValue()) {
-                this.value().validate(compatible);
-            }
-        }
-        value() {
-            return new Script(this.view.buffer, { validate: false });
-        }
-        hasValue() {
-            return this.view.byteLength > 0;
+    getCapacity() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint64(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getAmount() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint128(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getSudtScriptHash() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getScript() {
+        const start = 16;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Script(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.DepositRequest = DepositRequest;
+function SerializeDepositRequest(value) {
+    const buffers = [];
+    buffers.push(SerializeUint64(value.capacity));
+    buffers.push(SerializeUint128(value.amount));
+    buffers.push(SerializeByte32(value.sudt_script_hash));
+    buffers.push(SerializeScript(value.script));
+    return serializeTable(buffers);
+}
+exports.SerializeDepositRequest = SerializeDepositRequest;
+class DepositRequestVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
         }
     }
-    function SerializeScriptOpt(value) {
-        if (value) {
-            return SerializeScript(value);
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        for (let i = 0; i < len(offsets) - 1; i++) {
+            new DepositRequest(this.view.buffer.slice(offsets[i], offsets[i + 1]), {
+                validate: false,
+            }).validate();
+        }
+    }
+    length() {
+        if (this.view.byteLength < 8) {
+            return 0;
         }
         else {
-            return new ArrayBuffer(0);
+            return this.view.getUint32(4, true) / 4 - 1;
         }
     }
-    class ProposalShortId {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
+    indexAt(i) {
+        const start = 4 + i * 4;
+        const offset = this.view.getUint32(start, true);
+        let offset_end = this.view.byteLength;
+        if (i + 1 < this.length()) {
+            offset_end = this.view.getUint32(start + 4, true);
         }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, 10);
-        }
-        indexAt(i) {
-            return this.view.getUint8(i);
-        }
-        raw() {
-            return this.view.buffer;
-        }
-        static size() {
-            return 10;
+        return new DepositRequest(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.DepositRequestVec = DepositRequestVec;
+function SerializeDepositRequestVec(value) {
+    return serializeTable(value.map((item) => SerializeDepositRequest(item)));
+}
+exports.SerializeDepositRequestVec = SerializeDepositRequestVec;
+class RawWithdrawalRequest {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
         }
     }
-    function SerializeProposalShortId(value) {
-        const buffer = assertArrayBuffer(value);
-        assertDataLength(buffer.byteLength, 10);
-        return buffer;
+    getNonce() {
+        return new Uint32(this.view.buffer.slice(0, 0 + Uint32.size()), {
+            validate: false,
+        });
     }
-    class UncleBlockVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            for (let i = 0; i < len(offsets) - 1; i++) {
-                new UncleBlock(this.view.buffer.slice(offsets[i], offsets[i + 1]), { validate: false }).validate();
-            }
-        }
-        length() {
-            if (this.view.byteLength < 8) {
-                return 0;
-            }
-            else {
-                return this.view.getUint32(4, true) / 4 - 1;
-            }
-        }
-        indexAt(i) {
-            const start = 4 + i * 4;
-            const offset = this.view.getUint32(start, true);
-            let offset_end = this.view.byteLength;
-            if (i + 1 < this.length()) {
-                offset_end = this.view.getUint32(start + 4, true);
-            }
-            return new UncleBlock(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
+    getCapacity() {
+        return new Uint64(this.view.buffer.slice(0 + Uint32.size(), 0 + Uint32.size() + Uint64.size()), { validate: false });
     }
-    function SerializeUncleBlockVec(value) {
-        return serializeTable(value.map(item => SerializeUncleBlock(item)));
+    getAmount() {
+        return new Uint128(this.view.buffer.slice(0 + Uint32.size() + Uint64.size(), 0 + Uint32.size() + Uint64.size() + Uint128.size()), { validate: false });
     }
-    class TransactionVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            for (let i = 0; i < len(offsets) - 1; i++) {
-                new Transaction(this.view.buffer.slice(offsets[i], offsets[i + 1]), { validate: false }).validate();
-            }
-        }
-        length() {
-            if (this.view.byteLength < 8) {
-                return 0;
-            }
-            else {
-                return this.view.getUint32(4, true) / 4 - 1;
-            }
-        }
-        indexAt(i) {
-            const start = 4 + i * 4;
-            const offset = this.view.getUint32(start, true);
-            let offset_end = this.view.byteLength;
-            if (i + 1 < this.length()) {
-                offset_end = this.view.getUint32(start + 4, true);
-            }
-            return new Transaction(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
+    getSudtScriptHash() {
+        return new Byte32(this.view.buffer.slice(0 + Uint32.size() + Uint64.size() + Uint128.size(), 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size()), { validate: false });
     }
-    function SerializeTransactionVec(value) {
-        return serializeTable(value.map(item => SerializeTransaction(item)));
+    getAccountScriptHash() {
+        return new Byte32(this.view.buffer.slice(0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size(), 0 +
+            Uint32.size() +
+            Uint64.size() +
+            Uint128.size() +
+            Byte32.size() +
+            Byte32.size()), { validate: false });
     }
-    class ProposalShortIdVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.view.byteLength < 4) {
-                dataLengthError(this.view.byteLength, ">4");
-            }
-            const requiredByteLength = this.length() * ProposalShortId.size() + 4;
-            assertDataLength(this.view.byteLength, requiredByteLength);
-            for (let i = 0; i < 0; i++) {
-                const item = this.indexAt(i);
-                item.validate(compatible);
-            }
-        }
-        indexAt(i) {
-            return new ProposalShortId(this.view.buffer.slice(4 + i * ProposalShortId.size(), 4 + (i + 1) * ProposalShortId.size()), { validate: false });
-        }
-        length() {
-            return this.view.getUint32(0, true);
-        }
+    getSellAmount() {
+        return new Uint128(this.view.buffer.slice(0 +
+            Uint32.size() +
+            Uint64.size() +
+            Uint128.size() +
+            Byte32.size() +
+            Byte32.size(), 0 +
+            Uint32.size() +
+            Uint64.size() +
+            Uint128.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Uint128.size()), { validate: false });
     }
-    function SerializeProposalShortIdVec(value) {
-        const array = new Uint8Array(4 + ProposalShortId.size() * value.length);
-        (new DataView(array.buffer)).setUint32(0, value.length, true);
-        for (let i = 0; i < value.length; i++) {
-            const itemBuffer = SerializeProposalShortId(value[i]);
-            array.set(new Uint8Array(itemBuffer), 4 + i * ProposalShortId.size());
-        }
-        return array.buffer;
+    getSellCapacity() {
+        return new Uint64(this.view.buffer.slice(0 +
+            Uint32.size() +
+            Uint64.size() +
+            Uint128.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Uint128.size(), 0 +
+            Uint32.size() +
+            Uint64.size() +
+            Uint128.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Uint128.size() +
+            Uint64.size()), { validate: false });
     }
-    class CellDepVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.view.byteLength < 4) {
-                dataLengthError(this.view.byteLength, ">4");
-            }
-            const requiredByteLength = this.length() * CellDep.size() + 4;
-            assertDataLength(this.view.byteLength, requiredByteLength);
-            for (let i = 0; i < 0; i++) {
-                const item = this.indexAt(i);
-                item.validate(compatible);
-            }
-        }
-        indexAt(i) {
-            return new CellDep(this.view.buffer.slice(4 + i * CellDep.size(), 4 + (i + 1) * CellDep.size()), { validate: false });
-        }
-        length() {
-            return this.view.getUint32(0, true);
-        }
+    getOwnerLockHash() {
+        return new Byte32(this.view.buffer.slice(0 +
+            Uint32.size() +
+            Uint64.size() +
+            Uint128.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Uint128.size() +
+            Uint64.size(), 0 +
+            Uint32.size() +
+            Uint64.size() +
+            Uint128.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Uint128.size() +
+            Uint64.size() +
+            Byte32.size()), { validate: false });
     }
-    function SerializeCellDepVec(value) {
-        const array = new Uint8Array(4 + CellDep.size() * value.length);
-        (new DataView(array.buffer)).setUint32(0, value.length, true);
-        for (let i = 0; i < value.length; i++) {
-            const itemBuffer = SerializeCellDep(value[i]);
-            array.set(new Uint8Array(itemBuffer), 4 + i * CellDep.size());
-        }
-        return array.buffer;
+    getPaymentLockHash() {
+        return new Byte32(this.view.buffer.slice(0 +
+            Uint32.size() +
+            Uint64.size() +
+            Uint128.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Uint128.size() +
+            Uint64.size() +
+            Byte32.size(), 0 +
+            Uint32.size() +
+            Uint64.size() +
+            Uint128.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Uint128.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Byte32.size()), { validate: false });
     }
-    class CellInputVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            if (this.view.byteLength < 4) {
-                dataLengthError(this.view.byteLength, ">4");
-            }
-            const requiredByteLength = this.length() * CellInput.size() + 4;
-            assertDataLength(this.view.byteLength, requiredByteLength);
-            for (let i = 0; i < 0; i++) {
-                const item = this.indexAt(i);
-                item.validate(compatible);
-            }
-        }
-        indexAt(i) {
-            return new CellInput(this.view.buffer.slice(4 + i * CellInput.size(), 4 + (i + 1) * CellInput.size()), { validate: false });
-        }
-        length() {
-            return this.view.getUint32(0, true);
-        }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, RawWithdrawalRequest.size());
+        this.getNonce().validate(compatible);
+        this.getCapacity().validate(compatible);
+        this.getAmount().validate(compatible);
+        this.getSudtScriptHash().validate(compatible);
+        this.getAccountScriptHash().validate(compatible);
+        this.getSellAmount().validate(compatible);
+        this.getSellCapacity().validate(compatible);
+        this.getOwnerLockHash().validate(compatible);
+        this.getPaymentLockHash().validate(compatible);
     }
-    function SerializeCellInputVec(value) {
-        const array = new Uint8Array(4 + CellInput.size() * value.length);
-        (new DataView(array.buffer)).setUint32(0, value.length, true);
-        for (let i = 0; i < value.length; i++) {
-            const itemBuffer = SerializeCellInput(value[i]);
-            array.set(new Uint8Array(itemBuffer), 4 + i * CellInput.size());
-        }
-        return array.buffer;
+    static size() {
+        return (0 +
+            Uint32.size() +
+            Uint64.size() +
+            Uint128.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Uint128.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Byte32.size());
     }
-    class CellOutputVec {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            for (let i = 0; i < len(offsets) - 1; i++) {
-                new CellOutput(this.view.buffer.slice(offsets[i], offsets[i + 1]), { validate: false }).validate();
-            }
-        }
-        length() {
-            if (this.view.byteLength < 8) {
-                return 0;
-            }
-            else {
-                return this.view.getUint32(4, true) / 4 - 1;
-            }
-        }
-        indexAt(i) {
-            const start = 4 + i * 4;
-            const offset = this.view.getUint32(start, true);
-            let offset_end = this.view.byteLength;
-            if (i + 1 < this.length()) {
-                offset_end = this.view.getUint32(start + 4, true);
-            }
-            return new CellOutput(this.view.buffer.slice(offset, offset_end), { validate: false });
+}
+exports.RawWithdrawalRequest = RawWithdrawalRequest;
+function SerializeRawWithdrawalRequest(value) {
+    const array = new Uint8Array(0 +
+        Uint32.size() +
+        Uint64.size() +
+        Uint128.size() +
+        Byte32.size() +
+        Byte32.size() +
+        Uint128.size() +
+        Uint64.size() +
+        Byte32.size() +
+        Byte32.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeUint32(value.nonce)), 0);
+    array.set(new Uint8Array(SerializeUint64(value.capacity)), 0 + Uint32.size());
+    array.set(new Uint8Array(SerializeUint128(value.amount)), 0 + Uint32.size() + Uint64.size());
+    array.set(new Uint8Array(SerializeByte32(value.sudt_script_hash)), 0 + Uint32.size() + Uint64.size() + Uint128.size());
+    array.set(new Uint8Array(SerializeByte32(value.account_script_hash)), 0 + Uint32.size() + Uint64.size() + Uint128.size() + Byte32.size());
+    array.set(new Uint8Array(SerializeUint128(value.sell_amount)), 0 +
+        Uint32.size() +
+        Uint64.size() +
+        Uint128.size() +
+        Byte32.size() +
+        Byte32.size());
+    array.set(new Uint8Array(SerializeUint64(value.sell_capacity)), 0 +
+        Uint32.size() +
+        Uint64.size() +
+        Uint128.size() +
+        Byte32.size() +
+        Byte32.size() +
+        Uint128.size());
+    array.set(new Uint8Array(SerializeByte32(value.owner_lock_hash)), 0 +
+        Uint32.size() +
+        Uint64.size() +
+        Uint128.size() +
+        Byte32.size() +
+        Byte32.size() +
+        Uint128.size() +
+        Uint64.size());
+    array.set(new Uint8Array(SerializeByte32(value.payment_lock_hash)), 0 +
+        Uint32.size() +
+        Uint64.size() +
+        Uint128.size() +
+        Byte32.size() +
+        Byte32.size() +
+        Uint128.size() +
+        Uint64.size() +
+        Byte32.size());
+    return array.buffer;
+}
+exports.SerializeRawWithdrawalRequest = SerializeRawWithdrawalRequest;
+class WithdrawalRequestVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
         }
     }
-    function SerializeCellOutputVec(value) {
-        return serializeTable(value.map(item => SerializeCellOutput(item)));
-    }
-    class Script {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Byte32(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            if (offsets[2] - offsets[1] !== 1) {
-                throw new Error(`Invalid offset for hash_type: ${offsets[1]} - ${offsets[2]}`);
-            }
-            new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-        }
-        getCodeHash() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getHashType() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new DataView(this.view.buffer.slice(offset, offset_end)).getUint8(0);
-        }
-        getArgs() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        for (let i = 0; i < len(offsets) - 1; i++) {
+            new WithdrawalRequest(this.view.buffer.slice(offsets[i], offsets[i + 1]), { validate: false }).validate();
         }
     }
-    function SerializeScript(value) {
-        const buffers = [];
-        buffers.push(SerializeByte32(value.code_hash));
-        const hashTypeView = new DataView(new ArrayBuffer(1));
-        hashTypeView.setUint8(0, value.hash_type);
-        buffers.push(hashTypeView.buffer);
-        buffers.push(SerializeBytes(value.args));
-        return serializeTable(buffers);
-    }
-    class OutPoint {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
+    length() {
+        if (this.view.byteLength < 8) {
+            return 0;
         }
-        getTxHash() {
-            return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), { validate: false });
-        }
-        getIndex() {
-            return new Uint32(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Uint32.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, OutPoint.size());
-            this.getTxHash().validate(compatible);
-            this.getIndex().validate(compatible);
-        }
-        static size() {
-            return 0 + Byte32.size() + Uint32.size();
+        else {
+            return this.view.getUint32(4, true) / 4 - 1;
         }
     }
-    function SerializeOutPoint(value) {
-        const array = new Uint8Array(0 + Byte32.size() + Uint32.size());
-        array.set(new Uint8Array(SerializeByte32(value.tx_hash)), 0);
-        array.set(new Uint8Array(SerializeUint32(value.index)), 0 + Byte32.size());
-        return array.buffer;
+    indexAt(i) {
+        const start = 4 + i * 4;
+        const offset = this.view.getUint32(start, true);
+        let offset_end = this.view.byteLength;
+        if (i + 1 < this.length()) {
+            offset_end = this.view.getUint32(start + 4, true);
+        }
+        return new WithdrawalRequest(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
     }
-    class CellInput {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getSince() {
-            return new Uint64(this.view.buffer.slice(0, 0 + Uint64.size()), { validate: false });
-        }
-        getPreviousOutput() {
-            return new OutPoint(this.view.buffer.slice(0 + Uint64.size(), 0 + Uint64.size() + OutPoint.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, CellInput.size());
-            this.getSince().validate(compatible);
-            this.getPreviousOutput().validate(compatible);
-        }
-        static size() {
-            return 0 + Uint64.size() + OutPoint.size();
+}
+exports.WithdrawalRequestVec = WithdrawalRequestVec;
+function SerializeWithdrawalRequestVec(value) {
+    return serializeTable(value.map((item) => SerializeWithdrawalRequest(item)));
+}
+exports.SerializeWithdrawalRequestVec = SerializeWithdrawalRequestVec;
+class WithdrawalRequest {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
         }
     }
-    function SerializeCellInput(value) {
-        const array = new Uint8Array(0 + Uint64.size() + OutPoint.size());
-        array.set(new Uint8Array(SerializeUint64(value.since)), 0);
-        array.set(new Uint8Array(SerializeOutPoint(value.previous_output)), 0 + Uint64.size());
-        return array.buffer;
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new RawWithdrawalRequest(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
     }
-    class CellOutput {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Uint64(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Script(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new ScriptOpt(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-        }
-        getCapacity() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint64(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getLock() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Script(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getType() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new ScriptOpt(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
+    getRaw() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new RawWithdrawalRequest(this.view.buffer.slice(offset, offset_end), { validate: false });
     }
-    function SerializeCellOutput(value) {
-        const buffers = [];
-        buffers.push(SerializeUint64(value.capacity));
-        buffers.push(SerializeScript(value.lock));
-        buffers.push(SerializeScriptOpt(value.type_));
-        return serializeTable(buffers);
+    getSignature() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
     }
-    class CellDep {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getOutPoint() {
-            return new OutPoint(this.view.buffer.slice(0, 0 + OutPoint.size()), { validate: false });
-        }
-        getDepType() {
-            return this.view.getUint8(0 + OutPoint.size());
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, CellDep.size());
-            this.getOutPoint().validate(compatible);
-        }
-        static size() {
-            return 0 + OutPoint.size() + 1;
+}
+exports.WithdrawalRequest = WithdrawalRequest;
+function SerializeWithdrawalRequest(value) {
+    const buffers = [];
+    buffers.push(SerializeRawWithdrawalRequest(value.raw));
+    buffers.push(SerializeBytes(value.signature));
+    return serializeTable(buffers);
+}
+exports.SerializeWithdrawalRequest = SerializeWithdrawalRequest;
+class KVPair {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
         }
     }
-    function SerializeCellDep(value) {
-        const array = new Uint8Array(0 + OutPoint.size() + 1);
-        const view = new DataView(array.buffer);
-        array.set(new Uint8Array(SerializeOutPoint(value.out_point)), 0);
-        view.setUint8(0 + OutPoint.size(), value.dep_type);
-        return array.buffer;
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Byte32(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
     }
-    class RawTransaction {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Uint32(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new CellDepVec(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new Byte32Vec(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-            new CellInputVec(this.view.buffer.slice(offsets[3], offsets[4]), { validate: false }).validate();
-            new CellOutputVec(this.view.buffer.slice(offsets[4], offsets[5]), { validate: false }).validate();
-            new BytesVec(this.view.buffer.slice(offsets[5], offsets[6]), { validate: false }).validate();
-        }
-        getVersion() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Uint32(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getCellDeps() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new CellDepVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getHeaderDeps() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Byte32Vec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getInputs() {
-            const start = 16;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new CellInputVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getOutputs() {
-            const start = 20;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new CellOutputVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getOutputsData() {
-            const start = 24;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new BytesVec(this.view.buffer.slice(offset, offset_end), { validate: false });
+    getK() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getV() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.KVPair = KVPair;
+function SerializeKVPair(value) {
+    const buffers = [];
+    buffers.push(SerializeByte32(value.k));
+    buffers.push(SerializeByte32(value.v));
+    return serializeTable(buffers);
+}
+exports.SerializeKVPair = SerializeKVPair;
+class KVPairVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
         }
     }
-    function SerializeRawTransaction(value) {
-        const buffers = [];
-        buffers.push(SerializeUint32(value.version));
-        buffers.push(SerializeCellDepVec(value.cell_deps));
-        buffers.push(SerializeByte32Vec(value.header_deps));
-        buffers.push(SerializeCellInputVec(value.inputs));
-        buffers.push(SerializeCellOutputVec(value.outputs));
-        buffers.push(SerializeBytesVec(value.outputs_data));
-        return serializeTable(buffers);
-    }
-    class Transaction {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new RawTransaction(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new BytesVec(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-        }
-        getRaw() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new RawTransaction(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getWitnesses() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new BytesVec(this.view.buffer.slice(offset, offset_end), { validate: false });
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        for (let i = 0; i < len(offsets) - 1; i++) {
+            new KVPair(this.view.buffer.slice(offsets[i], offsets[i + 1]), {
+                validate: false,
+            }).validate();
         }
     }
-    function SerializeTransaction(value) {
-        const buffers = [];
-        buffers.push(SerializeRawTransaction(value.raw));
-        buffers.push(SerializeBytesVec(value.witnesses));
-        return serializeTable(buffers);
-    }
-    class RawHeader {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
+    length() {
+        if (this.view.byteLength < 8) {
+            return 0;
         }
-        getVersion() {
-            return new Uint32(this.view.buffer.slice(0, 0 + Uint32.size()), { validate: false });
-        }
-        getCompactTarget() {
-            return new Uint32(this.view.buffer.slice(0 + Uint32.size(), 0 + Uint32.size() + Uint32.size()), { validate: false });
-        }
-        getTimestamp() {
-            return new Uint64(this.view.buffer.slice(0 + Uint32.size() + Uint32.size(), 0 + Uint32.size() + Uint32.size() + Uint64.size()), { validate: false });
-        }
-        getNumber() {
-            return new Uint64(this.view.buffer.slice(0 + Uint32.size() + Uint32.size() + Uint64.size(), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size()), { validate: false });
-        }
-        getEpoch() {
-            return new Uint64(this.view.buffer.slice(0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size(), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size()), { validate: false });
-        }
-        getParentHash() {
-            return new Byte32(this.view.buffer.slice(0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size(), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size()), { validate: false });
-        }
-        getTransactionsRoot() {
-            return new Byte32(this.view.buffer.slice(0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size(), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size() + Byte32.size()), { validate: false });
-        }
-        getProposalsHash() {
-            return new Byte32(this.view.buffer.slice(0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size() + Byte32.size(), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size() + Byte32.size() + Byte32.size()), { validate: false });
-        }
-        getUnclesHash() {
-            return new Byte32(this.view.buffer.slice(0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size() + Byte32.size() + Byte32.size(), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size() + Byte32.size() + Byte32.size() + Byte32.size()), { validate: false });
-        }
-        getDao() {
-            return new Byte32(this.view.buffer.slice(0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size() + Byte32.size() + Byte32.size() + Byte32.size(), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size() + Byte32.size() + Byte32.size() + Byte32.size() + Byte32.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, RawHeader.size());
-            this.getVersion().validate(compatible);
-            this.getCompactTarget().validate(compatible);
-            this.getTimestamp().validate(compatible);
-            this.getNumber().validate(compatible);
-            this.getEpoch().validate(compatible);
-            this.getParentHash().validate(compatible);
-            this.getTransactionsRoot().validate(compatible);
-            this.getProposalsHash().validate(compatible);
-            this.getUnclesHash().validate(compatible);
-            this.getDao().validate(compatible);
-        }
-        static size() {
-            return 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size() + Byte32.size() + Byte32.size() + Byte32.size() + Byte32.size();
+        else {
+            return this.view.getUint32(4, true) / 4 - 1;
         }
     }
-    function SerializeRawHeader(value) {
-        const array = new Uint8Array(0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size() + Byte32.size() + Byte32.size() + Byte32.size() + Byte32.size());
-        array.set(new Uint8Array(SerializeUint32(value.version)), 0);
-        array.set(new Uint8Array(SerializeUint32(value.compact_target)), 0 + Uint32.size());
-        array.set(new Uint8Array(SerializeUint64(value.timestamp)), 0 + Uint32.size() + Uint32.size());
-        array.set(new Uint8Array(SerializeUint64(value.number)), 0 + Uint32.size() + Uint32.size() + Uint64.size());
-        array.set(new Uint8Array(SerializeUint64(value.epoch)), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size());
-        array.set(new Uint8Array(SerializeByte32(value.parent_hash)), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size());
-        array.set(new Uint8Array(SerializeByte32(value.transactions_root)), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size());
-        array.set(new Uint8Array(SerializeByte32(value.proposals_hash)), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size() + Byte32.size());
-        array.set(new Uint8Array(SerializeByte32(value.uncles_hash)), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size() + Byte32.size() + Byte32.size());
-        array.set(new Uint8Array(SerializeByte32(value.dao)), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size() + Uint64.size() + Byte32.size() + Byte32.size() + Byte32.size() + Byte32.size());
-        return array.buffer;
+    indexAt(i) {
+        const start = 4 + i * 4;
+        const offset = this.view.getUint32(start, true);
+        let offset_end = this.view.byteLength;
+        if (i + 1 < this.length()) {
+            offset_end = this.view.getUint32(start + 4, true);
+        }
+        return new KVPair(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
     }
-    class Header {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        getRaw() {
-            return new RawHeader(this.view.buffer.slice(0, 0 + RawHeader.size()), { validate: false });
-        }
-        getNonce() {
-            return new Uint128(this.view.buffer.slice(0 + RawHeader.size(), 0 + RawHeader.size() + Uint128.size()), { validate: false });
-        }
-        validate(compatible = false) {
-            assertDataLength(this.view.byteLength, Header.size());
-            this.getRaw().validate(compatible);
-            this.getNonce().validate(compatible);
-        }
-        static size() {
-            return 0 + RawHeader.size() + Uint128.size();
+}
+exports.KVPairVec = KVPairVec;
+function SerializeKVPairVec(value) {
+    return serializeTable(value.map((item) => SerializeKVPair(item)));
+}
+exports.SerializeKVPairVec = SerializeKVPairVec;
+class BlockInfo {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
         }
     }
-    function SerializeHeader(value) {
-        const array = new Uint8Array(0 + RawHeader.size() + Uint128.size());
-        array.set(new Uint8Array(SerializeRawHeader(value.raw)), 0);
-        array.set(new Uint8Array(SerializeUint128(value.nonce)), 0 + RawHeader.size());
-        return array.buffer;
+    getBlockProducerId() {
+        return new Uint32(this.view.buffer.slice(0, 0 + Uint32.size()), {
+            validate: false,
+        });
     }
-    class UncleBlock {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Header(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new ProposalShortIdVec(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-        }
-        getHeader() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Header(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getProposals() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new ProposalShortIdVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
+    getNumber() {
+        return new Uint64(this.view.buffer.slice(0 + Uint32.size(), 0 + Uint32.size() + Uint64.size()), { validate: false });
     }
-    function SerializeUncleBlock(value) {
-        const buffers = [];
-        buffers.push(SerializeHeader(value.header));
-        buffers.push(SerializeProposalShortIdVec(value.proposals));
-        return serializeTable(buffers);
+    getTimestamp() {
+        return new Uint64(this.view.buffer.slice(0 + Uint32.size() + Uint64.size(), 0 + Uint32.size() + Uint64.size() + Uint64.size()), { validate: false });
     }
-    class Block {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Header(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new UncleBlockVec(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new TransactionVec(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-            new ProposalShortIdVec(this.view.buffer.slice(offsets[3], offsets[4]), { validate: false }).validate();
-        }
-        getHeader() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Header(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getUncles() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new UncleBlockVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getTransactions() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new TransactionVec(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getProposals() {
-            const start = 16;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new ProposalShortIdVec(this.view.buffer.slice(offset, offset_end), { validate: false });
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, BlockInfo.size());
+        this.getBlockProducerId().validate(compatible);
+        this.getNumber().validate(compatible);
+        this.getTimestamp().validate(compatible);
+    }
+    static size() {
+        return 0 + Uint32.size() + Uint64.size() + Uint64.size();
+    }
+}
+exports.BlockInfo = BlockInfo;
+function SerializeBlockInfo(value) {
+    const array = new Uint8Array(0 + Uint32.size() + Uint64.size() + Uint64.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeUint32(value.block_producer_id)), 0);
+    array.set(new Uint8Array(SerializeUint64(value.number)), 0 + Uint32.size());
+    array.set(new Uint8Array(SerializeUint64(value.timestamp)), 0 + Uint32.size() + Uint64.size());
+    return array.buffer;
+}
+exports.SerializeBlockInfo = SerializeBlockInfo;
+class DepositLockArgs {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
         }
     }
-    function SerializeBlock(value) {
-        const buffers = [];
-        buffers.push(SerializeHeader(value.header));
-        buffers.push(SerializeUncleBlockVec(value.uncles));
-        buffers.push(SerializeTransactionVec(value.transactions));
-        buffers.push(SerializeProposalShortIdVec(value.proposals));
-        return serializeTable(buffers);
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Byte32(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Script(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Uint64(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
     }
-    class CellbaseWitness {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new Script(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new Bytes(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-        }
-        getLock() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new Script(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getMessage() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
+    getOwnerLockHash() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
     }
-    function SerializeCellbaseWitness(value) {
-        const buffers = [];
-        buffers.push(SerializeScript(value.lock));
-        buffers.push(SerializeBytes(value.message));
-        return serializeTable(buffers);
+    getLayer2Lock() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Script(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
     }
-    class WitnessArgs {
-        constructor(reader, { validate = true } = {}) {
-            this.view = new DataView(assertArrayBuffer(reader));
-            if (validate) {
-                this.validate();
-            }
-        }
-        validate(compatible = false) {
-            const offsets = verifyAndExtractOffsets(this.view, 0, true);
-            new BytesOpt(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
-            new BytesOpt(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
-            new BytesOpt(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
-        }
-        getLock() {
-            const start = 4;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new BytesOpt(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getInputType() {
-            const start = 8;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.getUint32(start + 4, true);
-            return new BytesOpt(this.view.buffer.slice(offset, offset_end), { validate: false });
-        }
-        getOutputType() {
-            const start = 12;
-            const offset = this.view.getUint32(start, true);
-            const offset_end = this.view.byteLength;
-            return new BytesOpt(this.view.buffer.slice(offset, offset_end), { validate: false });
+    getCancelTimeout() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Uint64(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.DepositLockArgs = DepositLockArgs;
+function SerializeDepositLockArgs(value) {
+    const buffers = [];
+    buffers.push(SerializeByte32(value.owner_lock_hash));
+    buffers.push(SerializeScript(value.layer2_lock));
+    buffers.push(SerializeUint64(value.cancel_timeout));
+    return serializeTable(buffers);
+}
+exports.SerializeDepositLockArgs = SerializeDepositLockArgs;
+class CustodianLockArgs {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
         }
     }
-    function SerializeWitnessArgs(value) {
-        const buffers = [];
-        buffers.push(SerializeBytesOpt(value.lock));
-        buffers.push(SerializeBytesOpt(value.input_type));
-        buffers.push(SerializeBytesOpt(value.output_type));
-        return serializeTable(buffers);
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new DepositLockArgs(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Uint64(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
     }
-    exports.AccountMerkleState = AccountMerkleState;
-    exports.Block = Block;
-    exports.BlockHashEntry = BlockHashEntry;
-    exports.BlockHashEntryVec = BlockHashEntryVec;
-    exports.BlockInfo = BlockInfo;
-    exports.BlockMerkleState = BlockMerkleState;
-    exports.Byte20 = Byte20;
-    exports.Byte32 = Byte32;
-    exports.Byte32Opt = Byte32Opt;
-    exports.Byte32Vec = Byte32Vec;
-    exports.Bytes = Bytes;
-    exports.BytesOpt = BytesOpt;
-    exports.BytesVec = BytesVec;
-    exports.CellDep = CellDep;
-    exports.CellDepVec = CellDepVec;
-    exports.CellInput = CellInput;
-    exports.CellInputVec = CellInputVec;
-    exports.CellOutput = CellOutput;
-    exports.CellOutputVec = CellOutputVec;
-    exports.CellbaseWitness = CellbaseWitness;
-    exports.ChallengeLockArgs = ChallengeLockArgs;
-    exports.ChallengeTarget = ChallengeTarget;
-    exports.ChallengeWitness = ChallengeWitness;
-    exports.CreateAccount = CreateAccount;
-    exports.CustodianLockArgs = CustodianLockArgs;
-    exports.DepositLockArgs = DepositLockArgs;
-    exports.DepositRequest = DepositRequest;
-    exports.DepositRequestVec = DepositRequestVec;
-    exports.GlobalState = GlobalState;
-    exports.Header = Header;
-    exports.KVPair = KVPair;
-    exports.KVPairVec = KVPairVec;
-    exports.L2Block = L2Block;
-    exports.L2Transaction = L2Transaction;
-    exports.L2TransactionVec = L2TransactionVec;
-    exports.MetaContractArgs = MetaContractArgs;
-    exports.OutPoint = OutPoint;
-    exports.ProposalShortId = ProposalShortId;
-    exports.ProposalShortIdVec = ProposalShortIdVec;
-    exports.RawHeader = RawHeader;
-    exports.RawL2Block = RawL2Block;
-    exports.RawL2BlockVec = RawL2BlockVec;
-    exports.RawL2Transaction = RawL2Transaction;
-    exports.RawTransaction = RawTransaction;
-    exports.RawWithdrawalRequest = RawWithdrawalRequest;
-    exports.RollupAction = RollupAction;
-    exports.RollupCancelChallenge = RollupCancelChallenge;
-    exports.RollupConfig = RollupConfig;
-    exports.RollupEnterChallenge = RollupEnterChallenge;
-    exports.RollupRevert = RollupRevert;
-    exports.RollupSubmitBlock = RollupSubmitBlock;
-    exports.SUDTArgs = SUDTArgs;
-    exports.SUDTQuery = SUDTQuery;
-    exports.SUDTTransfer = SUDTTransfer;
-    exports.Script = Script;
-    exports.ScriptOpt = ScriptOpt;
-    exports.ScriptVec = ScriptVec;
-    exports.SerializeAccountMerkleState = SerializeAccountMerkleState;
-    exports.SerializeBlock = SerializeBlock;
-    exports.SerializeBlockHashEntry = SerializeBlockHashEntry;
-    exports.SerializeBlockHashEntryVec = SerializeBlockHashEntryVec;
-    exports.SerializeBlockInfo = SerializeBlockInfo;
-    exports.SerializeBlockMerkleState = SerializeBlockMerkleState;
-    exports.SerializeByte20 = SerializeByte20;
-    exports.SerializeByte32 = SerializeByte32;
-    exports.SerializeByte32Opt = SerializeByte32Opt;
-    exports.SerializeByte32Vec = SerializeByte32Vec;
-    exports.SerializeBytes = SerializeBytes;
-    exports.SerializeBytesOpt = SerializeBytesOpt;
-    exports.SerializeBytesVec = SerializeBytesVec;
-    exports.SerializeCellDep = SerializeCellDep;
-    exports.SerializeCellDepVec = SerializeCellDepVec;
-    exports.SerializeCellInput = SerializeCellInput;
-    exports.SerializeCellInputVec = SerializeCellInputVec;
-    exports.SerializeCellOutput = SerializeCellOutput;
-    exports.SerializeCellOutputVec = SerializeCellOutputVec;
-    exports.SerializeCellbaseWitness = SerializeCellbaseWitness;
-    exports.SerializeChallengeLockArgs = SerializeChallengeLockArgs;
-    exports.SerializeChallengeTarget = SerializeChallengeTarget;
-    exports.SerializeChallengeWitness = SerializeChallengeWitness;
-    exports.SerializeCreateAccount = SerializeCreateAccount;
-    exports.SerializeCustodianLockArgs = SerializeCustodianLockArgs;
-    exports.SerializeDepositLockArgs = SerializeDepositLockArgs;
-    exports.SerializeDepositRequest = SerializeDepositRequest;
-    exports.SerializeDepositRequestVec = SerializeDepositRequestVec;
-    exports.SerializeGlobalState = SerializeGlobalState;
-    exports.SerializeHeader = SerializeHeader;
-    exports.SerializeKVPair = SerializeKVPair;
-    exports.SerializeKVPairVec = SerializeKVPairVec;
-    exports.SerializeL2Block = SerializeL2Block;
-    exports.SerializeL2Transaction = SerializeL2Transaction;
-    exports.SerializeL2TransactionVec = SerializeL2TransactionVec;
-    exports.SerializeMetaContractArgs = SerializeMetaContractArgs;
-    exports.SerializeOutPoint = SerializeOutPoint;
-    exports.SerializeProposalShortId = SerializeProposalShortId;
-    exports.SerializeProposalShortIdVec = SerializeProposalShortIdVec;
-    exports.SerializeRawHeader = SerializeRawHeader;
-    exports.SerializeRawL2Block = SerializeRawL2Block;
-    exports.SerializeRawL2BlockVec = SerializeRawL2BlockVec;
-    exports.SerializeRawL2Transaction = SerializeRawL2Transaction;
-    exports.SerializeRawTransaction = SerializeRawTransaction;
-    exports.SerializeRawWithdrawalRequest = SerializeRawWithdrawalRequest;
-    exports.SerializeRollupAction = SerializeRollupAction;
-    exports.SerializeRollupCancelChallenge = SerializeRollupCancelChallenge;
-    exports.SerializeRollupConfig = SerializeRollupConfig;
-    exports.SerializeRollupEnterChallenge = SerializeRollupEnterChallenge;
-    exports.SerializeRollupRevert = SerializeRollupRevert;
-    exports.SerializeRollupSubmitBlock = SerializeRollupSubmitBlock;
-    exports.SerializeSUDTArgs = SerializeSUDTArgs;
-    exports.SerializeSUDTQuery = SerializeSUDTQuery;
-    exports.SerializeSUDTTransfer = SerializeSUDTTransfer;
-    exports.SerializeScript = SerializeScript;
-    exports.SerializeScriptOpt = SerializeScriptOpt;
-    exports.SerializeScriptVec = SerializeScriptVec;
-    exports.SerializeSignature = SerializeSignature;
-    exports.SerializeStakeLockArgs = SerializeStakeLockArgs;
-    exports.SerializeSubmitTransactions = SerializeSubmitTransactions;
-    exports.SerializeSubmitWithdrawals = SerializeSubmitWithdrawals;
-    exports.SerializeTransaction = SerializeTransaction;
-    exports.SerializeTransactionVec = SerializeTransactionVec;
-    exports.SerializeUint128 = SerializeUint128;
-    exports.SerializeUint16 = SerializeUint16;
-    exports.SerializeUint256 = SerializeUint256;
-    exports.SerializeUint32 = SerializeUint32;
-    exports.SerializeUint64 = SerializeUint64;
-    exports.SerializeUncleBlock = SerializeUncleBlock;
-    exports.SerializeUncleBlockVec = SerializeUncleBlockVec;
-    exports.SerializeUnlockCustodianViaRevertWitness = SerializeUnlockCustodianViaRevertWitness;
-    exports.SerializeUnlockWithdrawalViaFinalize = SerializeUnlockWithdrawalViaFinalize;
-    exports.SerializeUnlockWithdrawalViaRevert = SerializeUnlockWithdrawalViaRevert;
-    exports.SerializeUnlockWithdrawalViaTrade = SerializeUnlockWithdrawalViaTrade;
-    exports.SerializeUnlockWithdrawalWitness = SerializeUnlockWithdrawalWitness;
-    exports.SerializeVerifySignatureContext = SerializeVerifySignatureContext;
-    exports.SerializeVerifyTransactionContext = SerializeVerifyTransactionContext;
-    exports.SerializeVerifyTransactionSignatureWitness = SerializeVerifyTransactionSignatureWitness;
-    exports.SerializeVerifyTransactionWitness = SerializeVerifyTransactionWitness;
-    exports.SerializeVerifyWithdrawalWitness = SerializeVerifyWithdrawalWitness;
-    exports.SerializeWithdrawalLockArgs = SerializeWithdrawalLockArgs;
-    exports.SerializeWithdrawalRequest = SerializeWithdrawalRequest;
-    exports.SerializeWithdrawalRequestVec = SerializeWithdrawalRequestVec;
-    exports.SerializeWitnessArgs = SerializeWitnessArgs;
-    exports.Signature = Signature;
-    exports.StakeLockArgs = StakeLockArgs;
-    exports.SubmitTransactions = SubmitTransactions;
-    exports.SubmitWithdrawals = SubmitWithdrawals;
-    exports.Transaction = Transaction;
-    exports.TransactionVec = TransactionVec;
-    exports.Uint128 = Uint128;
-    exports.Uint16 = Uint16;
-    exports.Uint256 = Uint256;
-    exports.Uint32 = Uint32;
-    exports.Uint64 = Uint64;
-    exports.UncleBlock = UncleBlock;
-    exports.UncleBlockVec = UncleBlockVec;
-    exports.UnlockCustodianViaRevertWitness = UnlockCustodianViaRevertWitness;
-    exports.UnlockWithdrawalViaFinalize = UnlockWithdrawalViaFinalize;
-    exports.UnlockWithdrawalViaRevert = UnlockWithdrawalViaRevert;
-    exports.UnlockWithdrawalViaTrade = UnlockWithdrawalViaTrade;
-    exports.UnlockWithdrawalWitness = UnlockWithdrawalWitness;
-    exports.VerifySignatureContext = VerifySignatureContext;
-    exports.VerifyTransactionContext = VerifyTransactionContext;
-    exports.VerifyTransactionSignatureWitness = VerifyTransactionSignatureWitness;
-    exports.VerifyTransactionWitness = VerifyTransactionWitness;
-    exports.VerifyWithdrawalWitness = VerifyWithdrawalWitness;
-    exports.WithdrawalLockArgs = WithdrawalLockArgs;
-    exports.WithdrawalRequest = WithdrawalRequest;
-    exports.WithdrawalRequestVec = WithdrawalRequestVec;
-    exports.WitnessArgs = WitnessArgs;
-    Object.defineProperty(exports, '__esModule', { value: true });
-})));
+    getDepositLockArgs() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new DepositLockArgs(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getDepositBlockHash() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getDepositBlockNumber() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Uint64(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.CustodianLockArgs = CustodianLockArgs;
+function SerializeCustodianLockArgs(value) {
+    const buffers = [];
+    buffers.push(SerializeDepositLockArgs(value.deposit_lock_args));
+    buffers.push(SerializeByte32(value.deposit_block_hash));
+    buffers.push(SerializeUint64(value.deposit_block_number));
+    return serializeTable(buffers);
+}
+exports.SerializeCustodianLockArgs = SerializeCustodianLockArgs;
+class UnlockCustodianViaRevertWitness {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getDepositLockHash() {
+        return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), {
+            validate: false,
+        });
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, UnlockCustodianViaRevertWitness.size());
+        this.getDepositLockHash().validate(compatible);
+    }
+    static size() {
+        return 0 + Byte32.size();
+    }
+}
+exports.UnlockCustodianViaRevertWitness = UnlockCustodianViaRevertWitness;
+function SerializeUnlockCustodianViaRevertWitness(value) {
+    const array = new Uint8Array(0 + Byte32.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeByte32(value.deposit_lock_hash)), 0);
+    return array.buffer;
+}
+exports.SerializeUnlockCustodianViaRevertWitness = SerializeUnlockCustodianViaRevertWitness;
+class WithdrawalLockArgs {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getAccountScriptHash() {
+        return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), {
+            validate: false,
+        });
+    }
+    getWithdrawalBlockHash() {
+        return new Byte32(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Byte32.size()), { validate: false });
+    }
+    getWithdrawalBlockNumber() {
+        return new Uint64(this.view.buffer.slice(0 + Byte32.size() + Byte32.size(), 0 + Byte32.size() + Byte32.size() + Uint64.size()), { validate: false });
+    }
+    getSudtScriptHash() {
+        return new Byte32(this.view.buffer.slice(0 + Byte32.size() + Byte32.size() + Uint64.size(), 0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size()), { validate: false });
+    }
+    getSellAmount() {
+        return new Uint128(this.view.buffer.slice(0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size(), 0 +
+            Byte32.size() +
+            Byte32.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Uint128.size()), { validate: false });
+    }
+    getSellCapacity() {
+        return new Uint64(this.view.buffer.slice(0 +
+            Byte32.size() +
+            Byte32.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Uint128.size(), 0 +
+            Byte32.size() +
+            Byte32.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Uint128.size() +
+            Uint64.size()), { validate: false });
+    }
+    getOwnerLockHash() {
+        return new Byte32(this.view.buffer.slice(0 +
+            Byte32.size() +
+            Byte32.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Uint128.size() +
+            Uint64.size(), 0 +
+            Byte32.size() +
+            Byte32.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Uint128.size() +
+            Uint64.size() +
+            Byte32.size()), { validate: false });
+    }
+    getPaymentLockHash() {
+        return new Byte32(this.view.buffer.slice(0 +
+            Byte32.size() +
+            Byte32.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Uint128.size() +
+            Uint64.size() +
+            Byte32.size(), 0 +
+            Byte32.size() +
+            Byte32.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Uint128.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Byte32.size()), { validate: false });
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, WithdrawalLockArgs.size());
+        this.getAccountScriptHash().validate(compatible);
+        this.getWithdrawalBlockHash().validate(compatible);
+        this.getWithdrawalBlockNumber().validate(compatible);
+        this.getSudtScriptHash().validate(compatible);
+        this.getSellAmount().validate(compatible);
+        this.getSellCapacity().validate(compatible);
+        this.getOwnerLockHash().validate(compatible);
+        this.getPaymentLockHash().validate(compatible);
+    }
+    static size() {
+        return (0 +
+            Byte32.size() +
+            Byte32.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Uint128.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Byte32.size());
+    }
+}
+exports.WithdrawalLockArgs = WithdrawalLockArgs;
+function SerializeWithdrawalLockArgs(value) {
+    const array = new Uint8Array(0 +
+        Byte32.size() +
+        Byte32.size() +
+        Uint64.size() +
+        Byte32.size() +
+        Uint128.size() +
+        Uint64.size() +
+        Byte32.size() +
+        Byte32.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeByte32(value.account_script_hash)), 0);
+    array.set(new Uint8Array(SerializeByte32(value.withdrawal_block_hash)), 0 + Byte32.size());
+    array.set(new Uint8Array(SerializeUint64(value.withdrawal_block_number)), 0 + Byte32.size() + Byte32.size());
+    array.set(new Uint8Array(SerializeByte32(value.sudt_script_hash)), 0 + Byte32.size() + Byte32.size() + Uint64.size());
+    array.set(new Uint8Array(SerializeUint128(value.sell_amount)), 0 + Byte32.size() + Byte32.size() + Uint64.size() + Byte32.size());
+    array.set(new Uint8Array(SerializeUint64(value.sell_capacity)), 0 +
+        Byte32.size() +
+        Byte32.size() +
+        Uint64.size() +
+        Byte32.size() +
+        Uint128.size());
+    array.set(new Uint8Array(SerializeByte32(value.owner_lock_hash)), 0 +
+        Byte32.size() +
+        Byte32.size() +
+        Uint64.size() +
+        Byte32.size() +
+        Uint128.size() +
+        Uint64.size());
+    array.set(new Uint8Array(SerializeByte32(value.payment_lock_hash)), 0 +
+        Byte32.size() +
+        Byte32.size() +
+        Uint64.size() +
+        Byte32.size() +
+        Uint128.size() +
+        Uint64.size() +
+        Byte32.size());
+    return array.buffer;
+}
+exports.SerializeWithdrawalLockArgs = SerializeWithdrawalLockArgs;
+class UnlockWithdrawalWitness {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        if (this.view.byteLength < 4) {
+            assertDataLength(this.view.byteLength, ">4");
+        }
+        const t = this.view.getUint32(0, true);
+        switch (t) {
+            case 0:
+                new UnlockWithdrawalViaFinalize(this.view.buffer.slice(4), {
+                    validate: false,
+                }).validate();
+                break;
+            case 1:
+                new UnlockWithdrawalViaRevert(this.view.buffer.slice(4), {
+                    validate: false,
+                }).validate();
+                break;
+            case 2:
+                new UnlockWithdrawalViaTrade(this.view.buffer.slice(4), {
+                    validate: false,
+                }).validate();
+                break;
+            default:
+                throw new Error(`Invalid type: ${t}`);
+        }
+    }
+    unionType() {
+        const t = this.view.getUint32(0, true);
+        switch (t) {
+            case 0:
+                return "UnlockWithdrawalViaFinalize";
+            case 1:
+                return "UnlockWithdrawalViaRevert";
+            case 2:
+                return "UnlockWithdrawalViaTrade";
+            default:
+                throw new Error(`Invalid type: ${t}`);
+        }
+    }
+    value() {
+        const t = this.view.getUint32(0, true);
+        switch (t) {
+            case 0:
+                return new UnlockWithdrawalViaFinalize(this.view.buffer.slice(4), {
+                    validate: false,
+                });
+            case 1:
+                return new UnlockWithdrawalViaRevert(this.view.buffer.slice(4), {
+                    validate: false,
+                });
+            case 2:
+                return new UnlockWithdrawalViaTrade(this.view.buffer.slice(4), {
+                    validate: false,
+                });
+            default:
+                throw new Error(`Invalid type: ${t}`);
+        }
+    }
+}
+exports.UnlockWithdrawalWitness = UnlockWithdrawalWitness;
+function SerializeUnlockWithdrawalWitness(value) {
+    switch (value.type) {
+        case "UnlockWithdrawalViaFinalize": {
+            const itemBuffer = SerializeUnlockWithdrawalViaFinalize(value.value);
+            const array = new Uint8Array(4 + itemBuffer.byteLength);
+            const view = new DataView(array.buffer);
+            view.setUint32(0, 0, true);
+            array.set(new Uint8Array(itemBuffer), 4);
+            return array.buffer;
+        }
+        case "UnlockWithdrawalViaRevert": {
+            const itemBuffer = SerializeUnlockWithdrawalViaRevert(value.value);
+            const array = new Uint8Array(4 + itemBuffer.byteLength);
+            const view = new DataView(array.buffer);
+            view.setUint32(0, 1, true);
+            array.set(new Uint8Array(itemBuffer), 4);
+            return array.buffer;
+        }
+        case "UnlockWithdrawalViaTrade": {
+            const itemBuffer = SerializeUnlockWithdrawalViaTrade(value.value);
+            const array = new Uint8Array(4 + itemBuffer.byteLength);
+            const view = new DataView(array.buffer);
+            view.setUint32(0, 2, true);
+            array.set(new Uint8Array(itemBuffer), 4);
+            return array.buffer;
+        }
+        default:
+            throw new Error(`Invalid type: ${value.type}`);
+    }
+}
+exports.SerializeUnlockWithdrawalWitness = SerializeUnlockWithdrawalWitness;
+class UnlockWithdrawalViaFinalize {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+    }
+}
+exports.UnlockWithdrawalViaFinalize = UnlockWithdrawalViaFinalize;
+function SerializeUnlockWithdrawalViaFinalize(value) {
+    const buffers = [];
+    return serializeTable(buffers);
+}
+exports.SerializeUnlockWithdrawalViaFinalize = SerializeUnlockWithdrawalViaFinalize;
+class UnlockWithdrawalViaRevert {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getCustodianLockHash() {
+        return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), {
+            validate: false,
+        });
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, UnlockWithdrawalViaRevert.size());
+        this.getCustodianLockHash().validate(compatible);
+    }
+    static size() {
+        return 0 + Byte32.size();
+    }
+}
+exports.UnlockWithdrawalViaRevert = UnlockWithdrawalViaRevert;
+function SerializeUnlockWithdrawalViaRevert(value) {
+    const array = new Uint8Array(0 + Byte32.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeByte32(value.custodian_lock_hash)), 0);
+    return array.buffer;
+}
+exports.SerializeUnlockWithdrawalViaRevert = SerializeUnlockWithdrawalViaRevert;
+class UnlockWithdrawalViaTrade {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Script(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+    }
+    getOwnerLock() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Script(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.UnlockWithdrawalViaTrade = UnlockWithdrawalViaTrade;
+function SerializeUnlockWithdrawalViaTrade(value) {
+    const buffers = [];
+    buffers.push(SerializeScript(value.owner_lock));
+    return serializeTable(buffers);
+}
+exports.SerializeUnlockWithdrawalViaTrade = SerializeUnlockWithdrawalViaTrade;
+class StakeLockArgs {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getOwnerLockHash() {
+        return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), {
+            validate: false,
+        });
+    }
+    getStakeBlockNumber() {
+        return new Uint64(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Uint64.size()), { validate: false });
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, StakeLockArgs.size());
+        this.getOwnerLockHash().validate(compatible);
+        this.getStakeBlockNumber().validate(compatible);
+    }
+    static size() {
+        return 0 + Byte32.size() + Uint64.size();
+    }
+}
+exports.StakeLockArgs = StakeLockArgs;
+function SerializeStakeLockArgs(value) {
+    const array = new Uint8Array(0 + Byte32.size() + Uint64.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeByte32(value.owner_lock_hash)), 0);
+    array.set(new Uint8Array(SerializeUint64(value.stake_block_number)), 0 + Byte32.size());
+    return array.buffer;
+}
+exports.SerializeStakeLockArgs = SerializeStakeLockArgs;
+class MetaContractArgs {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        if (this.view.byteLength < 4) {
+            assertDataLength(this.view.byteLength, ">4");
+        }
+        const t = this.view.getUint32(0, true);
+        switch (t) {
+            case 0:
+                new CreateAccount(this.view.buffer.slice(4), {
+                    validate: false,
+                }).validate();
+                break;
+            default:
+                throw new Error(`Invalid type: ${t}`);
+        }
+    }
+    unionType() {
+        const t = this.view.getUint32(0, true);
+        switch (t) {
+            case 0:
+                return "CreateAccount";
+            default:
+                throw new Error(`Invalid type: ${t}`);
+        }
+    }
+    value() {
+        const t = this.view.getUint32(0, true);
+        switch (t) {
+            case 0:
+                return new CreateAccount(this.view.buffer.slice(4), {
+                    validate: false,
+                });
+            default:
+                throw new Error(`Invalid type: ${t}`);
+        }
+    }
+}
+exports.MetaContractArgs = MetaContractArgs;
+function SerializeMetaContractArgs(value) {
+    switch (value.type) {
+        case "CreateAccount": {
+            const itemBuffer = SerializeCreateAccount(value.value);
+            const array = new Uint8Array(4 + itemBuffer.byteLength);
+            const view = new DataView(array.buffer);
+            view.setUint32(0, 0, true);
+            array.set(new Uint8Array(itemBuffer), 4);
+            return array.buffer;
+        }
+        default:
+            throw new Error(`Invalid type: ${value.type}`);
+    }
+}
+exports.SerializeMetaContractArgs = SerializeMetaContractArgs;
+class CreateAccount {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Script(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+    }
+    getScript() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Script(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.CreateAccount = CreateAccount;
+function SerializeCreateAccount(value) {
+    const buffers = [];
+    buffers.push(SerializeScript(value.script));
+    return serializeTable(buffers);
+}
+exports.SerializeCreateAccount = SerializeCreateAccount;
+class SUDTArgs {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        if (this.view.byteLength < 4) {
+            assertDataLength(this.view.byteLength, ">4");
+        }
+        const t = this.view.getUint32(0, true);
+        switch (t) {
+            case 0:
+                new SUDTQuery(this.view.buffer.slice(4), {
+                    validate: false,
+                }).validate();
+                break;
+            case 1:
+                new SUDTTransfer(this.view.buffer.slice(4), {
+                    validate: false,
+                }).validate();
+                break;
+            default:
+                throw new Error(`Invalid type: ${t}`);
+        }
+    }
+    unionType() {
+        const t = this.view.getUint32(0, true);
+        switch (t) {
+            case 0:
+                return "SUDTQuery";
+            case 1:
+                return "SUDTTransfer";
+            default:
+                throw new Error(`Invalid type: ${t}`);
+        }
+    }
+    value() {
+        const t = this.view.getUint32(0, true);
+        switch (t) {
+            case 0:
+                return new SUDTQuery(this.view.buffer.slice(4), { validate: false });
+            case 1:
+                return new SUDTTransfer(this.view.buffer.slice(4), { validate: false });
+            default:
+                throw new Error(`Invalid type: ${t}`);
+        }
+    }
+}
+exports.SUDTArgs = SUDTArgs;
+function SerializeSUDTArgs(value) {
+    switch (value.type) {
+        case "SUDTQuery": {
+            const itemBuffer = SerializeSUDTQuery(value.value);
+            const array = new Uint8Array(4 + itemBuffer.byteLength);
+            const view = new DataView(array.buffer);
+            view.setUint32(0, 0, true);
+            array.set(new Uint8Array(itemBuffer), 4);
+            return array.buffer;
+        }
+        case "SUDTTransfer": {
+            const itemBuffer = SerializeSUDTTransfer(value.value);
+            const array = new Uint8Array(4 + itemBuffer.byteLength);
+            const view = new DataView(array.buffer);
+            view.setUint32(0, 1, true);
+            array.set(new Uint8Array(itemBuffer), 4);
+            return array.buffer;
+        }
+        default:
+            throw new Error(`Invalid type: ${value.type}`);
+    }
+}
+exports.SerializeSUDTArgs = SerializeSUDTArgs;
+class SUDTQuery {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Bytes(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+    }
+    getShortAddress() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.SUDTQuery = SUDTQuery;
+function SerializeSUDTQuery(value) {
+    const buffers = [];
+    buffers.push(SerializeBytes(value.short_address));
+    return serializeTable(buffers);
+}
+exports.SerializeSUDTQuery = SerializeSUDTQuery;
+class SUDTTransfer {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Bytes(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Uint128(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Uint128(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+    }
+    getTo() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getAmount() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint128(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getFee() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Uint128(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.SUDTTransfer = SUDTTransfer;
+function SerializeSUDTTransfer(value) {
+    const buffers = [];
+    buffers.push(SerializeBytes(value.to));
+    buffers.push(SerializeUint128(value.amount));
+    buffers.push(SerializeUint128(value.fee));
+    return serializeTable(buffers);
+}
+exports.SerializeSUDTTransfer = SerializeSUDTTransfer;
+class ChallengeTarget {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getBlockHash() {
+        return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), {
+            validate: false,
+        });
+    }
+    getTargetIndex() {
+        return new Uint32(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Uint32.size()), { validate: false });
+    }
+    getTargetType() {
+        return this.view.getUint8(0 + Byte32.size() + Uint32.size());
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, ChallengeTarget.size());
+        this.getBlockHash().validate(compatible);
+        this.getTargetIndex().validate(compatible);
+    }
+    static size() {
+        return 0 + Byte32.size() + Uint32.size() + 1;
+    }
+}
+exports.ChallengeTarget = ChallengeTarget;
+function SerializeChallengeTarget(value) {
+    const array = new Uint8Array(0 + Byte32.size() + Uint32.size() + 1);
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeByte32(value.block_hash)), 0);
+    array.set(new Uint8Array(SerializeUint32(value.target_index)), 0 + Byte32.size());
+    view.setUint8(0 + Byte32.size() + Uint32.size(), value.target_type);
+    return array.buffer;
+}
+exports.SerializeChallengeTarget = SerializeChallengeTarget;
+class ChallengeLockArgs {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new ChallengeTarget(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Script(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+    }
+    getTarget() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new ChallengeTarget(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getRewardsReceiverLock() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Script(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.ChallengeLockArgs = ChallengeLockArgs;
+function SerializeChallengeLockArgs(value) {
+    const buffers = [];
+    buffers.push(SerializeChallengeTarget(value.target));
+    buffers.push(SerializeScript(value.rewards_receiver_lock));
+    return serializeTable(buffers);
+}
+exports.SerializeChallengeLockArgs = SerializeChallengeLockArgs;
+class ChallengeWitness {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new RawL2Block(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+    }
+    getRawL2Block() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new RawL2Block(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getBlockProof() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.ChallengeWitness = ChallengeWitness;
+function SerializeChallengeWitness(value) {
+    const buffers = [];
+    buffers.push(SerializeRawL2Block(value.raw_l2block));
+    buffers.push(SerializeBytes(value.block_proof));
+    return serializeTable(buffers);
+}
+exports.SerializeChallengeWitness = SerializeChallengeWitness;
+class ScriptVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        for (let i = 0; i < len(offsets) - 1; i++) {
+            new Script(this.view.buffer.slice(offsets[i], offsets[i + 1]), {
+                validate: false,
+            }).validate();
+        }
+    }
+    length() {
+        if (this.view.byteLength < 8) {
+            return 0;
+        }
+        else {
+            return this.view.getUint32(4, true) / 4 - 1;
+        }
+    }
+    indexAt(i) {
+        const start = 4 + i * 4;
+        const offset = this.view.getUint32(start, true);
+        let offset_end = this.view.byteLength;
+        if (i + 1 < this.length()) {
+            offset_end = this.view.getUint32(start + 4, true);
+        }
+        return new Script(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.ScriptVec = ScriptVec;
+function SerializeScriptVec(value) {
+    return serializeTable(value.map((item) => SerializeScript(item)));
+}
+exports.SerializeScriptVec = SerializeScriptVec;
+class BlockHashEntry {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getNumber() {
+        return new Uint64(this.view.buffer.slice(0, 0 + Uint64.size()), {
+            validate: false,
+        });
+    }
+    getHash() {
+        return new Byte32(this.view.buffer.slice(0 + Uint64.size(), 0 + Uint64.size() + Byte32.size()), { validate: false });
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, BlockHashEntry.size());
+        this.getNumber().validate(compatible);
+        this.getHash().validate(compatible);
+    }
+    static size() {
+        return 0 + Uint64.size() + Byte32.size();
+    }
+}
+exports.BlockHashEntry = BlockHashEntry;
+function SerializeBlockHashEntry(value) {
+    const array = new Uint8Array(0 + Uint64.size() + Byte32.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeUint64(value.number)), 0);
+    array.set(new Uint8Array(SerializeByte32(value.hash)), 0 + Uint64.size());
+    return array.buffer;
+}
+exports.SerializeBlockHashEntry = SerializeBlockHashEntry;
+class BlockHashEntryVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        if (this.view.byteLength < 4) {
+            dataLengthError(this.view.byteLength, ">4");
+        }
+        const requiredByteLength = this.length() * BlockHashEntry.size() + 4;
+        assertDataLength(this.view.byteLength, requiredByteLength);
+        for (let i = 0; i < 0; i++) {
+            const item = this.indexAt(i);
+            item.validate(compatible);
+        }
+    }
+    indexAt(i) {
+        return new BlockHashEntry(this.view.buffer.slice(4 + i * BlockHashEntry.size(), 4 + (i + 1) * BlockHashEntry.size()), { validate: false });
+    }
+    length() {
+        return this.view.getUint32(0, true);
+    }
+}
+exports.BlockHashEntryVec = BlockHashEntryVec;
+function SerializeBlockHashEntryVec(value) {
+    const array = new Uint8Array(4 + BlockHashEntry.size() * value.length);
+    new DataView(array.buffer).setUint32(0, value.length, true);
+    for (let i = 0; i < value.length; i++) {
+        const itemBuffer = SerializeBlockHashEntry(value[i]);
+        array.set(new Uint8Array(itemBuffer), 4 + i * BlockHashEntry.size());
+    }
+    return array.buffer;
+}
+exports.SerializeBlockHashEntryVec = SerializeBlockHashEntryVec;
+class VerifyTransactionContext {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Uint32(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new KVPairVec(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new ScriptVec(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+        new Byte32(this.view.buffer.slice(offsets[3], offsets[4]), {
+            validate: false,
+        }).validate();
+        new BlockHashEntryVec(this.view.buffer.slice(offsets[4], offsets[5]), {
+            validate: false,
+        }).validate();
+    }
+    getAccountCount() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getKvState() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new KVPairVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getScripts() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new ScriptVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getReturnDataHash() {
+        const start = 16;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getBlockHashes() {
+        const start = 20;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new BlockHashEntryVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.VerifyTransactionContext = VerifyTransactionContext;
+function SerializeVerifyTransactionContext(value) {
+    const buffers = [];
+    buffers.push(SerializeUint32(value.account_count));
+    buffers.push(SerializeKVPairVec(value.kv_state));
+    buffers.push(SerializeScriptVec(value.scripts));
+    buffers.push(SerializeByte32(value.return_data_hash));
+    buffers.push(SerializeBlockHashEntryVec(value.block_hashes));
+    return serializeTable(buffers);
+}
+exports.SerializeVerifyTransactionContext = SerializeVerifyTransactionContext;
+class VerifyTransactionWitness {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new L2Transaction(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new RawL2Block(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[3], offsets[4]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[4], offsets[5]), {
+            validate: false,
+        }).validate();
+        new VerifyTransactionContext(this.view.buffer.slice(offsets[5], offsets[6]), { validate: false }).validate();
+    }
+    getL2Tx() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new L2Transaction(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getRawL2Block() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new RawL2Block(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getTxProof() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getKvStateProof() {
+        const start = 16;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getBlockHashesProof() {
+        const start = 20;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getContext() {
+        const start = 24;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new VerifyTransactionContext(this.view.buffer.slice(offset, offset_end), { validate: false });
+    }
+}
+exports.VerifyTransactionWitness = VerifyTransactionWitness;
+function SerializeVerifyTransactionWitness(value) {
+    const buffers = [];
+    buffers.push(SerializeL2Transaction(value.l2tx));
+    buffers.push(SerializeRawL2Block(value.raw_l2block));
+    buffers.push(SerializeBytes(value.tx_proof));
+    buffers.push(SerializeBytes(value.kv_state_proof));
+    buffers.push(SerializeBytes(value.block_hashes_proof));
+    buffers.push(SerializeVerifyTransactionContext(value.context));
+    return serializeTable(buffers);
+}
+exports.SerializeVerifyTransactionWitness = SerializeVerifyTransactionWitness;
+class VerifyTransactionSignatureContext {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Uint32(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new KVPairVec(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new ScriptVec(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+    }
+    getAccountCount() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getKvState() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new KVPairVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getScripts() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new ScriptVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.VerifyTransactionSignatureContext = VerifyTransactionSignatureContext;
+function SerializeVerifyTransactionSignatureContext(value) {
+    const buffers = [];
+    buffers.push(SerializeUint32(value.account_count));
+    buffers.push(SerializeKVPairVec(value.kv_state));
+    buffers.push(SerializeScriptVec(value.scripts));
+    return serializeTable(buffers);
+}
+exports.SerializeVerifyTransactionSignatureContext = SerializeVerifyTransactionSignatureContext;
+class VerifyTransactionSignatureWitness {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new RawL2Block(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new L2Transaction(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[3], offsets[4]), {
+            validate: false,
+        }).validate();
+        new VerifyTransactionSignatureContext(this.view.buffer.slice(offsets[4], offsets[5]), { validate: false }).validate();
+    }
+    getRawL2Block() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new RawL2Block(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getL2Tx() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new L2Transaction(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getTxProof() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getKvStateProof() {
+        const start = 16;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getContext() {
+        const start = 20;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new VerifyTransactionSignatureContext(this.view.buffer.slice(offset, offset_end), { validate: false });
+    }
+}
+exports.VerifyTransactionSignatureWitness = VerifyTransactionSignatureWitness;
+function SerializeVerifyTransactionSignatureWitness(value) {
+    const buffers = [];
+    buffers.push(SerializeRawL2Block(value.raw_l2block));
+    buffers.push(SerializeL2Transaction(value.l2tx));
+    buffers.push(SerializeBytes(value.tx_proof));
+    buffers.push(SerializeBytes(value.kv_state_proof));
+    buffers.push(SerializeVerifyTransactionSignatureContext(value.context));
+    return serializeTable(buffers);
+}
+exports.SerializeVerifyTransactionSignatureWitness = SerializeVerifyTransactionSignatureWitness;
+class VerifyWithdrawalWitness {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new RawL2Block(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new WithdrawalRequest(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+    }
+    getRawL2Block() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new RawL2Block(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getWithdrawalRequest() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new WithdrawalRequest(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getWithdrawalProof() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.VerifyWithdrawalWitness = VerifyWithdrawalWitness;
+function SerializeVerifyWithdrawalWitness(value) {
+    const buffers = [];
+    buffers.push(SerializeRawL2Block(value.raw_l2block));
+    buffers.push(SerializeWithdrawalRequest(value.withdrawal_request));
+    buffers.push(SerializeBytes(value.withdrawal_proof));
+    return serializeTable(buffers);
+}
+exports.SerializeVerifyWithdrawalWitness = SerializeVerifyWithdrawalWitness;
+class RollupSubmitBlock {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new L2Block(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Byte32Vec(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+    }
+    getBlock() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new L2Block(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getRevertedBlockHashes() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32Vec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getRevertedBlockProof() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.RollupSubmitBlock = RollupSubmitBlock;
+function SerializeRollupSubmitBlock(value) {
+    const buffers = [];
+    buffers.push(SerializeL2Block(value.block));
+    buffers.push(SerializeByte32Vec(value.reverted_block_hashes));
+    buffers.push(SerializeBytes(value.reverted_block_proof));
+    return serializeTable(buffers);
+}
+exports.SerializeRollupSubmitBlock = SerializeRollupSubmitBlock;
+class RollupEnterChallenge {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new ChallengeWitness(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+    }
+    getWitness() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new ChallengeWitness(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.RollupEnterChallenge = RollupEnterChallenge;
+function SerializeRollupEnterChallenge(value) {
+    const buffers = [];
+    buffers.push(SerializeChallengeWitness(value.witness));
+    return serializeTable(buffers);
+}
+exports.SerializeRollupEnterChallenge = SerializeRollupEnterChallenge;
+class RollupCancelChallenge {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+    }
+}
+exports.RollupCancelChallenge = RollupCancelChallenge;
+function SerializeRollupCancelChallenge(value) {
+    const buffers = [];
+    return serializeTable(buffers);
+}
+exports.SerializeRollupCancelChallenge = SerializeRollupCancelChallenge;
+class RollupRevert {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new RawL2BlockVec(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+    }
+    getRevertedBlocks() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new RawL2BlockVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getBlockProof() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getRevertedBlockProof() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.RollupRevert = RollupRevert;
+function SerializeRollupRevert(value) {
+    const buffers = [];
+    buffers.push(SerializeRawL2BlockVec(value.reverted_blocks));
+    buffers.push(SerializeBytes(value.block_proof));
+    buffers.push(SerializeBytes(value.reverted_block_proof));
+    return serializeTable(buffers);
+}
+exports.SerializeRollupRevert = SerializeRollupRevert;
+class RollupAction {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        if (this.view.byteLength < 4) {
+            assertDataLength(this.view.byteLength, ">4");
+        }
+        const t = this.view.getUint32(0, true);
+        switch (t) {
+            case 0:
+                new RollupSubmitBlock(this.view.buffer.slice(4), {
+                    validate: false,
+                }).validate();
+                break;
+            case 1:
+                new RollupEnterChallenge(this.view.buffer.slice(4), {
+                    validate: false,
+                }).validate();
+                break;
+            case 2:
+                new RollupCancelChallenge(this.view.buffer.slice(4), {
+                    validate: false,
+                }).validate();
+                break;
+            case 3:
+                new RollupRevert(this.view.buffer.slice(4), {
+                    validate: false,
+                }).validate();
+                break;
+            default:
+                throw new Error(`Invalid type: ${t}`);
+        }
+    }
+    unionType() {
+        const t = this.view.getUint32(0, true);
+        switch (t) {
+            case 0:
+                return "RollupSubmitBlock";
+            case 1:
+                return "RollupEnterChallenge";
+            case 2:
+                return "RollupCancelChallenge";
+            case 3:
+                return "RollupRevert";
+            default:
+                throw new Error(`Invalid type: ${t}`);
+        }
+    }
+    value() {
+        const t = this.view.getUint32(0, true);
+        switch (t) {
+            case 0:
+                return new RollupSubmitBlock(this.view.buffer.slice(4), {
+                    validate: false,
+                });
+            case 1:
+                return new RollupEnterChallenge(this.view.buffer.slice(4), {
+                    validate: false,
+                });
+            case 2:
+                return new RollupCancelChallenge(this.view.buffer.slice(4), {
+                    validate: false,
+                });
+            case 3:
+                return new RollupRevert(this.view.buffer.slice(4), { validate: false });
+            default:
+                throw new Error(`Invalid type: ${t}`);
+        }
+    }
+}
+exports.RollupAction = RollupAction;
+function SerializeRollupAction(value) {
+    switch (value.type) {
+        case "RollupSubmitBlock": {
+            const itemBuffer = SerializeRollupSubmitBlock(value.value);
+            const array = new Uint8Array(4 + itemBuffer.byteLength);
+            const view = new DataView(array.buffer);
+            view.setUint32(0, 0, true);
+            array.set(new Uint8Array(itemBuffer), 4);
+            return array.buffer;
+        }
+        case "RollupEnterChallenge": {
+            const itemBuffer = SerializeRollupEnterChallenge(value.value);
+            const array = new Uint8Array(4 + itemBuffer.byteLength);
+            const view = new DataView(array.buffer);
+            view.setUint32(0, 1, true);
+            array.set(new Uint8Array(itemBuffer), 4);
+            return array.buffer;
+        }
+        case "RollupCancelChallenge": {
+            const itemBuffer = SerializeRollupCancelChallenge(value.value);
+            const array = new Uint8Array(4 + itemBuffer.byteLength);
+            const view = new DataView(array.buffer);
+            view.setUint32(0, 2, true);
+            array.set(new Uint8Array(itemBuffer), 4);
+            return array.buffer;
+        }
+        case "RollupRevert": {
+            const itemBuffer = SerializeRollupRevert(value.value);
+            const array = new Uint8Array(4 + itemBuffer.byteLength);
+            const view = new DataView(array.buffer);
+            view.setUint32(0, 3, true);
+            array.set(new Uint8Array(itemBuffer), 4);
+            return array.buffer;
+        }
+        default:
+            throw new Error(`Invalid type: ${value.type}`);
+    }
+}
+exports.SerializeRollupAction = SerializeRollupAction;
+class Uint16 {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, 2);
+    }
+    indexAt(i) {
+        return this.view.getUint8(i);
+    }
+    raw() {
+        return this.view.buffer;
+    }
+    toBigEndianUint16() {
+        return this.view.getUint16(0, false);
+    }
+    toLittleEndianUint16() {
+        return this.view.getUint16(0, true);
+    }
+    static size() {
+        return 2;
+    }
+}
+exports.Uint16 = Uint16;
+function SerializeUint16(value) {
+    const buffer = assertArrayBuffer(value);
+    assertDataLength(buffer.byteLength, 2);
+    return buffer;
+}
+exports.SerializeUint16 = SerializeUint16;
+class Uint32 {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, 4);
+    }
+    indexAt(i) {
+        return this.view.getUint8(i);
+    }
+    raw() {
+        return this.view.buffer;
+    }
+    toBigEndianUint32() {
+        return this.view.getUint32(0, false);
+    }
+    toLittleEndianUint32() {
+        return this.view.getUint32(0, true);
+    }
+    static size() {
+        return 4;
+    }
+}
+exports.Uint32 = Uint32;
+function SerializeUint32(value) {
+    const buffer = assertArrayBuffer(value);
+    assertDataLength(buffer.byteLength, 4);
+    return buffer;
+}
+exports.SerializeUint32 = SerializeUint32;
+class Uint64 {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, 8);
+    }
+    indexAt(i) {
+        return this.view.getUint8(i);
+    }
+    raw() {
+        return this.view.buffer;
+    }
+    toBigEndianBigUint64() {
+        return this.view.getBigUint64(0, false);
+    }
+    toLittleEndianBigUint64() {
+        return this.view.getUint64(0, true);
+    }
+    static size() {
+        return 8;
+    }
+}
+exports.Uint64 = Uint64;
+function SerializeUint64(value) {
+    const buffer = assertArrayBuffer(value);
+    assertDataLength(buffer.byteLength, 8);
+    return buffer;
+}
+exports.SerializeUint64 = SerializeUint64;
+class Uint128 {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, 16);
+    }
+    indexAt(i) {
+        return this.view.getUint8(i);
+    }
+    raw() {
+        return this.view.buffer;
+    }
+    static size() {
+        return 16;
+    }
+}
+exports.Uint128 = Uint128;
+function SerializeUint128(value) {
+    const buffer = assertArrayBuffer(value);
+    assertDataLength(buffer.byteLength, 16);
+    return buffer;
+}
+exports.SerializeUint128 = SerializeUint128;
+class Byte32 {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, 32);
+    }
+    indexAt(i) {
+        return this.view.getUint8(i);
+    }
+    raw() {
+        return this.view.buffer;
+    }
+    static size() {
+        return 32;
+    }
+}
+exports.Byte32 = Byte32;
+function SerializeByte32(value) {
+    const buffer = assertArrayBuffer(value);
+    assertDataLength(buffer.byteLength, 32);
+    return buffer;
+}
+exports.SerializeByte32 = SerializeByte32;
+class Uint256 {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, 32);
+    }
+    indexAt(i) {
+        return this.view.getUint8(i);
+    }
+    raw() {
+        return this.view.buffer;
+    }
+    static size() {
+        return 32;
+    }
+}
+exports.Uint256 = Uint256;
+function SerializeUint256(value) {
+    const buffer = assertArrayBuffer(value);
+    assertDataLength(buffer.byteLength, 32);
+    return buffer;
+}
+exports.SerializeUint256 = SerializeUint256;
+class Bytes {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        if (this.view.byteLength < 4) {
+            dataLengthError(this.view.byteLength, ">4");
+        }
+        const requiredByteLength = this.length() + 4;
+        assertDataLength(this.view.byteLength, requiredByteLength);
+    }
+    raw() {
+        return this.view.buffer.slice(4);
+    }
+    indexAt(i) {
+        return this.view.getUint8(4 + i);
+    }
+    length() {
+        return this.view.getUint32(0, true);
+    }
+}
+exports.Bytes = Bytes;
+function SerializeBytes(value) {
+    const item = assertArrayBuffer(value);
+    const array = new Uint8Array(4 + item.byteLength);
+    new DataView(array.buffer).setUint32(0, item.byteLength, true);
+    array.set(new Uint8Array(item), 4);
+    return array.buffer;
+}
+exports.SerializeBytes = SerializeBytes;
+class BytesOpt {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        if (this.hasValue()) {
+            this.value().validate(compatible);
+        }
+    }
+    value() {
+        return new Bytes(this.view.buffer, { validate: false });
+    }
+    hasValue() {
+        return this.view.byteLength > 0;
+    }
+}
+exports.BytesOpt = BytesOpt;
+function SerializeBytesOpt(value) {
+    if (value) {
+        return SerializeBytes(value);
+    }
+    else {
+        return new ArrayBuffer(0);
+    }
+}
+exports.SerializeBytesOpt = SerializeBytesOpt;
+class BytesVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        for (let i = 0; i < len(offsets) - 1; i++) {
+            new Bytes(this.view.buffer.slice(offsets[i], offsets[i + 1]), {
+                validate: false,
+            }).validate();
+        }
+    }
+    length() {
+        if (this.view.byteLength < 8) {
+            return 0;
+        }
+        else {
+            return this.view.getUint32(4, true) / 4 - 1;
+        }
+    }
+    indexAt(i) {
+        const start = 4 + i * 4;
+        const offset = this.view.getUint32(start, true);
+        let offset_end = this.view.byteLength;
+        if (i + 1 < this.length()) {
+            offset_end = this.view.getUint32(start + 4, true);
+        }
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.BytesVec = BytesVec;
+function SerializeBytesVec(value) {
+    return serializeTable(value.map((item) => SerializeBytes(item)));
+}
+exports.SerializeBytesVec = SerializeBytesVec;
+class Byte32Vec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        if (this.view.byteLength < 4) {
+            dataLengthError(this.view.byteLength, ">4");
+        }
+        const requiredByteLength = this.length() * Byte32.size() + 4;
+        assertDataLength(this.view.byteLength, requiredByteLength);
+        for (let i = 0; i < 0; i++) {
+            const item = this.indexAt(i);
+            item.validate(compatible);
+        }
+    }
+    indexAt(i) {
+        return new Byte32(this.view.buffer.slice(4 + i * Byte32.size(), 4 + (i + 1) * Byte32.size()), { validate: false });
+    }
+    length() {
+        return this.view.getUint32(0, true);
+    }
+}
+exports.Byte32Vec = Byte32Vec;
+function SerializeByte32Vec(value) {
+    const array = new Uint8Array(4 + Byte32.size() * value.length);
+    new DataView(array.buffer).setUint32(0, value.length, true);
+    for (let i = 0; i < value.length; i++) {
+        const itemBuffer = SerializeByte32(value[i]);
+        array.set(new Uint8Array(itemBuffer), 4 + i * Byte32.size());
+    }
+    return array.buffer;
+}
+exports.SerializeByte32Vec = SerializeByte32Vec;
+class ScriptOpt {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        if (this.hasValue()) {
+            this.value().validate(compatible);
+        }
+    }
+    value() {
+        return new Script(this.view.buffer, { validate: false });
+    }
+    hasValue() {
+        return this.view.byteLength > 0;
+    }
+}
+exports.ScriptOpt = ScriptOpt;
+function SerializeScriptOpt(value) {
+    if (value) {
+        return SerializeScript(value);
+    }
+    else {
+        return new ArrayBuffer(0);
+    }
+}
+exports.SerializeScriptOpt = SerializeScriptOpt;
+class ProposalShortId {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, 10);
+    }
+    indexAt(i) {
+        return this.view.getUint8(i);
+    }
+    raw() {
+        return this.view.buffer;
+    }
+    static size() {
+        return 10;
+    }
+}
+exports.ProposalShortId = ProposalShortId;
+function SerializeProposalShortId(value) {
+    const buffer = assertArrayBuffer(value);
+    assertDataLength(buffer.byteLength, 10);
+    return buffer;
+}
+exports.SerializeProposalShortId = SerializeProposalShortId;
+class UncleBlockVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        for (let i = 0; i < len(offsets) - 1; i++) {
+            new UncleBlock(this.view.buffer.slice(offsets[i], offsets[i + 1]), {
+                validate: false,
+            }).validate();
+        }
+    }
+    length() {
+        if (this.view.byteLength < 8) {
+            return 0;
+        }
+        else {
+            return this.view.getUint32(4, true) / 4 - 1;
+        }
+    }
+    indexAt(i) {
+        const start = 4 + i * 4;
+        const offset = this.view.getUint32(start, true);
+        let offset_end = this.view.byteLength;
+        if (i + 1 < this.length()) {
+            offset_end = this.view.getUint32(start + 4, true);
+        }
+        return new UncleBlock(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.UncleBlockVec = UncleBlockVec;
+function SerializeUncleBlockVec(value) {
+    return serializeTable(value.map((item) => SerializeUncleBlock(item)));
+}
+exports.SerializeUncleBlockVec = SerializeUncleBlockVec;
+class TransactionVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        for (let i = 0; i < len(offsets) - 1; i++) {
+            new Transaction(this.view.buffer.slice(offsets[i], offsets[i + 1]), {
+                validate: false,
+            }).validate();
+        }
+    }
+    length() {
+        if (this.view.byteLength < 8) {
+            return 0;
+        }
+        else {
+            return this.view.getUint32(4, true) / 4 - 1;
+        }
+    }
+    indexAt(i) {
+        const start = 4 + i * 4;
+        const offset = this.view.getUint32(start, true);
+        let offset_end = this.view.byteLength;
+        if (i + 1 < this.length()) {
+            offset_end = this.view.getUint32(start + 4, true);
+        }
+        return new Transaction(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.TransactionVec = TransactionVec;
+function SerializeTransactionVec(value) {
+    return serializeTable(value.map((item) => SerializeTransaction(item)));
+}
+exports.SerializeTransactionVec = SerializeTransactionVec;
+class ProposalShortIdVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        if (this.view.byteLength < 4) {
+            dataLengthError(this.view.byteLength, ">4");
+        }
+        const requiredByteLength = this.length() * ProposalShortId.size() + 4;
+        assertDataLength(this.view.byteLength, requiredByteLength);
+        for (let i = 0; i < 0; i++) {
+            const item = this.indexAt(i);
+            item.validate(compatible);
+        }
+    }
+    indexAt(i) {
+        return new ProposalShortId(this.view.buffer.slice(4 + i * ProposalShortId.size(), 4 + (i + 1) * ProposalShortId.size()), { validate: false });
+    }
+    length() {
+        return this.view.getUint32(0, true);
+    }
+}
+exports.ProposalShortIdVec = ProposalShortIdVec;
+function SerializeProposalShortIdVec(value) {
+    const array = new Uint8Array(4 + ProposalShortId.size() * value.length);
+    new DataView(array.buffer).setUint32(0, value.length, true);
+    for (let i = 0; i < value.length; i++) {
+        const itemBuffer = SerializeProposalShortId(value[i]);
+        array.set(new Uint8Array(itemBuffer), 4 + i * ProposalShortId.size());
+    }
+    return array.buffer;
+}
+exports.SerializeProposalShortIdVec = SerializeProposalShortIdVec;
+class CellDepVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        if (this.view.byteLength < 4) {
+            dataLengthError(this.view.byteLength, ">4");
+        }
+        const requiredByteLength = this.length() * CellDep.size() + 4;
+        assertDataLength(this.view.byteLength, requiredByteLength);
+        for (let i = 0; i < 0; i++) {
+            const item = this.indexAt(i);
+            item.validate(compatible);
+        }
+    }
+    indexAt(i) {
+        return new CellDep(this.view.buffer.slice(4 + i * CellDep.size(), 4 + (i + 1) * CellDep.size()), { validate: false });
+    }
+    length() {
+        return this.view.getUint32(0, true);
+    }
+}
+exports.CellDepVec = CellDepVec;
+function SerializeCellDepVec(value) {
+    const array = new Uint8Array(4 + CellDep.size() * value.length);
+    new DataView(array.buffer).setUint32(0, value.length, true);
+    for (let i = 0; i < value.length; i++) {
+        const itemBuffer = SerializeCellDep(value[i]);
+        array.set(new Uint8Array(itemBuffer), 4 + i * CellDep.size());
+    }
+    return array.buffer;
+}
+exports.SerializeCellDepVec = SerializeCellDepVec;
+class CellInputVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        if (this.view.byteLength < 4) {
+            dataLengthError(this.view.byteLength, ">4");
+        }
+        const requiredByteLength = this.length() * CellInput.size() + 4;
+        assertDataLength(this.view.byteLength, requiredByteLength);
+        for (let i = 0; i < 0; i++) {
+            const item = this.indexAt(i);
+            item.validate(compatible);
+        }
+    }
+    indexAt(i) {
+        return new CellInput(this.view.buffer.slice(4 + i * CellInput.size(), 4 + (i + 1) * CellInput.size()), { validate: false });
+    }
+    length() {
+        return this.view.getUint32(0, true);
+    }
+}
+exports.CellInputVec = CellInputVec;
+function SerializeCellInputVec(value) {
+    const array = new Uint8Array(4 + CellInput.size() * value.length);
+    new DataView(array.buffer).setUint32(0, value.length, true);
+    for (let i = 0; i < value.length; i++) {
+        const itemBuffer = SerializeCellInput(value[i]);
+        array.set(new Uint8Array(itemBuffer), 4 + i * CellInput.size());
+    }
+    return array.buffer;
+}
+exports.SerializeCellInputVec = SerializeCellInputVec;
+class CellOutputVec {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        for (let i = 0; i < len(offsets) - 1; i++) {
+            new CellOutput(this.view.buffer.slice(offsets[i], offsets[i + 1]), {
+                validate: false,
+            }).validate();
+        }
+    }
+    length() {
+        if (this.view.byteLength < 8) {
+            return 0;
+        }
+        else {
+            return this.view.getUint32(4, true) / 4 - 1;
+        }
+    }
+    indexAt(i) {
+        const start = 4 + i * 4;
+        const offset = this.view.getUint32(start, true);
+        let offset_end = this.view.byteLength;
+        if (i + 1 < this.length()) {
+            offset_end = this.view.getUint32(start + 4, true);
+        }
+        return new CellOutput(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.CellOutputVec = CellOutputVec;
+function SerializeCellOutputVec(value) {
+    return serializeTable(value.map((item) => SerializeCellOutput(item)));
+}
+exports.SerializeCellOutputVec = SerializeCellOutputVec;
+class Script {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Byte32(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        if (offsets[2] - offsets[1] !== 1) {
+            throw new Error(`Invalid offset for hash_type: ${offsets[1]} - ${offsets[2]}`);
+        }
+        new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+    }
+    getCodeHash() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getHashType() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new DataView(this.view.buffer.slice(offset, offset_end)).getUint8(0);
+    }
+    getArgs() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.Script = Script;
+function SerializeScript(value) {
+    const buffers = [];
+    buffers.push(SerializeByte32(value.code_hash));
+    const hashTypeView = new DataView(new ArrayBuffer(1));
+    hashTypeView.setUint8(0, value.hash_type);
+    buffers.push(hashTypeView.buffer);
+    buffers.push(SerializeBytes(value.args));
+    return serializeTable(buffers);
+}
+exports.SerializeScript = SerializeScript;
+class OutPoint {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getTxHash() {
+        return new Byte32(this.view.buffer.slice(0, 0 + Byte32.size()), {
+            validate: false,
+        });
+    }
+    getIndex() {
+        return new Uint32(this.view.buffer.slice(0 + Byte32.size(), 0 + Byte32.size() + Uint32.size()), { validate: false });
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, OutPoint.size());
+        this.getTxHash().validate(compatible);
+        this.getIndex().validate(compatible);
+    }
+    static size() {
+        return 0 + Byte32.size() + Uint32.size();
+    }
+}
+exports.OutPoint = OutPoint;
+function SerializeOutPoint(value) {
+    const array = new Uint8Array(0 + Byte32.size() + Uint32.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeByte32(value.tx_hash)), 0);
+    array.set(new Uint8Array(SerializeUint32(value.index)), 0 + Byte32.size());
+    return array.buffer;
+}
+exports.SerializeOutPoint = SerializeOutPoint;
+class CellInput {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getSince() {
+        return new Uint64(this.view.buffer.slice(0, 0 + Uint64.size()), {
+            validate: false,
+        });
+    }
+    getPreviousOutput() {
+        return new OutPoint(this.view.buffer.slice(0 + Uint64.size(), 0 + Uint64.size() + OutPoint.size()), { validate: false });
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, CellInput.size());
+        this.getSince().validate(compatible);
+        this.getPreviousOutput().validate(compatible);
+    }
+    static size() {
+        return 0 + Uint64.size() + OutPoint.size();
+    }
+}
+exports.CellInput = CellInput;
+function SerializeCellInput(value) {
+    const array = new Uint8Array(0 + Uint64.size() + OutPoint.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeUint64(value.since)), 0);
+    array.set(new Uint8Array(SerializeOutPoint(value.previous_output)), 0 + Uint64.size());
+    return array.buffer;
+}
+exports.SerializeCellInput = SerializeCellInput;
+class CellOutput {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Uint64(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Script(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new ScriptOpt(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+    }
+    getCapacity() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint64(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getLock() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Script(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getType() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new ScriptOpt(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.CellOutput = CellOutput;
+function SerializeCellOutput(value) {
+    const buffers = [];
+    buffers.push(SerializeUint64(value.capacity));
+    buffers.push(SerializeScript(value.lock));
+    buffers.push(SerializeScriptOpt(value.type_));
+    return serializeTable(buffers);
+}
+exports.SerializeCellOutput = SerializeCellOutput;
+class CellDep {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getOutPoint() {
+        return new OutPoint(this.view.buffer.slice(0, 0 + OutPoint.size()), {
+            validate: false,
+        });
+    }
+    getDepType() {
+        return this.view.getUint8(0 + OutPoint.size());
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, CellDep.size());
+        this.getOutPoint().validate(compatible);
+    }
+    static size() {
+        return 0 + OutPoint.size() + 1;
+    }
+}
+exports.CellDep = CellDep;
+function SerializeCellDep(value) {
+    const array = new Uint8Array(0 + OutPoint.size() + 1);
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeOutPoint(value.out_point)), 0);
+    view.setUint8(0 + OutPoint.size(), value.dep_type);
+    return array.buffer;
+}
+exports.SerializeCellDep = SerializeCellDep;
+class RawTransaction {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Uint32(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new CellDepVec(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new Byte32Vec(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+        new CellInputVec(this.view.buffer.slice(offsets[3], offsets[4]), {
+            validate: false,
+        }).validate();
+        new CellOutputVec(this.view.buffer.slice(offsets[4], offsets[5]), {
+            validate: false,
+        }).validate();
+        new BytesVec(this.view.buffer.slice(offsets[5], offsets[6]), {
+            validate: false,
+        }).validate();
+    }
+    getVersion() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Uint32(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getCellDeps() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new CellDepVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getHeaderDeps() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Byte32Vec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getInputs() {
+        const start = 16;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new CellInputVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getOutputs() {
+        const start = 20;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new CellOutputVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getOutputsData() {
+        const start = 24;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new BytesVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.RawTransaction = RawTransaction;
+function SerializeRawTransaction(value) {
+    const buffers = [];
+    buffers.push(SerializeUint32(value.version));
+    buffers.push(SerializeCellDepVec(value.cell_deps));
+    buffers.push(SerializeByte32Vec(value.header_deps));
+    buffers.push(SerializeCellInputVec(value.inputs));
+    buffers.push(SerializeCellOutputVec(value.outputs));
+    buffers.push(SerializeBytesVec(value.outputs_data));
+    return serializeTable(buffers);
+}
+exports.SerializeRawTransaction = SerializeRawTransaction;
+class Transaction {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new RawTransaction(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new BytesVec(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+    }
+    getRaw() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new RawTransaction(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getWitnesses() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new BytesVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.Transaction = Transaction;
+function SerializeTransaction(value) {
+    const buffers = [];
+    buffers.push(SerializeRawTransaction(value.raw));
+    buffers.push(SerializeBytesVec(value.witnesses));
+    return serializeTable(buffers);
+}
+exports.SerializeTransaction = SerializeTransaction;
+class RawHeader {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getVersion() {
+        return new Uint32(this.view.buffer.slice(0, 0 + Uint32.size()), {
+            validate: false,
+        });
+    }
+    getCompactTarget() {
+        return new Uint32(this.view.buffer.slice(0 + Uint32.size(), 0 + Uint32.size() + Uint32.size()), { validate: false });
+    }
+    getTimestamp() {
+        return new Uint64(this.view.buffer.slice(0 + Uint32.size() + Uint32.size(), 0 + Uint32.size() + Uint32.size() + Uint64.size()), { validate: false });
+    }
+    getNumber() {
+        return new Uint64(this.view.buffer.slice(0 + Uint32.size() + Uint32.size() + Uint64.size(), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size()), { validate: false });
+    }
+    getEpoch() {
+        return new Uint64(this.view.buffer.slice(0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size(), 0 +
+            Uint32.size() +
+            Uint32.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Uint64.size()), { validate: false });
+    }
+    getParentHash() {
+        return new Byte32(this.view.buffer.slice(0 +
+            Uint32.size() +
+            Uint32.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Uint64.size(), 0 +
+            Uint32.size() +
+            Uint32.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Byte32.size()), { validate: false });
+    }
+    getTransactionsRoot() {
+        return new Byte32(this.view.buffer.slice(0 +
+            Uint32.size() +
+            Uint32.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Byte32.size(), 0 +
+            Uint32.size() +
+            Uint32.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Byte32.size()), { validate: false });
+    }
+    getProposalsHash() {
+        return new Byte32(this.view.buffer.slice(0 +
+            Uint32.size() +
+            Uint32.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Byte32.size(), 0 +
+            Uint32.size() +
+            Uint32.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Byte32.size()), { validate: false });
+    }
+    getUnclesHash() {
+        return new Byte32(this.view.buffer.slice(0 +
+            Uint32.size() +
+            Uint32.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Byte32.size(), 0 +
+            Uint32.size() +
+            Uint32.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Byte32.size()), { validate: false });
+    }
+    getDao() {
+        return new Byte32(this.view.buffer.slice(0 +
+            Uint32.size() +
+            Uint32.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Byte32.size(), 0 +
+            Uint32.size() +
+            Uint32.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Byte32.size()), { validate: false });
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, RawHeader.size());
+        this.getVersion().validate(compatible);
+        this.getCompactTarget().validate(compatible);
+        this.getTimestamp().validate(compatible);
+        this.getNumber().validate(compatible);
+        this.getEpoch().validate(compatible);
+        this.getParentHash().validate(compatible);
+        this.getTransactionsRoot().validate(compatible);
+        this.getProposalsHash().validate(compatible);
+        this.getUnclesHash().validate(compatible);
+        this.getDao().validate(compatible);
+    }
+    static size() {
+        return (0 +
+            Uint32.size() +
+            Uint32.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Uint64.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Byte32.size() +
+            Byte32.size());
+    }
+}
+exports.RawHeader = RawHeader;
+function SerializeRawHeader(value) {
+    const array = new Uint8Array(0 +
+        Uint32.size() +
+        Uint32.size() +
+        Uint64.size() +
+        Uint64.size() +
+        Uint64.size() +
+        Byte32.size() +
+        Byte32.size() +
+        Byte32.size() +
+        Byte32.size() +
+        Byte32.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeUint32(value.version)), 0);
+    array.set(new Uint8Array(SerializeUint32(value.compact_target)), 0 + Uint32.size());
+    array.set(new Uint8Array(SerializeUint64(value.timestamp)), 0 + Uint32.size() + Uint32.size());
+    array.set(new Uint8Array(SerializeUint64(value.number)), 0 + Uint32.size() + Uint32.size() + Uint64.size());
+    array.set(new Uint8Array(SerializeUint64(value.epoch)), 0 + Uint32.size() + Uint32.size() + Uint64.size() + Uint64.size());
+    array.set(new Uint8Array(SerializeByte32(value.parent_hash)), 0 +
+        Uint32.size() +
+        Uint32.size() +
+        Uint64.size() +
+        Uint64.size() +
+        Uint64.size());
+    array.set(new Uint8Array(SerializeByte32(value.transactions_root)), 0 +
+        Uint32.size() +
+        Uint32.size() +
+        Uint64.size() +
+        Uint64.size() +
+        Uint64.size() +
+        Byte32.size());
+    array.set(new Uint8Array(SerializeByte32(value.proposals_hash)), 0 +
+        Uint32.size() +
+        Uint32.size() +
+        Uint64.size() +
+        Uint64.size() +
+        Uint64.size() +
+        Byte32.size() +
+        Byte32.size());
+    array.set(new Uint8Array(SerializeByte32(value.uncles_hash)), 0 +
+        Uint32.size() +
+        Uint32.size() +
+        Uint64.size() +
+        Uint64.size() +
+        Uint64.size() +
+        Byte32.size() +
+        Byte32.size() +
+        Byte32.size());
+    array.set(new Uint8Array(SerializeByte32(value.dao)), 0 +
+        Uint32.size() +
+        Uint32.size() +
+        Uint64.size() +
+        Uint64.size() +
+        Uint64.size() +
+        Byte32.size() +
+        Byte32.size() +
+        Byte32.size() +
+        Byte32.size());
+    return array.buffer;
+}
+exports.SerializeRawHeader = SerializeRawHeader;
+class Header {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    getRaw() {
+        return new RawHeader(this.view.buffer.slice(0, 0 + RawHeader.size()), {
+            validate: false,
+        });
+    }
+    getNonce() {
+        return new Uint128(this.view.buffer.slice(0 + RawHeader.size(), 0 + RawHeader.size() + Uint128.size()), { validate: false });
+    }
+    validate(compatible = false) {
+        assertDataLength(this.view.byteLength, Header.size());
+        this.getRaw().validate(compatible);
+        this.getNonce().validate(compatible);
+    }
+    static size() {
+        return 0 + RawHeader.size() + Uint128.size();
+    }
+}
+exports.Header = Header;
+function SerializeHeader(value) {
+    const array = new Uint8Array(0 + RawHeader.size() + Uint128.size());
+    const view = new DataView(array.buffer);
+    array.set(new Uint8Array(SerializeRawHeader(value.raw)), 0);
+    array.set(new Uint8Array(SerializeUint128(value.nonce)), 0 + RawHeader.size());
+    return array.buffer;
+}
+exports.SerializeHeader = SerializeHeader;
+class UncleBlock {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Header(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new ProposalShortIdVec(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+    }
+    getHeader() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Header(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getProposals() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new ProposalShortIdVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.UncleBlock = UncleBlock;
+function SerializeUncleBlock(value) {
+    const buffers = [];
+    buffers.push(SerializeHeader(value.header));
+    buffers.push(SerializeProposalShortIdVec(value.proposals));
+    return serializeTable(buffers);
+}
+exports.SerializeUncleBlock = SerializeUncleBlock;
+class Block {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Header(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new UncleBlockVec(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new TransactionVec(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+        new ProposalShortIdVec(this.view.buffer.slice(offsets[3], offsets[4]), {
+            validate: false,
+        }).validate();
+    }
+    getHeader() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Header(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getUncles() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new UncleBlockVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getTransactions() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new TransactionVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getProposals() {
+        const start = 16;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new ProposalShortIdVec(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.Block = Block;
+function SerializeBlock(value) {
+    const buffers = [];
+    buffers.push(SerializeHeader(value.header));
+    buffers.push(SerializeUncleBlockVec(value.uncles));
+    buffers.push(SerializeTransactionVec(value.transactions));
+    buffers.push(SerializeProposalShortIdVec(value.proposals));
+    return serializeTable(buffers);
+}
+exports.SerializeBlock = SerializeBlock;
+class CellbaseWitness {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new Script(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new Bytes(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+    }
+    getLock() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new Script(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getMessage() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new Bytes(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.CellbaseWitness = CellbaseWitness;
+function SerializeCellbaseWitness(value) {
+    const buffers = [];
+    buffers.push(SerializeScript(value.lock));
+    buffers.push(SerializeBytes(value.message));
+    return serializeTable(buffers);
+}
+exports.SerializeCellbaseWitness = SerializeCellbaseWitness;
+class WitnessArgs {
+    constructor(reader, { validate = true } = {}) {
+        this.view = new DataView(assertArrayBuffer(reader));
+        if (validate) {
+            this.validate();
+        }
+    }
+    validate(compatible = false) {
+        const offsets = verifyAndExtractOffsets(this.view, 0, true);
+        new BytesOpt(this.view.buffer.slice(offsets[0], offsets[1]), {
+            validate: false,
+        }).validate();
+        new BytesOpt(this.view.buffer.slice(offsets[1], offsets[2]), {
+            validate: false,
+        }).validate();
+        new BytesOpt(this.view.buffer.slice(offsets[2], offsets[3]), {
+            validate: false,
+        }).validate();
+    }
+    getLock() {
+        const start = 4;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new BytesOpt(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getInputType() {
+        const start = 8;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.getUint32(start + 4, true);
+        return new BytesOpt(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+    getOutputType() {
+        const start = 12;
+        const offset = this.view.getUint32(start, true);
+        const offset_end = this.view.byteLength;
+        return new BytesOpt(this.view.buffer.slice(offset, offset_end), {
+            validate: false,
+        });
+    }
+}
+exports.WitnessArgs = WitnessArgs;
+function SerializeWitnessArgs(value) {
+    const buffers = [];
+    buffers.push(SerializeBytesOpt(value.lock));
+    buffers.push(SerializeBytesOpt(value.input_type));
+    buffers.push(SerializeBytesOpt(value.output_type));
+    return serializeTable(buffers);
+}
+exports.SerializeWitnessArgs = SerializeWitnessArgs;
 
 
 /***/ }),
 
-/***/ 7420:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+/***/ 3303:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
-const HttpProvider = __webpack_require__(1809);
-const { Godwoker } = __webpack_require__(378);
-class PolyjuiceHttpProvider extends HttpProvider {
-    constructor(host, godwoken_config, option) {
-        super(host, option);
-        this.godwoker = new Godwoker(host, godwoken_config);
+"use strict";
+
+/**
+ * this file is a custom http provider used to proxy ETH rpc call to godwoken-polyjuice chain.
+ * it is fork and based on https://github.com/ChainSafe/web3.js/tree/1.x/packages/web3-providers-http
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const http = __importStar(__webpack_require__(8438));
+const https = __importStar(__webpack_require__(8022));
+const web3_core_helpers_1 = __webpack_require__(2536);
+const xhr2_cookies_1 = __webpack_require__(1946);
+const util_1 = __webpack_require__(378);
+const abi_1 = __webpack_require__(4923);
+class PolyjuiceHttpProvider {
+    constructor(host, godwoken_config, abi_items = [], options) {
+        this.godwoker = new util_1.Godwoker(host, godwoken_config);
+        this.abi = new abi_1.Abi(abi_items);
+        options = options || {};
+        this.withCredentials = options.withCredentials || false;
+        this.timeout = options.timeout || 0;
+        this.headers = options.headers;
+        this.agent = options.agent;
+        this.connected = false;
+        // keepAlive is true unless explicitly set to false
+        const keepAlive = options.keepAlive !== false;
+        this.host = host || 'http://localhost:8024';
+        if (!this.agent) {
+            if (this.host.substring(0, 5) === "https") {
+                this.httpsAgent = new https.Agent({ keepAlive });
+            }
+            else {
+                this.httpAgent = new http.Agent({ keepAlive });
+            }
+        }
     }
     async send(payload, callback) {
         const { method, params } = payload;
         switch (method) {
-            case 'eth_sendTransaction':
+            case "eth_sendTransaction":
                 if (!window.ethereum) {
-                    alert('PolyjuiceHttpProvider needs a wallet provider such as metamask!');
+                    alert("PolyjuiceHttpProvider needs a wallet provider such as metamask!");
                     break;
                 }
                 try {
                     const { from, gas, gasPrice, value, data, to } = params[0];
+                    const data_with_short_address = await this.abi.refactor_data_with_short_address(data, this.godwoker.getShortAddressByAllTypeEthAddress.bind(this.godwoker));
+                    console.log(data, data_with_short_address);
                     const t = {
                         from: from || window.ethereum.selectedAddress,
                         to: to,
                         value: value || 0,
-                        data: data || '',
+                        data: data_with_short_address || "",
                         gas: gas,
-                        gasPrice: gasPrice
+                        gasPrice: gasPrice,
                     };
-                    const to_id = this.godwoker.allTypeEthAddressToAccountId(to);
-                    const sender_script_hash = this.godwoker.getScriptHashByEoaEthAddress(from);
-                    const receiver_script_hash = await this.godwoker.getScriptHashByAccountId(to_id);
+                    const to_id = await this.godwoker.allTypeEthAddressToAccountId(to);
+                    const sender_script_hash = this.godwoker.computeScriptHashByEoaEthAddress(from);
+                    const receiver_script_hash = await this.godwoker.getScriptHashByAccountId(parseInt(to_id));
                     const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
                     const message = this.godwoker.generateTransactionMessageToSign(polyjuice_tx, sender_script_hash, receiver_script_hash);
                     const _signature = await window.ethereum.request({
-                        method: 'personal_sign',
+                        method: "personal_sign",
                         params: [message, window.ethereum.selectedAddress],
                     });
                     const signature = this.godwoker.packSignature(_signature);
                     const tx_hash = await this.godwoker.gw_submitL2Transaction(polyjuice_tx, signature);
+                    console.log(`provider just proxy an eth_sendTransaction rpc call, tx_hash: ${tx_hash}`);
                     await this.godwoker.waitForTransactionReceipt(tx_hash);
-                    const run_result = await this.godwoker.gw_getTransactionReceipt(tx_hash);
+                    this._send(payload, function (err, result) {
+                        console.log(err, result);
+                        const res = {
+                            jsonrpc: result.jsonrpc,
+                            id: result.id,
+                        };
+                        const new_res = { ...res, ...{ result: tx_hash } };
+                        console.log(`eth_sendTransaction, new_res: ${JSON.stringify(new_res, null, 2)}`);
+                        callback(null, new_res);
+                    });
+                    break;
+                }
+                catch (error) {
+                    this.connected = false;
+                    throw error;
+                }
+            case "eth_call":
+                try {
+                    const { from, gas, gasPrice, value, data, to } = params[0];
+                    const data_with_short_address = await this.abi.refactor_data_with_short_address(data, this.godwoker.getShortAddressByAllTypeEthAddress.bind(this.godwoker));
+                    const t = {
+                        from: from || window.ethereum.selectedAddress,
+                        to: to,
+                        value: value || 0,
+                        data: data_with_short_address || "",
+                        gas: gas || 5000000,
+                        gasPrice: gasPrice || 0,
+                    };
+                    const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
+                    const run_result = await this.godwoker.gw_executeRawL2Transaction(polyjuice_tx);
+                    console.log(`provider just proxy an eth_call rpc call.`);
                     console.log(`runResult: ${JSON.stringify(run_result, null, 2)}`);
+                    const abi_item = this.abi.get_intereted_abi_item_by_encoded_data(data);
+                    if (!abi_item) {
+                        this._send(payload, function (err, result) {
+                            console.log(err, result);
+                            const res = {
+                                jsonrpc: result.jsonrpc,
+                                id: result.id,
+                            };
+                            const new_res = { ...res, ...{ result: run_result.return_data } };
+                            console.log(`no abi, new_res: ${JSON.stringify(new_res, null, 2)}`);
+                            callback(null, new_res);
+                        });
+                    }
+                    else {
+                        const return_value_with_short_address = await this.abi.refactor_return_value_with_short_address(run_result.return_data, abi_item, this.godwoker.getEthAddressByAllTypeShortAddress.bind(this.godwoker));
+                        this._send(payload, function (err, result) {
+                            console.log(err, result);
+                            const res = {
+                                jsonrpc: result.jsonrpc,
+                                id: result.id,
+                            };
+                            const new_res = {
+                                ...res,
+                                ...{ result: return_value_with_short_address },
+                            };
+                            callback(null, new_res);
+                        });
+                    }
+                    break;
+                }
+                catch (error) {
+                    this.connected = false;
+                    throw error;
+                }
+            case "eth_estimateGas":
+                try {
+                    var new_payload = payload;
+                    const { data } = params[0];
+                    const data_with_short_address = await this.abi.refactor_data_with_short_address(data, this.godwoker.getShortAddressByAllTypeEthAddress.bind(this.godwoker));
+                    new_payload.params[0].data = data_with_short_address;
+                    console.log(`provider just proxy an eth_estimateGas rpc call, data: ${data_with_short_address}`);
+                    this._send(new_payload, callback);
                     break;
                 }
                 catch (error) {
@@ -39886,7 +36571,7 @@ class PolyjuiceHttpProvider extends HttpProvider {
                 }
             default:
                 try {
-                    super.send(payload, callback);
+                    this._send(payload, callback);
                     break;
                 }
                 catch (error) {
@@ -39895,8 +36580,87 @@ class PolyjuiceHttpProvider extends HttpProvider {
                 }
         }
     }
+    _prepareRequest() {
+        var request;
+        // the current runtime is a browser
+        if (typeof XMLHttpRequest !== "undefined") {
+            request = new XMLHttpRequest();
+        }
+        else {
+            request = new xhr2_cookies_1.XMLHttpRequest();
+            var agents = {
+                httpsAgent: this.httpsAgent,
+                httpAgent: this.httpAgent,
+                baseUrl: this.baseUrl,
+            };
+            if (this.agent) {
+                agents.httpsAgent = this.agent.https;
+                agents.httpAgent = this.agent.http;
+                agents.baseUrl = this.agent.baseUrl;
+            }
+            request.nodejsSet(agents);
+        }
+        request.open("POST", this.host, true);
+        request.setRequestHeader("Content-Type", "application/json");
+        request.timeout = this.timeout;
+        request.withCredentials = this.withCredentials;
+        if (this.headers) {
+            this.headers.forEach(function (header) {
+                request.setRequestHeader(header.name, header.value);
+            });
+        }
+        return request;
+    }
+    /**
+     * Should be used to make async request
+     *
+     * @method send
+     * @param {Object} payload
+     * @param {Function} callback triggered on end with (err, result)
+     */
+    _send(payload, callback) {
+        var _this = this;
+        var request = this._prepareRequest();
+        request.onreadystatechange = function () {
+            if (request.readyState === 4 && request.timeout !== 1) {
+                var result = request.responseText;
+                var error = null;
+                try {
+                    result = JSON.parse(result);
+                }
+                catch (e) {
+                    error = web3_core_helpers_1.errors.InvalidResponse(request.responseText);
+                }
+                _this.connected = true;
+                callback(error, result);
+            }
+        };
+        request.ontimeout = function () {
+            _this.connected = false;
+            callback(web3_core_helpers_1.errors.ConnectionTimeout(this.timeout));
+        };
+        try {
+            request.send(JSON.stringify(payload));
+        }
+        catch (error) {
+            this.connected = false;
+            callback(web3_core_helpers_1.errors.InvalidConnection(this.host));
+        }
+    }
+    /**
+     * Returns the desired boolean.
+     *
+     * @method supportsSubscriptions
+     * @returns {boolean}
+     */
+    supportsSubscriptions() {
+        return false;
+    }
+    disconnect() {
+        return this.connected;
+    }
 }
-module.exports = PolyjuiceHttpProvider;
+exports.default = PolyjuiceHttpProvider;
 
 
 /***/ }),
@@ -39905,12 +36669,12 @@ module.exports = PolyjuiceHttpProvider;
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
+/* provided dependency */ var fetch = __webpack_require__(9372);
 /* provided dependency */ var Buffer = __webpack_require__(816)["Buffer"];
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Godwoker = void 0;
-__webpack_require__(1202);
-const base_1 = __webpack_require__(9985);
+const base_1 = __webpack_require__(9766);
 const godwoken_1 = __webpack_require__(445);
 const schemas_1 = __webpack_require__(9243);
 const normalizer_1 = __webpack_require__(2197);
@@ -39918,26 +36682,35 @@ const ckb_js_toolkit_1 = __webpack_require__(9805);
 const jaysonBrowserClient = __webpack_require__(7426);
 const U128_MIN = BigInt(0);
 const U128_MAX = BigInt(2) ** BigInt(128) - BigInt(1);
-const EMPTY_ETH_ADDRESS = '0x' + '00'.repeat(20);
+const EMPTY_ETH_ADDRESS = "0x" + "00".repeat(20);
 class Godwoker {
     constructor(host, option) {
         const callServer = function (request, callback) {
             const opt = option.request_option || {
-                method: 'POST',
+                method: "POST",
                 body: request,
                 headers: {
-                    'Content-Type': 'application/json',
-                }
+                    "Content-Type": "application/json",
+                },
             };
             fetch(host, opt)
-                .then(function (res) { return res.text(); })
-                .then(function (text) { callback(null, text); })
-                .catch(function (err) { callback(err); });
+                .then(function (res) {
+                return res.text();
+            })
+                .then(function (text) {
+                callback(null, text);
+            })
+                .catch(function (err) {
+                callback(err);
+            });
         };
         this.client = jaysonBrowserClient(callServer);
         this.godwkenUtils = new godwoken_1.GodwokenUtils(option.godwoken.rollup_type_hash);
         this.eth_account_lock = option.godwoken.eth_account_lock;
         this.rollup_type_hash = option.godwoken.rollup_type_hash;
+        this.queryEthAddressByShortAddress = option.queryEthAddressByShortAddress;
+        this.saveEthAddressShortAddressMapping =
+            option.saveEthAddressShortAddressMapping;
     }
     packSignature(_signature) {
         let v = Number.parseInt(_signature.slice(-2), 16);
@@ -39946,34 +36719,45 @@ class Godwoker {
         const signature = _signature.slice(0, -2) + v.toString(16).padStart(2, "0");
         return signature;
     }
-    getScriptHashByEoaEthAddress(eth_address) {
+    computeScriptHashByEoaEthAddress(eth_address) {
         const layer2_lock = {
             code_hash: this.eth_account_lock.code_hash,
             hash_type: this.eth_account_lock.hash_type,
-            args: this.rollup_type_hash + eth_address.slice(2)
+            args: this.rollup_type_hash + eth_address.slice(2),
         };
         const lock_hash = base_1.utils.computeScriptHash(layer2_lock);
         return lock_hash;
     }
-    async getScriptHashByAccountId(account_id) {
-        return new Promise(resolve => {
-            this.client.request("gw_get_script_hash", [`${account_id.toString(16)}`], (err, res) => {
+    async getScriptByScriptHash(_script_hash) {
+        return new Promise((resolve, reject) => {
+            this.client.request("gw_get_script", [_script_hash], (err, res) => {
                 if (err)
-                    throw err;
-                if (res.result === undefined || res.result === null)
-                    throw Error(`unable to fetch account script hash from ${account_id}`);
-                resolve(res.result);
+                    return reject(err);
+                if (!res || res.result === undefined || res.result === null)
+                    return reject(new Error(`unable to fetch script from ${_script_hash}`));
+                return resolve(res.result);
+            });
+        });
+    }
+    async getScriptHashByAccountId(account_id) {
+        return new Promise((resolve, reject) => {
+            this.client.request("gw_get_script_hash", [`0x${BigInt(account_id).toString(16)}`], (err, res) => {
+                if (err)
+                    return reject(err);
+                if (!res || res.result === undefined || res.result === null)
+                    return reject(new Error(`unable to fetch account script hash from 0x${BigInt(account_id).toString(16)}`));
+                return resolve(res.result);
             });
         });
     }
     async getAccountIdByScriptHash(script_hash) {
-        return new Promise(resolve => {
-            this.client.request("gw_get_account_id", [script_hash], (err, res) => {
+        return new Promise((resolve, reject) => {
+            this.client.request("gw_get_account_id_by_script_hash", [script_hash], (err, res) => {
                 if (err)
-                    throw err;
-                if (res.result === undefined || res.result === null)
-                    throw Error(`unable to fetch account id from script hash ${script_hash}`);
-                resolve(res.result);
+                    return reject(err);
+                if (!res || res.result === undefined || res.result === null)
+                    return reject(new Error(`unable to fetch account id from script hash ${script_hash}`));
+                return resolve(res.result);
             });
         });
     }
@@ -39981,38 +36765,120 @@ class Godwoker {
         const layer2_lock = {
             code_hash: this.eth_account_lock.code_hash,
             hash_type: this.eth_account_lock.hash_type,
-            args: this.rollup_type_hash + eth_address.slice(2)
+            args: this.rollup_type_hash + eth_address.slice(2),
         };
         const lock_hash = base_1.utils.computeScriptHash(layer2_lock);
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             this.client.request("gw_get_account_id_by_script_hash", [lock_hash], (err, res) => {
                 if (err)
-                    throw err;
-                if (res.result === undefined || res.result === null)
-                    throw Error(`unable to fetch account id from ${eth_address}, lock_hash is ${lock_hash}`);
-                resolve(res.result);
+                    return reject(err);
+                if (!res || res.result === undefined || res.result === null)
+                    return reject(new Error(`unable to fetch account id from ${eth_address}, lock_hash is ${lock_hash}`));
+                return resolve(res.result);
             });
         });
     }
     async getScriptHashByShortAddress(_address) {
-        return new Promise(resolve => {
-            this.client.request("gw_get_script_hash_by_prefix", [_address], (err, res) => {
+        return new Promise((resolve, reject) => {
+            this.client.request("gw_get_script_hash_by_short_address", [_address], (err, res) => {
                 if (err)
-                    throw err;
-                if (res.result === undefined || res.result === null)
-                    throw Error(`unable to fetch script hash from short address: ${_address}`);
-                resolve(res.result);
+                    return reject(err);
+                if (!res || !res || res.result === undefined || res.result === null)
+                    return reject(new Error(`unable to fetch script hash from short address: ${_address}`));
+                return resolve(res.result);
+            });
+        });
+    }
+    computeShortAddressByEoaEthAddress(_address, write_callback) {
+        const short_address = this.computeScriptHashByEoaEthAddress(_address).slice(0, 42);
+        if (write_callback) {
+            write_callback(_address, short_address);
+        }
+        return short_address;
+    }
+    async getShortAddressByAllTypeEthAddress(_address) {
+        // todo: support create2 address in such case that it haven't create real contract yet.
+        try {
+            // assume it is an contract address (thus already an short address)
+            await this.getScriptHashByShortAddress(_address);
+            return _address;
+        }
+        catch (error) {
+            // script hash not exist with short address, assume it is EOA address..
+            // remember to save the script and eoa address mapping with default or user-specific callback
+            const write_callback = this.saveEthAddressShortAddressMapping
+                ? this.saveEthAddressShortAddressMapping
+                : this.defaultSaveEthAddressShortAddressMapping.bind(this);
+            return this.computeShortAddressByEoaEthAddress(_address, write_callback);
+        }
+    }
+    async getEthAddressByAllTypeShortAddress(_short_address) {
+        // todo: support create2 address in such case which it haven't create real contract yet.
+        try {
+            // first, query on-chain
+            const script_hash = await this.getScriptHashByShortAddress(_short_address);
+            const script = await this.getScriptByScriptHash(script_hash);
+            if (script.code_hash === this.eth_account_lock.code_hash) {
+                return "0x" + script.args.slice(66, 106);
+            }
+            // assume it is normal contract address.
+            return _short_address;
+        }
+        catch (error) {
+            // not on-chain, asume it is  eoa address
+            // which haven't create account on godwoken yet
+            const query_callback = this.queryEthAddressByShortAddress
+                ? this.queryEthAddressByShortAddress
+                : this.defaultQueryEthAddressByShortAddress.bind(this);
+            const eth_address = await query_callback(_short_address);
+            // check address and short_address indeed matched.
+            if (this.checkEthAddressIsEoa(eth_address, _short_address)) {
+                return eth_address;
+            }
+            else {
+                throw Error(`query result of eoa address ${_short_address} with ${_short_address} is not match!`);
+            }
+        }
+    }
+    // re-compute the eth address with code_hash info to make sure
+    // it indeed match with short_address
+    checkEthAddressIsEoa(eth_address, _target_short_address) {
+        const source_short_address = this.computeShortAddressByEoaEthAddress(eth_address);
+        console.log(source_short_address, _target_short_address);
+        return (source_short_address.toLowerCase() === _target_short_address.toLowerCase());
+    }
+    // default method
+    async defaultQueryEthAddressByShortAddress(_short_address) {
+        return new Promise((resolve, reject) => {
+            this.client.request("poly_getEthAddressByGodwokenShortAddress", [_short_address], (err, res) => {
+                if (err)
+                    return reject(err);
+                if (!res || res.result === undefined || res.result === null)
+                    return reject(new Error(`unable to fetch eth address from ${_short_address}`));
+                return resolve(res.result);
+            });
+        });
+    }
+    // default method
+    async defaultSaveEthAddressShortAddressMapping(_eth_address, _short_address) {
+        return new Promise((resolve, reject) => {
+            this.client.request("poly_saveEthAddressGodwokenShortAddressMapping", [_eth_address, _short_address], (err, res) => {
+                if (err)
+                    return reject(err);
+                if (!res || res.result !== "ok")
+                    return reject(new Error(`unable to save eth address and short address in web3 server.`));
+                return resolve(res.result);
             });
         });
     }
     async getNonce(account_id) {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             this.client.request("gw_get_nonce", [`0x${account_id.toString(16)}`], (err, res) => {
                 if (err)
-                    throw err;
-                if (res.result === undefined || res.result === null)
-                    throw Error(`unable to fetch nonce, account_id:${account_id}, ${JSON.stringify(res)}`);
-                resolve(res.result);
+                    return reject(err);
+                if (!res || res.result === undefined || res.result === null)
+                    return reject(new Error(`unable to fetch nonce, account_id:${account_id}, ${JSON.stringify(res)}`));
+                return resolve(res.result);
             });
         });
     }
@@ -40022,10 +36888,10 @@ class Godwoker {
         const nonce = await this.getNonce(parseInt(from));
         const encodedArgs = this.encodeArgs(eth_tx);
         const tx = {
-            from_id: '0x' + BigInt(from).toString(16),
-            to_id: '0x' + BigInt(to).toString(16),
+            from_id: "0x" + BigInt(from).toString(16),
+            to_id: "0x" + BigInt(to).toString(16),
             args: encodedArgs,
-            nonce: '0x' + BigInt(nonce).toString(16),
+            nonce: "0x" + BigInt(nonce).toString(16),
         };
         return tx;
     }
@@ -40037,47 +36903,74 @@ class Godwoker {
         const _tx = normalizer_1.NormalizeL2Transaction(tx);
         return new ckb_js_toolkit_1.Reader(schemas_1.SerializeL2Transaction(_tx)).serializeJson();
     }
+    serializeRawL2Transaction(tx) {
+        const _tx = normalizer_1.NormalizeRawL2Transaction(tx);
+        return new ckb_js_toolkit_1.Reader(schemas_1.SerializeRawL2Transaction(_tx)).serializeJson();
+    }
     async gw_executeL2Tranaction(raw_tx, signature) {
         const l2_tx = { raw: raw_tx, signature: signature };
         console.log(JSON.stringify(l2_tx, null, 2));
         const serialize_tx = this.serializeL2Transaction(l2_tx);
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             this.client.request("gw_execute_l2_tranaction", [serialize_tx], (err, res) => {
                 if (err)
-                    throw err;
-                if (res.result === undefined || res.result === null)
-                    throw Error(`failed to send gw_executeL2Tranaction rpc, ${JSON.stringify(res)}`);
-                resolve(res.result);
+                    return reject(err);
+                if (!res || res.result === undefined || res.result === null)
+                    return reject(new Error(`failed to send gw_executeL2Tranaction rpc, ${JSON.stringify(res)}`));
+                return resolve(res.result);
+            });
+        });
+    }
+    async gw_executeRawL2Transaction(raw_tx) {
+        console.log(JSON.stringify(raw_tx, null, 2));
+        const serialize_tx = this.serializeRawL2Transaction(raw_tx);
+        return new Promise((resolve, reject) => {
+            this.client.request("gw_execute_raw_l2transaction", [serialize_tx], (err, res) => {
+                if (err)
+                    return reject(err);
+                if (!res || res.result === undefined || res.result === null)
+                    return reject(new Error(`failed to send gw_executeRawL2Tranaction rpc, ${JSON.stringify(res)}`));
+                return resolve(res.result);
             });
         });
     }
     async gw_submitL2Transaction(raw_tx, signature) {
         const l2_tx = { raw: raw_tx, signature: signature };
         const serialize_tx = this.serializeL2Transaction(l2_tx);
-        return new Promise(resolve => {
-            this.client.request("gw_submit_l2_transaction", [serialize_tx], (err, res) => {
+        return new Promise((resolve, reject) => {
+            this.client.request("gw_submit_l2transaction", [serialize_tx], (err, res) => {
                 if (err)
-                    throw err;
-                if (res.result === undefined || res.result === null)
-                    throw Error(`failed to send gw_submitL2Transaction rpc, ${JSON.stringify(res)}`);
-                resolve(res.result);
+                    return reject(err);
+                if (!res || res.result === undefined || res.result === null)
+                    return reject(new Error(`failed to send gw_submitL2Transaction rpc, ${JSON.stringify(res)}`));
+                return resolve(res.result);
             });
         });
     }
     async gw_getTransactionReceipt(tx_hash) {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             this.client.request("gw_get_transaction_receipt", [tx_hash], (err, res) => {
                 if (err)
-                    throw err;
-                //if(res.result === undefined || res.result === null) throw Error(`failed to send gw_getTransactionReceipt rpc, ${JSON.stringify(res)}`);
-                resolve(res.result);
+                    return reject(err);
+                //if(!res || res.result === undefined || res.result === null) resolve( Error(`failed to send gw_getTransactionReceipt rpc, ${JSON.stringify(res)}`);
+                return resolve(res.result);
+            });
+        });
+    }
+    async eth_getTransactionReceipt(tx_hash) {
+        return new Promise((resolve, reject) => {
+            this.client.request("eth_getTransactionReceipt", [tx_hash], (err, res) => {
+                if (err)
+                    return reject(err);
+                //if(!res || res.result === undefined || res.result === null) resolve( Error(`failed to send gw_getTransactionReceipt rpc, ${JSON.stringify(res)}`);
+                return resolve(res.result);
             });
         });
     }
     async waitForTransactionReceipt(tx_hash) {
         while (true) {
             await this.asyncSleep(3000);
-            const tx_receipt = await this.gw_getTransactionReceipt(tx_hash);
+            const tx_receipt = await this.eth_getTransactionReceipt(tx_hash);
             console.log(`keep waitting for tx_receipt: ${JSON.stringify(tx_receipt)}`);
             if (tx_receipt) {
                 break;
@@ -40089,52 +36982,53 @@ class Godwoker {
         return new Promise((r) => setTimeout(r, ms));
     }
     async allTypeEthAddressToAccountId(_address) {
+        // todo: support create2 address in such case that it haven't create real contract yet.
         const address = Buffer.from(_address.slice(2), "hex");
         if (address.byteLength !== 20)
             throw new Error(`Invalid eth address length: ${address.byteLength}`);
         if (address.equals(Buffer.from(Array(20).fill(0))))
-            // special-case: meta-contract address
-            return '0x0';
+            // special-case: meta-contract address should return creator
+            return "0x3";
         try {
-            const script_hash = this.getScriptHashByEoaEthAddress(_address);
-            const accountId = await this.getAccountIdByScriptHash(script_hash);
-            return accountId;
-        }
-        catch (error) {
-            if (!JSON.stringify(error).includes('unable to fetch account id from script hash'))
-                throw error;
-            // is normal contract address (short address)
-            // todo: check if contract address is (1. normal contract address (2. create2 contract address
+            // assume it is normal contract address, thus an godwoken-short-address
             const script_hash = await this.getScriptHashByShortAddress(_address);
             return await this.getAccountIdByScriptHash(script_hash);
+        }
+        catch (error) {
+            if (!JSON.stringify(error).includes("unable to fetch script hash from short address"))
+                throw error;
+            // otherwise, assume it is EOA address
+            const script_hash = this.computeScriptHashByEoaEthAddress(_address);
+            const accountId = await this.getAccountIdByScriptHash(script_hash);
+            return accountId;
         }
     }
     encodeArgs(_tx) {
         const { to, gasPrice, gas: gasLimit, value, data } = _tx;
+        console.log(_tx);
         // header
-        const args_0_7 = '0x' +
-            Buffer.from('FFFFFF', 'hex').toString('hex') +
-            Buffer.from('POLY', 'utf8').toString('hex');
+        const args_0_7 = "0x" +
+            Buffer.from("FFFFFF", "hex").toString("hex") +
+            Buffer.from("POLY", "utf8").toString("hex");
         // gas limit
         const args_8_16 = this.UInt64ToLeBytes(BigInt(gasLimit));
         // gas price
-        const args_16_32 = this.UInt128ToLeBytes(gasPrice === '0x' ? BigInt(0) : BigInt(gasPrice));
+        const args_16_32 = this.UInt128ToLeBytes(gasPrice === "0x" ? BigInt(0) : BigInt(gasPrice));
         // value
-        const args_32_48 = this.UInt128ToLeBytes(value === '0x' ? BigInt(0) : BigInt(value));
-        const dataByteLength = Buffer.from(data.slice(2), 'hex').length;
+        const args_32_48 = this.UInt128ToLeBytes(value === "0x" ? BigInt(0) : BigInt(value));
+        const dataByteLength = Buffer.from(data.slice(2), "hex").length;
         // data length
         const args_48_52 = this.UInt32ToLeBytes(dataByteLength);
         // data
         const args_data = data;
-        // todo: transfer eth-address to short address in data(if it is related)
-        let args_7 = '';
-        if (to === EMPTY_ETH_ADDRESS || to === '0x' || to === '0x0') {
-            args_7 = '0x03';
+        let args_7 = "";
+        if (to === EMPTY_ETH_ADDRESS || to === "0x" || to === "0x0") {
+            args_7 = "0x03";
         }
         else {
-            args_7 = '0x00';
+            args_7 = "0x00";
         }
-        const args = '0x' +
+        const args = "0x" +
             args_0_7.slice(2) +
             args_7.slice(2) +
             args_8_16.slice(2) +
@@ -40148,13 +37042,13 @@ class Godwoker {
     UInt32ToLeBytes(num) {
         const buf = Buffer.allocUnsafe(4);
         buf.writeUInt32LE(+num, 0);
-        return '0x' + buf.toString('hex');
+        return "0x" + buf.toString("hex");
     }
     UInt64ToLeBytes(num) {
         num = BigInt(num);
         const buf = Buffer.alloc(8);
         buf.writeBigUInt64LE(num);
-        return `0x${buf.toString('hex')}`;
+        return `0x${buf.toString("hex")}`;
     }
     UInt128ToLeBytes(u128) {
         if (u128 < U128_MIN) {
@@ -40164,12 +37058,12 @@ class Godwoker {
             throw new Error(`u128 ${u128} too large`);
         }
         const buf = Buffer.alloc(16);
-        buf.writeBigUInt64LE(u128 & BigInt('0xFFFFFFFFFFFFFFFF'), 0);
+        buf.writeBigUInt64LE(u128 & BigInt("0xFFFFFFFFFFFFFFFF"), 0);
         buf.writeBigUInt64LE(u128 >> BigInt(64), 8);
-        return '0x' + buf.toString('hex');
+        return "0x" + buf.toString("hex");
     }
     LeBytesToUInt32(hex) {
-        const buf = Buffer.from(hex.slice(2), 'hex');
+        const buf = Buffer.from(hex.slice(2), "hex");
         return buf.readUInt32LE();
     }
 }
@@ -45475,6 +42369,379 @@ module.exports = {
 
 /***/ }),
 
+/***/ 7705:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+/*
+ This file is part of web3.js.
+
+ web3.js is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ web3.js is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Lesser General Public License for more details.
+
+ You should have received a copy of the GNU Lesser General Public License
+ along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
+ */
+/**
+ * @file index.js
+ * @author Marek Kotewicz <marek@parity.io>
+ * @author Fabian Vogelsteller <fabian@frozeman.de>
+ * @date 2018
+ */
+var Buffer = __webpack_require__(816).Buffer;
+var _ = __webpack_require__(254);
+var utils = __webpack_require__(3353);
+var EthersAbiCoder = __webpack_require__(913)/* .AbiCoder */ .RQ;
+var ParamType = __webpack_require__(913)/* .ParamType */ ._R;
+var ethersAbiCoder = new EthersAbiCoder(function (type, value) {
+    if (type.match(/^u?int/) && !_.isArray(value) && (!_.isObject(value) || value.constructor.name !== 'BN')) {
+        return value.toString();
+    }
+    return value;
+});
+// result method
+function Result() {
+}
+/**
+ * ABICoder prototype should be used to encode/decode solidity params of any type
+ */
+var ABICoder = function () {
+};
+/**
+ * Encodes the function name to its ABI representation, which are the first 4 bytes of the sha3 of the function name including  types.
+ *
+ * @method encodeFunctionSignature
+ * @param {String|Object} functionName
+ * @return {String} encoded function name
+ */
+ABICoder.prototype.encodeFunctionSignature = function (functionName) {
+    if (_.isObject(functionName)) {
+        functionName = utils._jsonInterfaceMethodToString(functionName);
+    }
+    return utils.sha3(functionName).slice(0, 10);
+};
+/**
+ * Encodes the function name to its ABI representation, which are the first 4 bytes of the sha3 of the function name including  types.
+ *
+ * @method encodeEventSignature
+ * @param {String|Object} functionName
+ * @return {String} encoded function name
+ */
+ABICoder.prototype.encodeEventSignature = function (functionName) {
+    if (_.isObject(functionName)) {
+        functionName = utils._jsonInterfaceMethodToString(functionName);
+    }
+    return utils.sha3(functionName);
+};
+/**
+ * Should be used to encode plain param
+ *
+ * @method encodeParameter
+ *
+ * @param {String|Object} type
+ * @param {any} param
+ *
+ * @return {String} encoded plain param
+ */
+ABICoder.prototype.encodeParameter = function (type, param) {
+    return this.encodeParameters([type], [param]);
+};
+/**
+ * Should be used to encode list of params
+ *
+ * @method encodeParameters
+ *
+ * @param {Array<String|Object>} types
+ * @param {Array<any>} params
+ *
+ * @return {String} encoded list of params
+ */
+ABICoder.prototype.encodeParameters = function (types, params) {
+    var self = this;
+    types = self.mapTypes(types);
+    params = params.map(function (param, index) {
+        let type = types[index];
+        if (typeof type === 'object' && type.type) {
+            // We may get a named type of shape {name, type}
+            type = type.type;
+        }
+        param = self.formatParam(type, param);
+        // Format params for tuples
+        if (typeof type === 'string' && type.includes('tuple')) {
+            const coder = ethersAbiCoder._getCoder(ParamType.from(type));
+            const modifyParams = (coder, param) => {
+                if (coder.name === 'array') {
+                    return param.map(p => modifyParams(ethersAbiCoder._getCoder(ParamType.from(coder.type.replace('[]', ''))), p));
+                }
+                coder.coders.forEach((c, i) => {
+                    if (c.name === 'tuple') {
+                        modifyParams(c, param[i]);
+                    }
+                    else {
+                        param[i] = self.formatParam(c.name, param[i]);
+                    }
+                });
+            };
+            modifyParams(coder, param);
+        }
+        return param;
+    });
+    return ethersAbiCoder.encode(types, params);
+};
+/**
+ * Map types if simplified format is used
+ *
+ * @method mapTypes
+ * @param {Array} types
+ * @return {Array}
+ */
+ABICoder.prototype.mapTypes = function (types) {
+    var self = this;
+    var mappedTypes = [];
+    types.forEach(function (type) {
+        // Remap `function` type params to bytes24 since Ethers does not
+        // recognize former type. Solidity docs say `Function` is a bytes24
+        // encoding the contract address followed by the function selector hash.
+        if (typeof type === 'object' && type.type === 'function') {
+            type = Object.assign({}, type, { type: "bytes24" });
+        }
+        if (self.isSimplifiedStructFormat(type)) {
+            var structName = Object.keys(type)[0];
+            mappedTypes.push(Object.assign(self.mapStructNameAndType(structName), {
+                components: self.mapStructToCoderFormat(type[structName])
+            }));
+            return;
+        }
+        mappedTypes.push(type);
+    });
+    return mappedTypes;
+};
+/**
+ * Check if type is simplified struct format
+ *
+ * @method isSimplifiedStructFormat
+ * @param {string | Object} type
+ * @returns {boolean}
+ */
+ABICoder.prototype.isSimplifiedStructFormat = function (type) {
+    return typeof type === 'object' && typeof type.components === 'undefined' && typeof type.name === 'undefined';
+};
+/**
+ * Maps the correct tuple type and name when the simplified format in encode/decodeParameter is used
+ *
+ * @method mapStructNameAndType
+ * @param {string} structName
+ * @return {{type: string, name: *}}
+ */
+ABICoder.prototype.mapStructNameAndType = function (structName) {
+    var type = 'tuple';
+    if (structName.indexOf('[]') > -1) {
+        type = 'tuple[]';
+        structName = structName.slice(0, -2);
+    }
+    return { type: type, name: structName };
+};
+/**
+ * Maps the simplified format in to the expected format of the ABICoder
+ *
+ * @method mapStructToCoderFormat
+ * @param {Object} struct
+ * @return {Array}
+ */
+ABICoder.prototype.mapStructToCoderFormat = function (struct) {
+    var self = this;
+    var components = [];
+    Object.keys(struct).forEach(function (key) {
+        if (typeof struct[key] === 'object') {
+            components.push(Object.assign(self.mapStructNameAndType(key), {
+                components: self.mapStructToCoderFormat(struct[key])
+            }));
+            return;
+        }
+        components.push({
+            name: key,
+            type: struct[key]
+        });
+    });
+    return components;
+};
+/**
+ * Handle some formatting of params for backwards compatability with Ethers V4
+ *
+ * @method formatParam
+ * @param {String} - type
+ * @param {any} - param
+ * @return {any} - The formatted param
+ */
+ABICoder.prototype.formatParam = function (type, param) {
+    const paramTypeBytes = new RegExp(/^bytes([0-9]*)$/);
+    const paramTypeBytesArray = new RegExp(/^bytes([0-9]*)\[\]$/);
+    const paramTypeNumber = new RegExp(/^(u?int)([0-9]*)$/);
+    const paramTypeNumberArray = new RegExp(/^(u?int)([0-9]*)\[\]$/);
+    // Format BN to string
+    if (utils.isBN(param) || utils.isBigNumber(param)) {
+        return param.toString(10);
+    }
+    if (type.match(paramTypeBytesArray) || type.match(paramTypeNumberArray)) {
+        return param.map(p => this.formatParam(type.replace('[]', ''), p));
+    }
+    // Format correct width for u?int[0-9]*
+    let match = type.match(paramTypeNumber);
+    if (match) {
+        let size = parseInt(match[2] || "256");
+        if (size / 8 < param.length) {
+            // pad to correct bit width
+            param = utils.leftPad(param, size);
+        }
+    }
+    // Format correct length for bytes[0-9]+
+    match = type.match(paramTypeBytes);
+    if (match) {
+        if (Buffer.isBuffer(param)) {
+            param = utils.toHex(param);
+        }
+        // format to correct length
+        let size = parseInt(match[1]);
+        if (size) {
+            let maxSize = size * 2;
+            if (param.substring(0, 2) === '0x') {
+                maxSize += 2;
+            }
+            if (param.length < maxSize) {
+                // pad to correct length
+                param = utils.rightPad(param, size * 2);
+            }
+        }
+        // format odd-length bytes to even-length
+        if (param.length % 2 === 1) {
+            param = '0x0' + param.substring(2);
+        }
+    }
+    return param;
+};
+/**
+ * Encodes a function call from its json interface and parameters.
+ *
+ * @method encodeFunctionCall
+ * @param {Array} jsonInterface
+ * @param {Array} params
+ * @return {String} The encoded ABI for this function call
+ */
+ABICoder.prototype.encodeFunctionCall = function (jsonInterface, params) {
+    return this.encodeFunctionSignature(jsonInterface) + this.encodeParameters(jsonInterface.inputs, params).replace('0x', '');
+};
+/**
+ * Should be used to decode bytes to plain param
+ *
+ * @method decodeParameter
+ * @param {String} type
+ * @param {String} bytes
+ * @return {Object} plain param
+ */
+ABICoder.prototype.decodeParameter = function (type, bytes) {
+    return this.decodeParameters([type], bytes)[0];
+};
+/**
+ * Should be used to decode list of params
+ *
+ * @method decodeParameter
+ * @param {Array} outputs
+ * @param {String} bytes
+ * @return {Array} array of plain params
+ */
+ABICoder.prototype.decodeParameters = function (outputs, bytes) {
+    return this.decodeParametersWith(outputs, bytes, false);
+};
+/**
+ * Should be used to decode list of params
+ *
+ * @method decodeParameter
+ * @param {Array} outputs
+ * @param {String} bytes
+ * @param {Boolean} loose
+ * @return {Array} array of plain params
+ */
+ABICoder.prototype.decodeParametersWith = function (outputs, bytes, loose) {
+    if (outputs.length > 0 && (!bytes || bytes === '0x' || bytes === '0X')) {
+        throw new Error('Returned values aren\'t valid, did it run Out of Gas? ' +
+            'You might also see this error if you are not using the ' +
+            'correct ABI for the contract you are retrieving data from, ' +
+            'requesting data from a block number that does not exist, ' +
+            'or querying a node which is not fully synced.');
+    }
+    var res = ethersAbiCoder.decode(this.mapTypes(outputs), '0x' + bytes.replace(/0x/i, ''), loose);
+    var returnValue = new Result();
+    returnValue.__length__ = 0;
+    outputs.forEach(function (output, i) {
+        var decodedValue = res[returnValue.__length__];
+        decodedValue = (decodedValue === '0x') ? null : decodedValue;
+        returnValue[i] = decodedValue;
+        if (_.isObject(output) && output.name) {
+            returnValue[output.name] = decodedValue;
+        }
+        returnValue.__length__++;
+    });
+    return returnValue;
+};
+/**
+ * Decodes events non- and indexed parameters.
+ *
+ * @method decodeLog
+ * @param {Object} inputs
+ * @param {String} data
+ * @param {Array} topics
+ * @return {Array} array of plain params
+ */
+ABICoder.prototype.decodeLog = function (inputs, data, topics) {
+    var _this = this;
+    topics = _.isArray(topics) ? topics : [topics];
+    data = data || '';
+    var notIndexedInputs = [];
+    var indexedParams = [];
+    var topicCount = 0;
+    // TODO check for anonymous logs?
+    inputs.forEach(function (input, i) {
+        if (input.indexed) {
+            indexedParams[i] = (['bool', 'int', 'uint', 'address', 'fixed', 'ufixed'].find(function (staticType) {
+                return input.type.indexOf(staticType) !== -1;
+            })) ? _this.decodeParameter(input.type, topics[topicCount]) : topics[topicCount];
+            topicCount++;
+        }
+        else {
+            notIndexedInputs[i] = input;
+        }
+    });
+    var nonIndexedData = data;
+    var notIndexedParams = (nonIndexedData) ? this.decodeParametersWith(notIndexedInputs, nonIndexedData, true) : [];
+    var returnValue = new Result();
+    returnValue.__length__ = 0;
+    inputs.forEach(function (res, i) {
+        returnValue[i] = (res.type === 'string') ? '' : null;
+        if (typeof notIndexedParams[i] !== 'undefined') {
+            returnValue[i] = notIndexedParams[i];
+        }
+        if (typeof indexedParams[i] !== 'undefined') {
+            returnValue[i] = indexedParams[i];
+        }
+        if (res.name) {
+            returnValue[res.name] = returnValue[i];
+        }
+        returnValue.__length__++;
+    });
+    return returnValue;
+};
+var coder = new ABICoder();
+module.exports = coder;
+
+
+/***/ }),
+
 /***/ 8658:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -45725,138 +42992,6 @@ class Iban {
     ;
 }
 module.exports = Iban;
-
-
-/***/ }),
-
-/***/ 1809:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-/*
-    This file is part of web3.js.
-
-    web3.js is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    web3.js is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
-*/
-/** @file httpprovider.js
- * @authors:
- *   Marek Kotewicz <marek@parity.io>
- *   Marian Oancea
- *   Fabian Vogelsteller <fabian@ethereum.org>
- * @date 2015
- */
-var errors = __webpack_require__(2536).errors;
-var XHR2 = __webpack_require__(1946).XMLHttpRequest; // jshint ignore: line
-var http = __webpack_require__(8438);
-var https = __webpack_require__(8022);
-/**
- * HttpProvider should be used to send rpc calls over http
- */
-var HttpProvider = function HttpProvider(host, options) {
-    options = options || {};
-    this.withCredentials = options.withCredentials || false;
-    this.timeout = options.timeout || 0;
-    this.headers = options.headers;
-    this.agent = options.agent;
-    this.connected = false;
-    // keepAlive is true unless explicitly set to false
-    const keepAlive = options.keepAlive !== false;
-    this.host = host || 'http://localhost:8545';
-    if (!this.agent) {
-        if (this.host.substring(0, 5) === "https") {
-            this.httpsAgent = new https.Agent({ keepAlive });
-        }
-        else {
-            this.httpAgent = new http.Agent({ keepAlive });
-        }
-    }
-};
-HttpProvider.prototype._prepareRequest = function () {
-    var request;
-    // the current runtime is a browser
-    if (typeof XMLHttpRequest !== 'undefined') {
-        request = new XMLHttpRequest();
-    }
-    else {
-        request = new XHR2();
-        var agents = { httpsAgent: this.httpsAgent, httpAgent: this.httpAgent, baseUrl: this.baseUrl };
-        if (this.agent) {
-            agents.httpsAgent = this.agent.https;
-            agents.httpAgent = this.agent.http;
-            agents.baseUrl = this.agent.baseUrl;
-        }
-        request.nodejsSet(agents);
-    }
-    request.open('POST', this.host, true);
-    request.setRequestHeader('Content-Type', 'application/json');
-    request.timeout = this.timeout;
-    request.withCredentials = this.withCredentials;
-    if (this.headers) {
-        this.headers.forEach(function (header) {
-            request.setRequestHeader(header.name, header.value);
-        });
-    }
-    return request;
-};
-/**
- * Should be used to make async request
- *
- * @method send
- * @param {Object} payload
- * @param {Function} callback triggered on end with (err, result)
- */
-HttpProvider.prototype.send = function (payload, callback) {
-    var _this = this;
-    var request = this._prepareRequest();
-    request.onreadystatechange = function () {
-        if (request.readyState === 4 && request.timeout !== 1) {
-            var result = request.responseText;
-            var error = null;
-            try {
-                result = JSON.parse(result);
-            }
-            catch (e) {
-                error = errors.InvalidResponse(request.responseText);
-            }
-            _this.connected = true;
-            callback(error, result);
-        }
-    };
-    request.ontimeout = function () {
-        _this.connected = false;
-        callback(errors.ConnectionTimeout(this.timeout));
-    };
-    try {
-        request.send(JSON.stringify(payload));
-    }
-    catch (error) {
-        this.connected = false;
-        callback(errors.InvalidConnection(this.host));
-    }
-};
-HttpProvider.prototype.disconnect = function () {
-    //NO OP
-};
-/**
- * Returns the desired boolean.
- *
- * @method supportsSubscriptions
- * @returns {boolean}
- */
-HttpProvider.prototype.supportsSubscriptions = function () {
-    return false;
-};
-module.exports = HttpProvider;
 
 
 /***/ }),
@@ -47786,6 +44921,18 @@ function extend() {
 /******/ 		__webpack_require__.amdO = {};
 /******/ 	})();
 /******/ 	
+/******/ 	/* webpack/runtime/compat get default export */
+/******/ 	(() => {
+/******/ 		// getDefaultExport function for compatibility with non-harmony modules
+/******/ 		__webpack_require__.n = (module) => {
+/******/ 			var getter = module && module.__esModule ?
+/******/ 				() => (module['default']) :
+/******/ 				() => (module);
+/******/ 			__webpack_require__.d(getter, { a: getter });
+/******/ 			return getter;
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/define property getters */
 /******/ 	(() => {
 /******/ 		// define getter functions for harmony exports
@@ -47840,10 +44987,10 @@ function extend() {
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __webpack_require__(7420);
+/******/ 	var __webpack_exports__ = __webpack_require__(3303);
+/******/ 	__webpack_exports__ = __webpack_exports__.default;
 /******/ 	
 /******/ 	return __webpack_exports__;
 /******/ })()
 ;
 });
-//# sourceMappingURL=polyjuice_provider.min.js.map

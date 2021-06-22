@@ -1,2 +1,2 @@
 const browserEnv = require("browser-env");
-browserEnv();
+if (process.env.MODE === "browser") browserEnv();
