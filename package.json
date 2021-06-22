@@ -1,6 +1,6 @@
 {
-  "name": "polyjuice-providers-http",
-  "version": "0.1.0",
+  "name": "@retric/test-provider",
+  "version": "0.0.1-rc2",
   "main": "lib/index.js",
   "license": "MIT",
   "engines": {
@@ -13,8 +13,16 @@
     "compile": "tsc && cp -r src/godwoken/schemas lib/godwoken/",
     "build": "webpack --config=webpack.config.js",
     "example": "cp lib/index.js example/web/static/js/ && node example/web/server.js",
-    "test": "MODE=browser ava && MODE=node ava"
+    "test": "MODE=browser ava && MODE=node ava",
+    "publish": "npm publish --tag=v0.0.1-rc2",
+    "pack": "npm pack"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "/lib"
+  ],
   "ava": {
     "require": [
       "./tests/_setup-browser-env.js"
