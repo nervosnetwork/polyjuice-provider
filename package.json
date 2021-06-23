@@ -12,7 +12,7 @@
     "clean": "rm -rf lib/*",
     "compile": "tsc && cp -r src/godwoken/schemas lib/godwoken/",
     "build": "webpack --config=webpack.config.js",
-    "example": "cp lib/index.js example/web/static/js/ && node example/web/server.js",
+    "example": "cp ./build/browser/PolyjuiceHttpProvider.js example/web/static/js/ && node example/web/server.js",
     "test": "MODE=browser ava && MODE=node ava",
     "publish": "npm publish",
     "test-publish": "npm publish --dry-run",

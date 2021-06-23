@@ -17,10 +17,8 @@ const basicConfig = {
     libraryExport: 'default',
     globalObject: 'this',
   },
-//  externals: [
-//    "@ckb-lumos/base", "web3", "webpack", "typescript", "buffer", "encoding", "jayson", "keccak256", "xhr2-cookies", "express"
-//  ],
-// in order to ignore all modules in node_modules folder 
+
+  // in order to ignore all modules in node_modules folder 
   externals: [nodeExternals()],
 
   resolve: {
@@ -68,6 +66,7 @@ const basicConfig = {
   },
 };
 
+// can be used in nodejs env
 const serverConfig = {...basicConfig, ...{
   target: 'node',
   output: {...basicConfig.output, ...{
@@ -75,6 +74,7 @@ const serverConfig = {...basicConfig, ...{
   }}
 }};
 
+// can be used in web dev such as react
 const clientConfig = {...basicConfig, ...{
   target: 'web', // <=== can be omitted as default is 'web'
   output: {...basicConfig.output, ...{
@@ -82,4 +82,14 @@ const clientConfig = {...basicConfig, ...{
   }}
 }};
 
-module.exports = [serverConfig, clientConfig];
+// can be used by html script tag. eg: <script src="/path/to/PolyjuiceHttpProvider.js"></script>
+const browserConfig = {...basicConfig, ...{
+  target: 'web',
+  output: {...basicConfig.output, ...{
+    path: path.resolve(__dirname, "./build/browser/"),
+    filename: 'PolyjuiceHttpProvider.js',
+  }},
+  externals: [],
+}}
+
+module.exports = [serverConfig, clientConfig, browserConfig];
