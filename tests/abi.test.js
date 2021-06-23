@@ -1,5 +1,8 @@
 const test = require("ava");
 const Web3EthAbi = require("web3-eth-abi");
+const root = require('path').join.bind(this, __dirname, '..');
+require("dotenv").config({ path: root(".test.env") });
+
 let PolyjuiceHttpProvider;
 if (process.env.MODE === "browser")
   PolyjuiceHttpProvider = require("../lib/index");
@@ -60,14 +63,12 @@ var godwoker;
 
 test.before((t) => {
   // init provider and web3
-  const godwoken_rpc_url = "http://127.0.0.1:8024";
+  const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
   const provider_config = {
     godwoken: {
-      rollup_type_hash:
-        "0xbe92efcb50c8022a2a6bd0f7a0692450c4f0733059dbc86f098f5f5fbbe2e64e",
+      rollup_type_hash: process.env.ROLLUP_TYPE_HASH,
       eth_account_lock: {
-        code_hash:
-          "0x619519cff96dd0bb0e3ae44d11775385075025a78a8a4e86ffb60b0df15cee02",
+        code_hash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH,
         hash_type: "type",
       },
     },

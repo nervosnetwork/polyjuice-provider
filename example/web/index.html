@@ -4,8 +4,10 @@
         <link rel="shortcut icon" href="#">
     </head>
     <body>
-        <!-- load the contract config file -->
+        <!-- load the contract artifactes file -->
         <script src="/contracts/simplestorage.js"></script>
+        <!-- load some config file -->
+        <script src="/js/config.js"></script>
 
         <!-- load the normal web3.js file-->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.3.4/web3.min.js"></script>
@@ -14,14 +16,12 @@
 
         <script>
             // init provider and web3
-            const godwoken_rpc_url = "http://127.0.0.1:8024";
+            const godwoken_rpc_url = SimpleConfig.WEB3_JSON_RPC;
             const provider_config = {
               godwoken: {
-                rollup_type_hash:
-                  "0xbe92efcb50c8022a2a6bd0f7a0692450c4f0733059dbc86f098f5f5fbbe2e64e",
+                rollup_type_hash: SimpleConfig.ROLLUP_TYPE_HASH,
                 eth_account_lock: {
-                  code_hash:
-                    "0x619519cff96dd0bb0e3ae44d11775385075025a78a8a4e86ffb60b0df15cee02",
+                  code_hash: SimpleConfig.ETH_ACCOUNT_LOCK_CODE_HASH,
                   hash_type: "type",
                 },
               },
@@ -30,11 +30,11 @@
             const web3 = new Web3(p);
             
             console.log(`Hey, welcome to our example dapp on polyjuice!`);
-            console.log(`deploy the-simple-storage-contract to your local godwoken node before you try testing.`);
-            console.log(`see: https://github.com/nervosnetwork/godwoken-examples/tree/9dbd0cb2f942de4127cf7ec7f98c2b4707ed4e73/packages/tools/sample-contracts`);
+            console.log(`deploy the-simple-storage-V2-contract to your local godwoken node before you try testing.`);
+            console.log(`see: https://github.com/RetricSu/simple-storage-v2/blob/master/contracts/SimpleStorageV2.sol`);
             
             // init contract handler
-            const contract_address = "0x1B53aa9B683b9622e1B6a11fA3b5F05C00f8afdB";
+            const contract_address = SimpleConfig.EXAMPLE_CONTRACT_ADDRESS;
             const simplestorageV2 = new web3.eth.Contract( SimpleContract.abi, contract_address );
 
             const test_address_1 = "0x768249aC5ED64517C96c16e26B7A5Aa3E9334217";

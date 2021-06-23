@@ -3,3 +3,4 @@ lib
 .DS_Store
 build/browser/
 example/web/static/js/
+.test.env

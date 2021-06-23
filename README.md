@@ -1,4 +1,4 @@
-# Polyjuice Http Provider
+# (THIS BRANCH IS ONLY FOR TEST!) Polyjuice Http Provider
 
 a godwoken-compatible http provider for web3.js.
 
@@ -60,31 +60,61 @@ basically, PolyjuiceHttpProvider is just a extended class of [[web3-providers-ht
     yarn 
 ```
 
-build browser version:
+build:
 
 ```sh
     yarn build
 ```
 
-useage:
-
-```html
-<script src="../lib/polyjuice_provider.min.js"></script>
-```
-
-build node version:
+node version:
 
 ```sh
-    yarn build:node
+    /lib/index.node.js
+```
+
+usage:
+
+```js
+const PolyjuiceHttpProvider = require('./PolyjuiceHttpProvider');
+```
+
+web version:
+
+```sh
+    /lib/index.js
 ```
 
 useage:
 
 ```js
-const PolyjuiceHttpProvider = require('../lib/polyjuice_provider.min.js');
+import PolyjuiceHttpProvider from './PolyjuiceHttpProvider';
 ```
 
-test:
+browser version:
+
+```sh
+    /build/browser/PolyjuiceHttpProvider.js
+```
+
+usage:
+
+```html
+<script src="/path/to/PolyjuiceHttpProvider.js"></script>
+```
+
+---
+
+before you can run test and an minimal example, create an .test.env file with some godwoken-polyjuice config.
+
+```sh
+cat > ./test.env <<EOF
+WEB3_JSON_RPC=<godwoken web3 rpc>
+ROLLUP_TYPE_HASH=<godwoken rollup type hash>
+ETH_ACCOUNT_LOCK_CODE_HASH=<eth account lock code hash>
+EXAMPLE_CONTRACT_ADDRESS=<an example test contract deployed address>
+```
+
+## test
 
 ```sh
     yarn test
