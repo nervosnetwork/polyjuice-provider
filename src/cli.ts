@@ -93,7 +93,6 @@ export default class PolyjuiceHttpProviderForNode extends PolyjuiceHttpProvider 
             polyjuice_tx,
             sender_script_hash,
             receiver_script_hash,
-            true
           );
           const _signature = await this.signer.sign_with_private_key(
             message,
@@ -129,6 +128,80 @@ export default class PolyjuiceHttpProviderForNode extends PolyjuiceHttpProvider 
           this.connected = false;
           throw error;
         }
+
+        case "eth_call":
+          try {
+            console.log('cli-provider eth_call');
+            const { from, gas, gasPrice, value, data, to } = params[0];
+  
+            const data_with_short_address =
+              await this.abi.refactor_data_with_short_address(
+                data,
+                this.godwoker.getShortAddressByAllTypeEthAddress.bind(
+                  this.godwoker
+                )
+              );
+  
+            const t = {
+              from: from || "0x" + "0".repeat(40),
+              to: to,
+              value: value || 0,
+              data: data_with_short_address || "",
+              gas: gas || 5000000,
+              gasPrice: gasPrice || 0,
+            };
+  
+            const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
+  
+            const run_result = await this.godwoker.gw_executeRawL2Transaction(
+              polyjuice_tx
+            );
+  
+            console.log(`provider just proxy an eth_call rpc call.`);
+  
+            console.log(`runResult: ${JSON.stringify(run_result, null, 2)}`);
+            const abi_item =
+              this.abi.get_intereted_abi_item_by_encoded_data(data);
+            if (!abi_item) {
+              this._send(payload, function (err, result) {
+                console.log(err, result);
+                const res = {
+                  jsonrpc: result.jsonrpc,
+                  id: result.id,
+                };
+                const new_res = { ...res, ...{ result: run_result.return_data } };
+                console.log(
+                  `no abi, new_res: ${JSON.stringify(new_res, null, 2)}`
+                );
+                callback(null, new_res);
+              });
+            } else {
+              const return_value_with_short_address =
+                await this.abi.refactor_return_value_with_short_address(
+                  run_result.return_data,
+                  abi_item,
+                  this.godwoker.getEthAddressByAllTypeShortAddress.bind(
+                    this.godwoker
+                  )
+                );
+              this._send(payload, function (err, result) {
+                console.log(err, result);
+                const res = {
+                  jsonrpc: result.jsonrpc,
+                  id: result.id,
+                };
+                const new_res = {
+                  ...res,
+                  ...{ result: return_value_with_short_address },
+                };
+                callback(null, new_res);
+              });
+            }
+            break;
+          } catch (error) {
+            this.connected = false;
+            throw error;
+          }
 
       default:
         try {
