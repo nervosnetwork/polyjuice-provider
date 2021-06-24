@@ -56,8 +56,8 @@ export default class PolyjuiceHttpProviderForNode extends PolyjuiceHttpProvider 
     switch (method) {
       case "eth_sendTransaction":
         try {
-          const { from, gas, gasPrice, value, data, to } = params[0];
-
+          const { from, gas, gasPrice, value, data } = params[0];
+          const to = params[0].to || `0x${Array(40).fill(0).join('')}`;
           const data_with_short_address =
             await this.abi.refactor_data_with_short_address(
               data,
