@@ -102,6 +102,18 @@ usage:
 <script src="/path/to/PolyjuiceHttpProvider.js"></script>
 ```
 
+### hardhat
+
+hardhat is using `ethers` instead of `web3.js`, you can find ethers-compatibale `JsonRpcProvider` and `WalletSigner` in `/lib/hardhat/providers`
+
+usage:
+
+```js
+const { PolyjuiceJsonRpcProvider } = require('PolyjuiceHttpProvider/lib/hardhat/providers');
+const PolyjuiceWallet = require('PolyjuiceHttpProvider/lib/hardhat/wallet-signer');
+```
+
+
 ---
 
 before you can run test and an minimal example, create an .test.env file with some godwoken-polyjuice config.

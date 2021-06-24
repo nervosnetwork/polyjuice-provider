@@ -376,6 +376,25 @@ export class Godwoker {
     );
   }
 
+  async generateMessageFromEthTransaction(tx: EthTransaction) {
+    const { from, to } = tx;
+
+    const to_id = await this.allTypeEthAddressToAccountId(to);
+    const sender_script_hash = this.computeScriptHashByEoaEthAddress(from);
+    const receiver_script_hash = await this.getScriptHashByAccountId(
+      parseInt(to_id)
+    );
+
+    const polyjuice_tx = await this.assembleRawL2Transaction(tx);
+    const message = this.generateTransactionMessageToSign(
+      polyjuice_tx,
+      sender_script_hash,
+      receiver_script_hash,
+      true // with personal sign prefixed
+    );
+    return message;
+  }
+
   serializeL2Transaction(tx: L2Transaction) {
     const _tx = NormalizeL2Transaction(tx);
     return new Reader(SerializeL2Transaction(_tx)).serializeJson();
