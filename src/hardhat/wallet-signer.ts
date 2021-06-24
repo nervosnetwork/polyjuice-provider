@@ -58,11 +58,11 @@ export default class PolyjuiceWallet extends Wallet {
       // to sign transaction.
       const t = {
         from: tx.from,
-        to: tx.to,
-        value: hexlify(tx.value),
-        data: hexlify(tx.data),
-        gas: hexlify(tx.gasLimit),
-        gasPrice: hexlify(tx.gasPrice),
+        to: tx.to || "0x" + "0".repeat(40),
+        value: hexlify(tx.value || 0),
+        data: hexlify(tx.data || "0x00"),
+        gas: hexlify(tx.gasLimit || 50000),
+        gasPrice: hexlify(tx.gasPrice || 0),
       };
       const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
       const message = await this.godwoker.generateMessageFromEthTransaction(t);

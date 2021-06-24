@@ -1,6 +1,6 @@
 {
   "name": "@retric/test-provider",
-  "version": "0.0.1-rc4",
+  "version": "0.0.1-rc5",
   "main": "lib/index.js",
   "license": "MIT",
   "engines": {
