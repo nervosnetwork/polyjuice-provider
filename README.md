@@ -112,6 +112,7 @@ WEB3_JSON_RPC=<godwoken web3 rpc>
 ROLLUP_TYPE_HASH=<godwoken rollup type hash>
 ETH_ACCOUNT_LOCK_CODE_HASH=<eth account lock code hash>
 EXAMPLE_CONTRACT_ADDRESS=<an example test contract deployed address>
+PRIVATE_KEY=<your eth test private key, do not use in production>
 ```
 
 ## test

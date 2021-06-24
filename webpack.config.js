@@ -3,7 +3,6 @@ const path = require("path");
 const webpack = require("webpack");
 const nodeExternals = require('webpack-node-externals');
 
-
 const basicConfig = {
   context: path.resolve(__dirname, "./src"),
   entry: "./index.ts",
@@ -82,6 +81,15 @@ const clientConfig = {...basicConfig, ...{
   }}
 }};
 
+// can be used in nodejs env
+const cliConfig = {...basicConfig, ...{
+  target: 'node',
+  entry: "./cli.ts",
+  output: {...basicConfig.output, ...{
+    filename: 'cli.js',
+  }}
+}};
+
 // can be used by html script tag. eg: <script src="/path/to/PolyjuiceHttpProvider.js"></script>
 const browserConfig = {...basicConfig, ...{
   target: 'web',
@@ -92,4 +100,4 @@ const browserConfig = {...basicConfig, ...{
   externals: [],
 }}
 
-module.exports = [serverConfig, clientConfig, browserConfig];
+module.exports = [serverConfig, clientConfig, browserConfig, cliConfig];

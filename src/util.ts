@@ -1,5 +1,4 @@
 import { Script, Hash, utils, HexNumber, HexString } from "@ckb-lumos/base";
-
 import { GodwokenUtils, RawL2Transaction, L2Transaction } from "./godwoken";
 import {
   SerializeL2Transaction,
@@ -366,14 +365,14 @@ export class Godwoker {
   generateTransactionMessageToSign(
     tx: RawL2Transaction,
     sender_script_hash: string,
-    receiver_script_hash: string
+    receiver_script_hash: string,
+    is_add_prefix_in_signing_message: boolean = false
   ) {
-    const add_prefix_in_signing_message = false;
     return this.godwkenUtils.generateTransactionMessageToSign(
       tx,
       sender_script_hash,
       receiver_script_hash,
-      add_prefix_in_signing_message
+      is_add_prefix_in_signing_message
     );
   }
 
