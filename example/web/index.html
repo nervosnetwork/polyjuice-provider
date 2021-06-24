@@ -26,7 +26,7 @@
                 },
               },
             };
-            const p = new PolyjuiceHttpProvider(godwoken_rpc_url, provider_config);
+            const p = new PolyjuiceHttpProvider(godwoken_rpc_url, provider_config, SimpleContract.abi);
             const web3 = new Web3(p);
             
             console.log(`Hey, welcome to our example dapp on polyjuice!`);

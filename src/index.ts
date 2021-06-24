@@ -10,6 +10,7 @@ import { XMLHttpRequest as XHR2 } from "xhr2-cookies";
 import { JsonRpcResponse } from "web3-core-helpers";
 import { AbiItem } from "web3-utils";
 import { Godwoker, GodwokerOption } from "./util";
+import Signer from "./signer";
 import { Abi } from "./abi";
 
 export interface HttpHeader {
@@ -31,13 +32,14 @@ export interface HttpProviderOptions {
   keepAlive?: boolean;
 }
 
-declare global {
-  interface Window {
-    ethereum: any;
-  }
+export interface ExperimentalFeatureOption {
+  mode: boolean;
+  private_key?: string;
 }
 
 export default class PolyjuiceHttpProvider {
+  experimentalFeatureMode: boolean;
+  signer: Signer;
   godwoker: Godwoker;
   abi: Abi;
   withCredentials: boolean;
@@ -56,6 +58,7 @@ export default class PolyjuiceHttpProvider {
     abi_items: AbiItem[] = [],
     options?: HttpProviderOptions
   ) {
+    this.signer = new Signer();
     this.godwoker = new Godwoker(host, godwoken_config);
     this.abi = new Abi(abi_items);
 
@@ -90,13 +93,6 @@ export default class PolyjuiceHttpProvider {
 
     switch (method) {
       case "eth_sendTransaction":
-        if (!window.ethereum) {
-          alert(
-            "PolyjuiceHttpProvider needs a wallet provider such as metamask!"
-          );
-          break;
-        }
-
         try {
           const { from, gas, gasPrice, value, data, to } = params[0];
 
@@ -111,7 +107,7 @@ export default class PolyjuiceHttpProvider {
           console.log(data, data_with_short_address);
 
           const t = {
-            from: from || window.ethereum.selectedAddress,
+            from: from,
             to: to,
             value: value || 0,
             data: data_with_short_address || "",
@@ -131,10 +127,10 @@ export default class PolyjuiceHttpProvider {
             sender_script_hash,
             receiver_script_hash
           );
-          const _signature = await window.ethereum.request({
-            method: "personal_sign",
-            params: [message, window.ethereum.selectedAddress],
-          });
+          const _signature = await this.signer.sign_with_metamask(
+            message,
+            from
+          );
           const signature = this.godwoker.packSignature(_signature);
           const tx_hash = await this.godwoker.gw_submitL2Transaction(
             polyjuice_tx,
@@ -179,7 +175,7 @@ export default class PolyjuiceHttpProvider {
             );
 
           const t = {
-            from: from || window.ethereum.selectedAddress,
+            from: from || "0x" + "0".repeat(40),
             to: to,
             value: value || 0,
             data: data_with_short_address || "",
