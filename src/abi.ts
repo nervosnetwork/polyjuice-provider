@@ -189,7 +189,6 @@ export class Abi {
       0,
       decode_values_with_refactor.length - 1
     );
-    console.log(decode_values_with_refactor);
     return Web3EthAbi.encodeParameters(
       output_value_types,
       decode_values_with_refactor

@@ -104,8 +104,6 @@ export default class PolyjuiceHttpProvider {
               )
             );
 
-          console.log(data, data_with_short_address);
-
           const t = {
             from: from,
             to: to,
@@ -136,24 +134,13 @@ export default class PolyjuiceHttpProvider {
             polyjuice_tx,
             signature
           );
-          console.log(
-            `provider just proxy an eth_sendTransaction rpc call, tx_hash: ${tx_hash}`
-          );
           await this.godwoker.waitForTransactionReceipt(tx_hash);
           this._send(payload, function (err, result) {
-            console.log(err, result);
             const res = {
               jsonrpc: result.jsonrpc,
               id: result.id,
             };
             const new_res = { ...res, ...{ result: tx_hash } };
-            console.log(
-              `eth_sendTransaction, new_res: ${JSON.stringify(
-                new_res,
-                null,
-                2
-              )}`
-            );
             callback(null, new_res);
           });
           break;
@@ -189,22 +176,15 @@ export default class PolyjuiceHttpProvider {
             polyjuice_tx
           );
 
-          console.log(`provider just proxy an eth_call rpc call.`);
-
-          console.log(`runResult: ${JSON.stringify(run_result, null, 2)}`);
           const abi_item =
             this.abi.get_intereted_abi_item_by_encoded_data(data);
           if (!abi_item) {
             this._send(payload, function (err, result) {
-              console.log(err, result);
               const res = {
                 jsonrpc: result.jsonrpc,
                 id: result.id,
               };
               const new_res = { ...res, ...{ result: run_result.return_data } };
-              console.log(
-                `no abi, new_res: ${JSON.stringify(new_res, null, 2)}`
-              );
               callback(null, new_res);
             });
           } else {
@@ -217,7 +197,6 @@ export default class PolyjuiceHttpProvider {
                 )
               );
             this._send(payload, function (err, result) {
-              console.log(err, result);
               const res = {
                 jsonrpc: result.jsonrpc,
                 id: result.id,
@@ -250,9 +229,6 @@ export default class PolyjuiceHttpProvider {
 
           new_payload.params[0].data = data_with_short_address;
 
-          console.log(
-            `provider just proxy an eth_estimateGas rpc call, data: ${data_with_short_address}`
-          );
           this._send(new_payload, callback);
           break;
         } catch (error) {

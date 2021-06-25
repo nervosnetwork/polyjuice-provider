@@ -57,7 +57,7 @@ export default class PolyjuiceHttpProviderForNode extends PolyjuiceHttpProvider 
       case "eth_sendTransaction":
         try {
           const { from, gas, gasPrice, value, data } = params[0];
-          const to = params[0].to || `0x${Array(40).fill(0).join('')}`;
+          const to = params[0].to || `0x${Array(40).fill(0).join("")}`;
           const data_with_short_address =
             await this.abi.refactor_data_with_short_address(
               data,
@@ -65,8 +65,6 @@ export default class PolyjuiceHttpProviderForNode extends PolyjuiceHttpProvider 
                 this.godwoker
               )
             );
-
-          console.log(data, data_with_short_address);
 
           const t = {
             from: from,
@@ -87,7 +85,7 @@ export default class PolyjuiceHttpProviderForNode extends PolyjuiceHttpProvider 
 
           // ready to sign tx
           console.log(
-            `it is very dangerous to sign with private-key, please use it carefully and only use in test development scence!`
+            `it is very dangerous to sign with private-key, please use it carefully and only use in test development!`
           );
           const message = this.godwoker.generateTransactionMessageToSign(
             polyjuice_tx,
@@ -103,24 +101,14 @@ export default class PolyjuiceHttpProviderForNode extends PolyjuiceHttpProvider 
             polyjuice_tx,
             signature
           );
-          console.log(
-            `provider just proxy an eth_sendTransaction rpc call, tx_hash: ${tx_hash}`
-          );
+
           await this.godwoker.waitForTransactionReceipt(tx_hash);
           this._send(payload, function (err, result) {
-            console.log(err, result);
             const res = {
               jsonrpc: result.jsonrpc,
               id: result.id,
             };
             const new_res = { ...res, ...{ result: tx_hash } };
-            console.log(
-              `eth_sendTransaction, new_res: ${JSON.stringify(
-                new_res,
-                null,
-                2
-              )}`
-            );
             callback(null, new_res);
           });
           break;

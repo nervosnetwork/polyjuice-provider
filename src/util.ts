@@ -410,7 +410,6 @@ export class Godwoker {
     signature: HexString
   ): Promise<string> {
     const l2_tx = { raw: raw_tx, signature: signature };
-    console.log(JSON.stringify(l2_tx, null, 2));
     const serialize_tx = this.serializeL2Transaction(l2_tx);
     return new Promise((resolve, reject) => {
       this.client.request(
@@ -433,7 +432,6 @@ export class Godwoker {
   }
 
   async gw_executeRawL2Transaction(raw_tx: RawL2Transaction): Promise<any> {
-    console.log(JSON.stringify(raw_tx, null, 2));
     const serialize_tx = this.serializeRawL2Transaction(raw_tx);
     return new Promise((resolve, reject) => {
       this.client.request(
@@ -560,7 +558,6 @@ export class Godwoker {
   encodeArgs(_tx: EthTransaction) {
     const { to, gasPrice, gas: gasLimit, value, data } = _tx;
 
-    console.log(_tx);
     // header
     const args_0_7 =
       "0x" +
