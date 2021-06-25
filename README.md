@@ -66,31 +66,19 @@ build:
     yarn build
 ```
 
-node version:
-
-```sh
-    /lib/index.node.js
-```
-
-usage:
+useage:
 
 ```js
 const PolyjuiceHttpProvider = require('./PolyjuiceHttpProvider');
 ```
 
-web version:
+typescript supported:
 
-```sh
-    /lib/index.js
-```
-
-useage:
-
-```js
+```ts
 import PolyjuiceHttpProvider from './PolyjuiceHttpProvider';
 ```
 
-browser version:
+browser version lies in:
 
 ```sh
     /build/browser/PolyjuiceHttpProvider.js

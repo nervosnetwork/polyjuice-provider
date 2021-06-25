@@ -67,14 +67,6 @@ const basicConfig = {
 };
 
 // ========= web3.js compatibale provider =========
-// can be used in nodejs env
-const serverConfig = {...basicConfig, ...{
-  target: 'node',
-  output: {...basicConfig.output, ...{
-    filename: 'index.node.js',
-  }}
-}};
-
 // can be used in web dev such as react
 const clientConfig = {...basicConfig, ...{
   target: 'web',
@@ -133,4 +125,4 @@ const ethersWalletSignerConfig = {...basicConfig, ...{
 }}
 
 
-module.exports = [serverConfig, clientConfig, browserConfig, cliConfig, ethersProvidersConfig, ethersWalletSignerConfig];
+module.exports = [clientConfig, browserConfig, cliConfig, ethersProvidersConfig, ethersWalletSignerConfig];
