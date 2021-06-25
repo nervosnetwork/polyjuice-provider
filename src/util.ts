@@ -511,9 +511,7 @@ export class Godwoker {
     while (true) {
       await this.asyncSleep(3000);
       const tx_receipt = await this.eth_getTransactionReceipt(tx_hash);
-      console.log(
-        `keep waitting for tx_receipt: ${JSON.stringify(tx_receipt)}`
-      );
+      console.log(`keep waitting for tx_receipt..`);
 
       if (tx_receipt) {
         break;

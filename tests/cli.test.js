@@ -172,7 +172,7 @@ test.serial("proxy rpc: call_transaction", async (t) => {
 //     // skip test, the last test in node env might not be done, will cause duplicated-tx
 //     return t.pass();
 //   }
-//
+// 
 //   const web3 = new Web3(provider);
 //   const txRes = await web3.eth.sendTransaction({
 //     from: ETH_ADDRESS,
