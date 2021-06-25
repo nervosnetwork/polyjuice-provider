@@ -1,4 +1,4 @@
-import { personalSign } from 'eth-sig-util';
+import { personalSign } from "eth-sig-util";
 
 declare global {
   interface Window {
@@ -31,16 +31,24 @@ export default class Signer {
   }
 
   // message without prefix "\x19Ethereum Signed Message:\n"
-  sign_with_private_key(message_without_prefix: string, address: string): string {
+  sign_with_private_key(
+    message_without_prefix: string,
+    address: string
+  ): string {
     if (!this.private_key) {
       throw new Error("private key not found! cannot use this method!");
     }
 
-    let privateKeyBuffer = Buffer.from(this.private_key.length === 40 ? this.private_key : this.private_key.slice(2), 'hex');
+    let privateKeyBuffer = Buffer.from(
+      this.private_key.length === 40
+        ? this.private_key
+        : this.private_key.slice(2),
+      "hex"
+    );
 
     const signature = personalSign(privateKeyBuffer, {
-      data: message_without_prefix
-    })
+      data: message_without_prefix,
+    });
 
     return signature;
   }
