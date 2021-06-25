@@ -1,4 +1,5 @@
 const test = require("ava");
+const Web3 = require("web3");
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
 
@@ -54,6 +55,9 @@ const TEST_ABI_ITEMS = [
     anonymous: false,
   },
 ];
+const ETH_ADDRESS = "0xFb2C72d3ffe10Ef7c9960272859a23D24db9e04A";
+const PRIVATE_KEY =
+  "0xcd277d1a87ffc737b01f6f079a721fe34910b673755130399ea379200a6ef9f2";
 var provider;
 
 test.before((t) => {
@@ -72,18 +76,30 @@ test.before((t) => {
     godwoken_rpc_url,
     provider_config,
     TEST_ABI_ITEMS,
-    process.env.PRIVATE_KEY
+    PRIVATE_KEY
   );
 });
 
-test.serial("sign method", (t) => {
-  const message = "0x1000";
-  const sig = provider.signer.sign_with_private_key(
-    message,
-    "0xFb2C72d3ffe10Ef7c9960272859a23D24db9e04A"
-  );
+test.serial("sign message method", (t) => {
+  const message =
+    "0x61c0994ff56d3cc888e41ee4a45080a431ffa84979ccf936b3ecc4887d7e9324";
+  const sig = provider.signer.sign_with_private_key(message, ETH_ADDRESS);
   t.is(
     sig,
-    "0x824b98f8dc8ab3b4d67cd1e6fdce9f9bfe3ac462124affaf19229cf43111deff06c170076d07ae7cc4cc4b2d7b375e5a1e4fae75eb68b77d4447f9af6e41bde01b"
+    "0x7de886aaeb6c6df85a6c5a7603bdfe1dab36da558f9460f8f2fe201b1053ed111aaec1cf024eada7393f0dec80587398ec5d83f8976eaa0662c3b8b4ad9ee9601c"
   );
 });
+
+// test.serial("proxy rpc: send_transaction", async (t) => {
+//   const web3 = new Web3(provider);
+//   const txHash = await web3.eth.sendTransaction({
+//     from: ETH_ADDRESS,
+//     to: `0x${Array(40).fill(0).join('')}`,
+//     value: "0x00",
+//     data: "0x00",
+//     gas: "0x30d40",
+//     gasPrice: "0x00",
+//   });
+//   console.log(txHash);
+//   t.true(typeof txHash === "string");
+// });

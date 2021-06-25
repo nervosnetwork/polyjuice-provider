@@ -30,14 +30,14 @@ export default class Signer {
     return _signature;
   }
 
-  // message with prefix "\x19Ethereum Signed Message:\n"
-  sign_with_private_key(message_with_prefix: string, address: string): string {
+  // message without prefix "\x19Ethereum Signed Message:\n"
+  sign_with_private_key(message_without_prefix: string, address: string): string {
     if (!this.private_key) {
       throw new Error("private key not found! cannot use this method!");
     }
 
     const accounts = new Accounts();
-    const sign = accounts.sign(message_with_prefix, this.private_key);
+    const sign = accounts.sign(message_without_prefix, this.private_key);
     return sign.signature;
   }
 
