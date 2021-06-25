@@ -66,7 +66,9 @@ export default class PolyjuiceWallet extends Wallet {
       };
       const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
       const message = await this.godwoker.generateMessageFromEthTransaction(t);
-      const _signature = await joinSignature(this._signingKey().signDigest(message));
+      const _signature = await joinSignature(
+        this._signingKey().signDigest(message)
+      );
       const signature = this.godwoker.packSignature(_signature);
       const l2_tx = { raw: polyjuice_tx, signature: signature };
       return this.godwoker.serializeL2Transaction(l2_tx);
