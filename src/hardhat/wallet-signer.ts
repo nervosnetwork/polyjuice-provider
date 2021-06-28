@@ -6,6 +6,7 @@ import { SigningKey } from "@ethersproject/signing-key";
 import { resolveProperties } from "@ethersproject/properties";
 import { getAddress } from "@ethersproject/address";
 import { GodwokerOption, Godwoker } from "../util";
+import { Abi, AbiItems } from "../abi";
 
 import { Logger } from "@ethersproject/logger";
 import { joinSignature, Bytes, BytesLike, hexlify } from "@ethersproject/bytes";
@@ -14,6 +15,7 @@ const logger = new Logger("Polyjuice-Wallet/0.0.1");
 export interface PolyjuiceConfig {
   godwokerOption: GodwokerOption;
   web3RpcUrl: string;
+  abiItems?: AbiItems;
 }
 
 export default interface PolyjuiceWallet extends Wallet {
@@ -26,6 +28,7 @@ export default interface PolyjuiceWallet extends Wallet {
 
 export default class PolyjuiceWallet extends Wallet {
   godwoker: Godwoker;
+  abi: Abi;
 
   constructor(
     privateKey: BytesLike | ExternallyOwnedAccount | SigningKey,
@@ -33,8 +36,9 @@ export default class PolyjuiceWallet extends Wallet {
     provider?: JsonRpcProvider
   ) {
     super(privateKey, provider);
-    const { web3RpcUrl, godwokerOption } = polyjuiceConfig;
+    const { web3RpcUrl, abiItems, godwokerOption } = polyjuiceConfig;
     this.godwoker = new Godwoker(web3RpcUrl, godwokerOption);
+    this.abi = new Abi(abiItems || []);
   }
 
   signTransaction(transaction: TransactionRequest): Promise<string> {
@@ -56,11 +60,29 @@ export default class PolyjuiceWallet extends Wallet {
       // use godwoken-polyjuice's transaction signing method
       // (which is deifferent tx type and use a message signing)
       // to sign transaction.
+      let data_with_short_address;
+      try {
+        data_with_short_address =
+          await this.abi.refactor_data_with_short_address(
+            hexlify(tx.data || "0x00"),
+            this.godwoker.getShortAddressByAllTypeEthAddress.bind(this.godwoker)
+          );
+      } catch (error) {
+        logger.throwArgumentError(
+          "can not replace data with short_address",
+          "data",
+          transaction.data
+        );
+        throw new Error(
+          `can not replace data with short_address ${transaction.data}`
+        );
+      }
+
       const t = {
         from: tx.from,
         to: tx.to || "0x" + "0".repeat(40),
         value: hexlify(tx.value || 0),
-        data: hexlify(tx.data || "0x00"),
+        data: data_with_short_address,
         gas: hexlify(tx.gasLimit || 50000),
         gasPrice: hexlify(tx.gasPrice || 0),
       };

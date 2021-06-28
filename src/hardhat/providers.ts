@@ -1,9 +1,38 @@
-import { JsonRpcProvider } from "@ethersproject/providers";
+import { JsonRpcProvider, TransactionRequest } from "@ethersproject/providers";
+import { Transaction } from "@ethersproject/transactions";
 import { hexlify } from "@ethersproject/bytes";
 import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { BigNumber } from "@ethersproject/bignumber";
+import { ConnectionInfo } from "@ethersproject/web";
+import { Networkish } from "@ethersproject/networks";
+import { Abi, AbiItems } from "../abi";
+import { Godwoker, GodwokerOption } from "../util";
+
+export interface PolyjuiceJsonRpcProvider extends JsonRpcProvider {
+  constructor(
+    godwoker_option: GodwokerOption,
+    abi: AbiItems,
+    url?: ConnectionInfo | string,
+    network?: Networkish
+  );
+}
 
 export class PolyjuiceJsonRpcProvider extends JsonRpcProvider {
+  abi: Abi;
+  godwoker: Godwoker;
+
+  constructor(
+    godwoker_option: GodwokerOption,
+    abi_items: AbiItems = [],
+    url?: ConnectionInfo | string,
+    network?: Networkish
+  ) {
+    super(url, network);
+    this.abi = new Abi(abi_items);
+    const web3_url = typeof url === "string" ? url : url.url;
+    this.godwoker = new Godwoker(web3_url, godwoker_option);
+  }
+
   async sendTransaction(
     signedTransaction: string | Promise<string>
   ): Promise<TransactionResponse> {
@@ -20,7 +49,7 @@ export class PolyjuiceJsonRpcProvider extends JsonRpcProvider {
         signedTransaction: hexTx,
       });
       // TODO replace with real eth tx unserialize from godwoken signed tx serialized hex string
-      const fake_tx = {
+      const fake_tx: Transaction = {
         hash: hash,
         from: "0x",
         nonce: 0,
@@ -35,6 +64,82 @@ export class PolyjuiceJsonRpcProvider extends JsonRpcProvider {
       (<any>error).transaction = null;
       (<any>error).transactionHash = null;
       throw error;
+    }
+  }
+
+  async send(method: string, params: Array<any>): Promise<any> {
+    switch (method) {
+      case "eth_call":
+        try {
+          const { data } = params[0];
+          const data_with_short_address =
+            await this.abi.refactor_data_with_short_address(
+              data,
+              this.godwoker.getShortAddressByAllTypeEthAddress.bind(
+                this.godwoker
+              )
+            );
+          // todo: use an common method to format params
+          params[0].data = data_with_short_address;
+          params[0].gas = params[0].gas || "0x345f3400";
+          params[0].gasPrice = params[0].gasPrice || "0x00";
+          params[0].value = params[0].value || "0x00";
+
+          const t = params[0];
+          const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
+
+          const run_result = await this.godwoker.gw_executeRawL2Transaction(
+            polyjuice_tx
+          );
+
+          const abi_item =
+            this.abi.get_intereted_abi_item_by_encoded_data(data);
+
+          if (!abi_item) return run_result.return_data;
+
+          const return_value_with_short_address =
+            await this.abi.refactor_return_value_with_short_address(
+              run_result.return_data,
+              abi_item,
+              this.godwoker.getEthAddressByAllTypeShortAddress.bind(
+                this.godwoker
+              )
+            );
+          return return_value_with_short_address;
+        } catch (error) {
+          this.emit("debug", {
+            action: "response",
+            error: error,
+            provider: this,
+          });
+
+          throw error;
+        }
+
+      case "eth_estimateGas":
+        try {
+          const { data } = params[0];
+          const data_with_short_address =
+            await this.abi.refactor_data_with_short_address(
+              data,
+              this.godwoker.getShortAddressByAllTypeEthAddress.bind(
+                this.godwoker
+              )
+            );
+          params[0].data = data_with_short_address;
+          return super.send(method, params);
+        } catch (error) {
+          this.emit("debug", {
+            action: "response",
+            error: error,
+            provider: this,
+          });
+
+          throw error;
+        }
+
+      default:
+        return super.send(method, params);
     }
   }
 

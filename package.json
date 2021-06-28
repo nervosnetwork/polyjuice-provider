@@ -13,7 +13,7 @@
     "compile": "tsc && cp -r src/godwoken/schemas lib/godwoken/",
     "build": "webpack --config=webpack.config.js",
     "example": "yarn gen-config-for-example && cp ./build/browser/PolyjuiceHttpProvider.js example/web/static/js/ && node example/web/server.js",
-    "test": "MODE=browser ava && MODE=node ava",
+    "test": "MODE=browser ava && MODE=node ava --timeout=100s",
     "publish": "npm publish",
     "test-publish": "npm publish --dry-run",
     "pack": "npm pack",
@@ -26,6 +26,7 @@
     "/lib"
   ],
   "devDependencies": {
+    "@ethersproject/contracts": "^5.4.0",
     "@types/node": "^14.14.37",
     "ava": "^3.15.0",
     "babel-plugin-transform-runtime": "^6.23.0",
