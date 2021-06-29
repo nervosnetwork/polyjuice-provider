@@ -1,6 +1,6 @@
 {
   "name": "@retric/test-provider",
-  "version": "0.0.1-rc7",
+  "version": "0.0.1-ethers520",
   "main": "lib/index.js",
   "license": "MIT",
   "engines": {
@@ -26,7 +26,6 @@
     "/lib"
   ],
   "devDependencies": {
-    "@ethersproject/contracts": "^5.4.0",
     "@types/node": "^14.14.37",
     "ava": "^3.15.0",
     "babel-plugin-transform-runtime": "^6.23.0",
@@ -48,8 +47,6 @@
   },
   "dependencies": {
     "@ckb-lumos/base": "^0.16.0",
-    "@ethersproject/providers": "^5.3.1",
-    "@ethersproject/wallet": "^5.3.0",
     "buffer": "^6.0.3",
     "encoding": "^0.1.13",
     "eth-sig-util": "^3.0.1",
