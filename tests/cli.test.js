@@ -109,7 +109,7 @@ test.serial("sign message method", (t) => {
 //     // skip test, the last test in node env might not be done, will cause duplicated-tx
 //     return t.pass();
 //   }
-// 
+//
 //   const web3 = new Web3(provider);
 //   const simplestorageV2 = new web3.eth.Contract(
 //     EXAMPLE_CONTRACT.abi,
@@ -129,7 +129,7 @@ test.serial("sign message method", (t) => {
 //     // skip test
 //     return t.pass();
 //   }
-// 
+//
 //   const web3 = new Web3(provider);
 //   const simplestorageV2 = new web3.eth.Contract(
 //     EXAMPLE_CONTRACT.abi,
