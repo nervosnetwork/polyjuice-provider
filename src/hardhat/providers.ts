@@ -1,4 +1,4 @@
-import { JsonRpcProvider, TransactionRequest } from "@ethersproject/providers";
+import { providers } from "ethers";
 import { Transaction } from "@ethersproject/transactions";
 import { hexlify } from "@ethersproject/bytes";
 import { TransactionResponse } from "@ethersproject/abstract-provider";
@@ -8,7 +8,7 @@ import { Networkish } from "@ethersproject/networks";
 import { Abi, AbiItems } from "../abi";
 import { Godwoker, GodwokerOption } from "../util";
 
-export interface PolyjuiceJsonRpcProvider extends JsonRpcProvider {
+export interface PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   constructor(
     godwoker_option: GodwokerOption,
     abi: AbiItems,
@@ -17,7 +17,7 @@ export interface PolyjuiceJsonRpcProvider extends JsonRpcProvider {
   );
 }
 
-export class PolyjuiceJsonRpcProvider extends JsonRpcProvider {
+export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   abi: Abi;
   godwoker: Godwoker;
 

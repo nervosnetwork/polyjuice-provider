@@ -1,6 +1,5 @@
-import { Wallet } from "@ethersproject/wallet";
+import { Wallet, providers } from "ethers";
 import { Provider, TransactionRequest } from "@ethersproject/abstract-provider";
-import { JsonRpcProvider } from "@ethersproject/providers";
 import { ExternallyOwnedAccount } from "@ethersproject/abstract-signer";
 import { SigningKey } from "@ethersproject/signing-key";
 import { resolveProperties } from "@ethersproject/properties";
@@ -22,7 +21,7 @@ export default interface PolyjuiceWallet extends Wallet {
   constructor(
     privateKey: BytesLike | ExternallyOwnedAccount | SigningKey,
     polyjuiceConfig: PolyjuiceConfig,
-    provider?: JsonRpcProvider
+    provider?: providers.JsonRpcProvider
   );
 }
 
@@ -33,7 +32,7 @@ export default class PolyjuiceWallet extends Wallet {
   constructor(
     privateKey: BytesLike | ExternallyOwnedAccount | SigningKey,
     polyjuiceConfig: PolyjuiceConfig,
-    provider?: JsonRpcProvider
+    provider?: providers.JsonRpcProvider
   ) {
     super(privateKey, provider);
     const { web3RpcUrl, abiItems, godwokerOption } = polyjuiceConfig;
