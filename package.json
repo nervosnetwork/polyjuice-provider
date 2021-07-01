@@ -1,6 +1,6 @@
 {
   "name": "@retric/test-provider",
-  "version": "0.0.1-ethers520",
+  "version": "0.0.1-ethers540",
   "main": "lib/index.js",
   "license": "MIT",
   "engines": {
@@ -50,7 +50,7 @@
     "buffer": "^6.0.3",
     "encoding": "^0.1.13",
     "eth-sig-util": "^3.0.1",
-    "ethers": "5.2.0",
+    "ethers": "5.4.0",
     "jayson": "^3.4.4",
     "keccak256": "^1.0.2",
     "web3": "^1.3.4",
