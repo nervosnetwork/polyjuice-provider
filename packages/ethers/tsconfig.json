@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "declaration": true,
+    "outDir": "./lib",
+    "lib": ["es2020", "DOM"],
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "allowUmdGlobalAccess": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "allowJs": true
+  },
+  "exclude": ["node_modules", "tests", "lib"],
+  "include": ["src"]
+}
