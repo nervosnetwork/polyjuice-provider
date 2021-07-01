@@ -1,56 +1,10 @@
-# Polyjuice Http Provider
+# (THIS BRANCH IS ONLY FOR TEST!) Polyjuice Http Provider
 
 a godwoken-compatible http provider for web3.js.
 
 now you can call your smart-contract on godwoken with metamask and eth address.
 
-## init web3
-
-Before:
-
-```js
-import Web3 from 'web3';
-
-var web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8024'));
-```
-
-Now:
-
-```js
-import Web3 from 'web3';
-import PolyjuiceHttpProvider from './PolyjuiceHttpProvider';
-
-var web3 = new Web3(new PolyjuiceHttpProvider('http://localhost:8024', GodwokenOption, ['your abi items array']));
-```
-
-for ```GodwokenOption```: see [here](/src/util.ts#L38-L49).
-
-## init contract instance
-
-Before:
-
-```js
-import Web3 from 'web3';
-
-var provider = new Web3.providers.HttpProvider('http://localhost:8024');
-var web3 = new Web3(provider);
-
-var contract = web3.eth.Contract(abi, contract_address);
-```
-
-Now:
-
-```js
-import Web3 from 'web3';
-import PolyjuiceHttpProvider from './PolyjuiceHttpProvider';
-
-var provider = new PolyjuiceHttpProvider('http://localhost:8024', GodwokenOption, ['your abi items array']);
-var web3 = new Web3(provider);
-
-var contract = web3.eth.Contract(abi, contract_address);
-```
-
-basically, PolyjuiceHttpProvider is just a extended class of [[web3-providers-http](https://github.com/ChainSafe/web3.js/tree/1.x/packages/web3-providers-http)]
+[docs](docs/usage.md)
 
 ## getting started
 
@@ -60,31 +14,63 @@ basically, PolyjuiceHttpProvider is just a extended class of [[web3-providers-ht
     yarn 
 ```
 
-build browser version:
+build:
 
 ```sh
     yarn build
 ```
 
-useage:
-
-```html
-<script src="../lib/polyjuice_provider.min.js"></script>
-```
-
-build node version:
-
-```sh
-    yarn build:node
-```
-
-useage:
+usage:
 
 ```js
-const PolyjuiceHttpProvider = require('../lib/polyjuice_provider.min.js');
+const PolyjuiceHttpProvider = require('./PolyjuiceHttpProvider');
 ```
 
-test:
+typescript supported:
+
+```ts
+import PolyjuiceHttpProvider from './PolyjuiceHttpProvider';
+```
+
+browser version lies in:
+
+```sh
+    /build/browser/PolyjuiceHttpProvider.js
+```
+
+usage:
+
+```html
+<script src="/path/to/PolyjuiceHttpProvider.js"></script>
+```
+
+### hardhat
+
+hardhat is using `ethers` instead of `web3.js`, you can find ethers-compatibale `JsonRpcProvider` and `WalletSigner` in `/lib/hardhat/providers`
+
+usage:
+
+```js
+const { PolyjuiceJsonRpcProvider } = require('PolyjuiceHttpProvider/lib/hardhat/providers');
+const PolyjuiceWallet = require('PolyjuiceHttpProvider/lib/hardhat/wallet-signer');
+```
+
+
+---
+
+before you can run test and an minimal example, create an .test.env file with some godwoken-polyjuice config.
+
+```sh
+cat > ./test.env <<EOF
+WEB3_JSON_RPC=<godwoken web3 rpc>
+ROLLUP_TYPE_HASH=<godwoken rollup type hash>
+ETH_ACCOUNT_LOCK_CODE_HASH=<eth account lock code hash>
+EXAMPLE_CONTRACT_ADDRESS=<an example test contract deployed address>
+PRIVATE_KEY=<your eth test private key, do not use in production>
+ETH_ADDRESS=<your eth test address, match with private_key above>
+```
+
+## test
 
 ```sh
     yarn test

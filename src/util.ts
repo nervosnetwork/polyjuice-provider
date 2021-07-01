@@ -1,5 +1,4 @@
 import { Script, Hash, utils, HexNumber, HexString } from "@ckb-lumos/base";
-
 import { GodwokenUtils, RawL2Transaction, L2Transaction } from "./godwoken";
 import {
   SerializeL2Transaction,
@@ -366,15 +365,34 @@ export class Godwoker {
   generateTransactionMessageToSign(
     tx: RawL2Transaction,
     sender_script_hash: string,
-    receiver_script_hash: string
+    receiver_script_hash: string,
+    is_add_prefix_in_signing_message: boolean = false
   ) {
-    const add_prefix_in_signing_message = false;
     return this.godwkenUtils.generateTransactionMessageToSign(
       tx,
       sender_script_hash,
       receiver_script_hash,
-      add_prefix_in_signing_message
+      is_add_prefix_in_signing_message
     );
+  }
+
+  async generateMessageFromEthTransaction(tx: EthTransaction) {
+    const { from, to } = tx;
+
+    const to_id = await this.allTypeEthAddressToAccountId(to);
+    const sender_script_hash = this.computeScriptHashByEoaEthAddress(from);
+    const receiver_script_hash = await this.getScriptHashByAccountId(
+      parseInt(to_id)
+    );
+
+    const polyjuice_tx = await this.assembleRawL2Transaction(tx);
+    const message = this.generateTransactionMessageToSign(
+      polyjuice_tx,
+      sender_script_hash,
+      receiver_script_hash,
+      true // with personal sign prefixed
+    );
+    return message;
   }
 
   serializeL2Transaction(tx: L2Transaction) {
@@ -392,7 +410,6 @@ export class Godwoker {
     signature: HexString
   ): Promise<string> {
     const l2_tx = { raw: raw_tx, signature: signature };
-    console.log(JSON.stringify(l2_tx, null, 2));
     const serialize_tx = this.serializeL2Transaction(l2_tx);
     return new Promise((resolve, reject) => {
       this.client.request(
@@ -415,7 +432,6 @@ export class Godwoker {
   }
 
   async gw_executeRawL2Transaction(raw_tx: RawL2Transaction): Promise<any> {
-    console.log(JSON.stringify(raw_tx, null, 2));
     const serialize_tx = this.serializeRawL2Transaction(raw_tx);
     return new Promise((resolve, reject) => {
       this.client.request(
@@ -495,9 +511,7 @@ export class Godwoker {
     while (true) {
       await this.asyncSleep(3000);
       const tx_receipt = await this.eth_getTransactionReceipt(tx_hash);
-      console.log(
-        `keep waitting for tx_receipt: ${JSON.stringify(tx_receipt)}`
-      );
+      console.log(`keep waitting for tx_receipt..`);
 
       if (tx_receipt) {
         break;
@@ -542,7 +556,6 @@ export class Godwoker {
   encodeArgs(_tx: EthTransaction) {
     const { to, gasPrice, gas: gasLimit, value, data } = _tx;
 
-    console.log(_tx);
     // header
     const args_0_7 =
       "0x" +

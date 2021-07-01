@@ -1,6 +1,8 @@
 import { AbiOutput, AbiInput, AbiItem } from "web3-utils";
 const Web3EthAbi = require("web3-eth-abi");
 
+export type AbiItems = AbiItem[];
+
 export interface MethodIDs {
   [method_id: string]: AbiItem;
 }
@@ -189,7 +191,6 @@ export class Abi {
       0,
       decode_values_with_refactor.length - 1
     );
-    console.log(decode_values_with_refactor);
     return Web3EthAbi.encodeParameters(
       output_value_types,
       decode_values_with_refactor

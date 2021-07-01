@@ -1,6 +1,7 @@
 // shared config (dev and prod)
 const path = require("path");
 const webpack = require("webpack");
+const nodeExternals = require('webpack-node-externals');
 
 const basicConfig = {
   context: path.resolve(__dirname, "./src"),
@@ -15,6 +16,10 @@ const basicConfig = {
     libraryExport: 'default',
     globalObject: 'this',
   },
+
+  // in order to ignore all modules in node_modules folder 
+  externals: [nodeExternals()],
+
   resolve: {
     extensions: [".js", ".ts"],
     fallback: {
@@ -29,7 +34,8 @@ const basicConfig = {
       "./godwoken": path.resolve(__dirname, "src/godwoken"),
       buffer: path.join(__dirname, "./node_modules/buffer"),
       Buffer: path.join(__dirname, "./node_modules/buffer"),
-      process: "process/browser"
+      process: "process/browser",
+      "@ethersproject/wallet/src.ts/_version": path.join(__dirname, "./node_modules/@ethersproject/wallet/src.ts/_version"),
     },
   },
   module: {
@@ -60,18 +66,63 @@ const basicConfig = {
   },
 };
 
-const serverConfig = {...basicConfig, ...{
-  target: 'node',
-  output: {...basicConfig.output, ...{
-    filename: 'index.node.js',
-  }}
-}};
-
+// ========= web3.js compatibale provider =========
+// can be used in web dev such as react
 const clientConfig = {...basicConfig, ...{
-  target: 'web', // <=== can be omitted as default is 'web'
+  target: 'web',
   output: {...basicConfig.output, ...{
     filename: 'index.js',
   }}
 }};
 
-module.exports = [serverConfig, clientConfig];
+// can be used in nodejs env for sign_message_with_private_key
+const cliConfig = {...basicConfig, ...{
+  target: 'node',
+  entry: "./cli.ts",
+  output: {...basicConfig.output, ...{
+    filename: 'cli.js',
+  }}
+}};
+
+// can be used by html script tag. eg: <script src="/path/to/PolyjuiceHttpProvider.js"></script>
+const browserConfig = {...basicConfig, ...{
+  target: 'web',
+  output: {...basicConfig.output, ...{
+    path: path.resolve(__dirname, "./build/browser/"),
+    filename: 'PolyjuiceHttpProvider.js',
+  }},
+  externals: [],
+}}
+
+//======== ethers compatibale provider and signer ===========
+// can be used in hardhat
+const ethersProvidersConfig = {...basicConfig, ...{
+  target: 'web',
+  context: path.resolve(__dirname, "./src/hardhat"),
+  entry: "./providers.ts",
+  output: {...basicConfig.output, ...{
+    path: path.resolve(__dirname, "./lib/hardhat/"),
+    filename: 'providers.js',
+    libraryTarget: 'umd',
+    library: 'PolyjuiceProviders',
+    libraryExport: 'default',
+    globalObject: 'this',
+  }}
+}}
+
+const ethersWalletSignerConfig = {...basicConfig, ...{
+  target: 'web',
+  context: path.resolve(__dirname, "./src/hardhat"),
+  entry: "./wallet-signer.ts",
+  output: {...basicConfig.output, ...{
+    path: path.resolve(__dirname, "./lib/hardhat/"),
+    filename: 'wallet-signer.js',
+    libraryTarget: 'umd',
+    library: 'PolyjuiceWalletSigner',
+    libraryExport: 'default',
+    globalObject: 'this',
+  }}
+}}
+
+
+module.exports = [clientConfig, browserConfig, cliConfig, ethersProvidersConfig, ethersWalletSignerConfig];
