@@ -1,6 +1,6 @@
-import test from 'ava';
+import test from "ava";
 import { Contract, ContractFactory } from "ethers";
-import { AbiItems } from '../lib/abi';
+import { AbiItems } from "../lib/abi";
 import { PolyjuiceJsonRpcProvider } from "../lib/hardhat/providers";
 import PolyjuiceWallet, { PolyjuiceConfig } from "../lib/hardhat/wallet-signer";
 
@@ -118,17 +118,17 @@ test.serial("deploy_example_contract", async (t) => {
     // skip test
     return t.pass();
   }
-  
-  const implementationFactory = new ContractFactory(
-        SimpleStorageV2_Abi,
-        SimpleStorageV2_ByteCode,
-        deployer,
-      );
 
-      const tx = implementationFactory.getDeployTransaction();
-      tx.gasPrice = 0;
-      tx.gasLimit = 500000;
-      const res = deployer.sendTransaction(tx);
+  const implementationFactory = new ContractFactory(
+    SimpleStorageV2_Abi,
+    SimpleStorageV2_ByteCode,
+    deployer
+  );
+
+  const tx = implementationFactory.getDeployTransaction();
+  tx.gasPrice = 0;
+  tx.gasLimit = 500000;
+  const res = deployer.sendTransaction(tx);
 
   const txReceipt = await res.wait();
   t.is(txReceipt.contractAddress.slice(0, 2), "0x");
