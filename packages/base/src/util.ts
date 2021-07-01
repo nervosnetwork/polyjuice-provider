@@ -1,13 +1,13 @@
 import { Script, Hash, utils, HexNumber, HexString } from "@ckb-lumos/base";
-import { GodwokenUtils, RawL2Transaction, L2Transaction } from "./godwoken";
+import { GodwokenUtils, RawL2Transaction, L2Transaction } from "@polyjuice-provider/godwoken";
 import {
   SerializeL2Transaction,
   SerializeRawL2Transaction,
-} from "./godwoken/schemas";
+} from "@polyjuice-provider/godwoken/schemas";
 import {
   NormalizeL2Transaction,
   NormalizeRawL2Transaction,
-} from "./godwoken/normalizer";
+} from "@polyjuice-provider/godwoken/lib/normalizer";
 import { Reader } from "ckb-js-toolkit";
 
 const jaysonBrowserClient = require("jayson/lib/client/browser");

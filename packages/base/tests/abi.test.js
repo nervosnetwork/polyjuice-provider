@@ -6,7 +6,7 @@ require("dotenv").config({ path: root(".test.env") });
 const browserEnv = require("browser-env");
 if (process.env.MODE === "browser") browserEnv();
 
-const PolyjuiceHttpProvider = require("../lib/index");
+const PolyjuiceHttpProvider = require("../../../lib/index");
 
 const TEST_ABI_ITEMS = [
   {

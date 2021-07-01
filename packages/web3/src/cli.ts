@@ -9,8 +9,8 @@ import * as http from "http";
 import * as https from "https";
 import { JsonRpcResponse } from "web3-core-helpers";
 import { AbiItem } from "web3-utils";
-import { GodwokerOption } from "./util";
-import Signer from "./signer";
+import { GodwokerOption } from "@polyjuice-provider/base/lib/util";
+import Signer from "@polyjuice-provider/base/lib/signer";
 import PolyjuiceHttpProvider from "./index";
 
 export interface HttpHeader {

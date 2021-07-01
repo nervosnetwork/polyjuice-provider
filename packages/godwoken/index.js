@@ -7,8 +7,8 @@ const {
   NormalizeCreateAccount,
   NormalizeWithdrawalRequest,
   NormalizeRawWithdrawalRequest,
-} = require("./normalizer");
-const normalizer = require("./normalizer");
+} = require("./lib/normalizer");
+const normalizer = require("./lib/normalizer");
 const core = require("./schemas");
 
 function numberToUInt32LE(value) {

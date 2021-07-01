@@ -9,9 +9,10 @@ import { errors } from "web3-core-helpers";
 import { XMLHttpRequest as XHR2 } from "xhr2-cookies";
 import { JsonRpcResponse } from "web3-core-helpers";
 import { AbiItem } from "web3-utils";
-import { Godwoker, GodwokerOption } from "./util";
-import Signer from "./signer";
-import { Abi } from "./abi";
+
+import { Godwoker, GodwokerOption } from "@polyjuice-provider/base/lib/util";
+import Signer from "@polyjuice-provider/base/lib/signer";
+import { Abi } from "@polyjuice-provider/base/lib/abi";
 
 export interface HttpHeader {
   name: string;
