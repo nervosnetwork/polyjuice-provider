@@ -65,23 +65,23 @@ export interface WithdrawalRequest {
 export interface WithdrawalLockArgs {
   // the original deposit info
   // used for helping programs generate reverted custodian cell
-  deposit_block_hash: Hash,
-  deposit_block_number: HexNumber,
+  deposit_block_hash: Hash;
+  deposit_block_number: HexNumber;
   // the original custodian lock hash
-  withdrawal_block_hash: Hash,
-  withdrawal_block_number: HexNumber,
+  withdrawal_block_hash: Hash;
+  withdrawal_block_number: HexNumber;
   // buyer can pay sell_amount token to unlock
-  sudt_script_hash: Hash,
-  sell_amount: HexNumber,
-  sell_capacity: HexNumber,
+  sudt_script_hash: Hash;
+  sell_amount: HexNumber;
+  sell_capacity: HexNumber;
   // layer1 lock to withdraw after challenge period
-  owner_lock_hash: Hash,
+  owner_lock_hash: Hash;
   // layer1 lock to receive the payment, must exists on the chain
-  payment_lock_hash: Hash,
+  payment_lock_hash: Hash;
 }
 
 export interface UnlockWithdrawalViaFinalize {
-  block_proof: HexString,
+  block_proof: HexString;
 }
 
 // export interface HeaderInfo {
@@ -91,15 +91,15 @@ export interface UnlockWithdrawalViaFinalize {
 
 // todo RemoveMeLater: load from new-generate schemas.
 export interface AccountMerkleState {
-  merkle_root: Hash,
-  count: Uint32,
+  merkle_root: Hash;
+  count: Uint32;
 }
 
 export interface SubmitTransactions {
-  tx_witness_root: Hash,
-  tx_count: Uint32,
-  compacted_post_root_list: HexString[] 
-} 
+  tx_witness_root: Hash;
+  tx_count: Uint32;
+  compacted_post_root_list: HexString[];
+}
 
 export interface RawL2Block {
   number: Uint64;
@@ -107,25 +107,24 @@ export interface RawL2Block {
   block_producer_id: Uint32;
   stake_cell_owner_lock_hash: Hash;
   timestamp: Uint64;
-  prev_account: AccountMerkleState,
-  post_account: AccountMerkleState,
-  submit_transactions: SubmitTransactions,
-  submit_withdrawals: WithdrawalRequest
-
+  prev_account: AccountMerkleState;
+  post_account: AccountMerkleState;
+  submit_transactions: SubmitTransactions;
+  submit_withdrawals: WithdrawalRequest;
 }
 
 export interface L2Block {
   raw: RawL2Block;
   kv_state: string[];
-  kv_state_proof: Hash,
+  kv_state_proof: Hash;
   transactions: L2Transaction[];
-  block_proof: Hash,
-  withdrawal_requests: WithdrawalRequest[],
-  hash: Hash,
+  block_proof: Hash;
+  withdrawal_requests: WithdrawalRequest[];
+  hash: Hash;
 }
 
 export interface TxReceipt {
-  logs: []
+  logs: [];
 }
 
 export enum Status {
@@ -136,7 +135,7 @@ export enum Status {
 export declare class Godwoken {
   constructor(url: string);
 
-  ping(): Promise<'pong'>;
+  ping(): Promise<"pong">;
   getTipBlockHash(): Promise<Hash>;
   getBlockHash(block_number: Uint32): Promise<Hash>;
   getBlock(block_hash: Hash): Promise<L2Block>;
@@ -151,7 +150,7 @@ export declare class Godwoken {
   getScript(script_hash: Hash): Promise<Script>;
   getScriptHash(account_id: Uint32): Promise<Hash>;
   getData(data_hash: Hash): Promise<HexString>;
-  getTransactionReceipt(tx_hash: Hash): Promise<TxReceipt>
+  getTransactionReceipt(tx_hash: Hash): Promise<TxReceipt>;
 }
 
 export declare class GodwokenUtils {
@@ -160,11 +159,9 @@ export declare class GodwokenUtils {
     raw_l2tx: RawL2Transaction,
     sender_script_hash: string,
     receiver_script_hash: string,
-    add_prefix?: boolean,
+    add_prefix?: boolean
   ): Hash;
-  generateWithdrawalMessageToSign(
-    raw_request: RawWithdrawalRequest
-  ): Hash;
+  generateWithdrawalMessageToSign(raw_request: RawWithdrawalRequest): Hash;
   static createAccountRawL2Transaction(
     from_id: Uint32,
     nonce: Uint32,

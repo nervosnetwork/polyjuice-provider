@@ -1,11 +1,11 @@
 import { Hash, HexNumber, HexString, Script } from "@ckb-lumos/base";
 import { normalizers, Reader } from "ckb-js-toolkit";
 import {
-    L2Transaction,
-    RawL2Transaction,
-    CreateAccount,
-    RawWithdrawalRequest,
-    WithdrawalRequest,
+  L2Transaction,
+  RawL2Transaction,
+  CreateAccount,
+  RawWithdrawalRequest,
+  WithdrawalRequest,
 } from "./index";
 
 // Taken for now from https://github.com/xxuejie/ckb-js-toolkit/blob/68f5ff709f78eb188ee116b2887a362123b016cc/src/normalizers.js#L17-L69,
@@ -158,30 +158,30 @@ export function NormalizeL2Transaction(
 }
 
 export function NormalizeRawWithdrawalRequest(
-    raw_request: object,
-    { debugPath = "raw_withdrawal_request" } = {}
+  raw_request: object,
+  { debugPath = "raw_withdrawal_request" } = {}
 ) {
-    return normalizeObject(debugPath, raw_request, {
-        nonce: normalizeHexNumber(4),
-        capacity: normalizeHexNumber(8),
-        amount: normalizeHexNumber(16),
-        sudt_script_hash: normalizeRawData(32),
-        account_script_hash: normalizeRawData(32),
-        sell_amount: normalizeHexNumber(16),
-        sell_capacity: normalizeHexNumber(8),
-        owner_lock_hash: normalizeRawData(32),
-        payment_lock_hash: normalizeRawData(32),
-    });
+  return normalizeObject(debugPath, raw_request, {
+    nonce: normalizeHexNumber(4),
+    capacity: normalizeHexNumber(8),
+    amount: normalizeHexNumber(16),
+    sudt_script_hash: normalizeRawData(32),
+    account_script_hash: normalizeRawData(32),
+    sell_amount: normalizeHexNumber(16),
+    sell_capacity: normalizeHexNumber(8),
+    owner_lock_hash: normalizeRawData(32),
+    payment_lock_hash: normalizeRawData(32),
+  });
 }
 
 export function NormalizeWithdrawalRequest(
-    request: WithdrawalRequest,
-    { debugPath = "withdrawal_request" } = {}
+  request: WithdrawalRequest,
+  { debugPath = "withdrawal_request" } = {}
 ) {
-    return normalizeObject(debugPath, request, {
-        raw: toNormalize(NormalizeRawWithdrawalRequest),
-        signature: normalizeRawData(65),
-    });
+  return normalizeObject(debugPath, request, {
+    raw: toNormalize(NormalizeRawWithdrawalRequest),
+    signature: normalizeRawData(65),
+  });
 }
 
 export interface UnoinType {
@@ -199,7 +199,7 @@ export function NormalizeCreateAccount(
 }
 
 export interface SUDTQuery {
-  account_id: HexNumber,
+  account_id: HexNumber;
 }
 
 export function NormalizeSUDTQuery(
@@ -208,13 +208,13 @@ export function NormalizeSUDTQuery(
 ) {
   return normalizeObject(debugPath, sudt_query, {
     account_id: normalizeHexNumber(4),
-  })
+  });
 }
 
 export interface SUDTTransfer {
-  to: HexNumber,
-  amount: HexNumber,
-  fee: HexNumber,
+  to: HexNumber;
+  amount: HexNumber;
+  fee: HexNumber;
 }
 
 export function NormalizeSUDTTransfer(
@@ -225,7 +225,7 @@ export function NormalizeSUDTTransfer(
     to: normalizeHexNumber(4),
     amount: normalizeHexNumber(16),
     fee: normalizeHexNumber(16),
-  })
+  });
 }
 
 export function NormalizeWithdrawalLockArgs(

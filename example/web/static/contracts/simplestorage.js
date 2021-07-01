@@ -1,5 +1,65 @@
 const SimpleContract = {
-    "address": "0x0a00000000000000000000000000000000000000",
-    "contract_name": "SimpleStorage",
-    "abi": [{"inputs":[],"stateMutability":"payable","type":"constructor"},{"inputs":[],"name":"get","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"x","type":"uint256"}],"name":"set","outputs":[],"stateMutability":"payable","type":"function"}],
-}
+  contractName: "SimpleStorageV2",
+  abi: [
+    {
+      constant: false,
+      inputs: [
+        {
+          internalType: "address",
+          name: "newValue",
+          type: "address",
+        },
+      ],
+      name: "set",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+    {
+      constant: true,
+      inputs: [],
+      name: "get",
+      outputs: [
+        {
+          internalType: "address",
+          name: "",
+          type: "address",
+        },
+      ],
+      payable: false,
+      stateMutability: "view",
+      type: "function",
+    },
+    {
+      constant: false,
+      inputs: [
+        {
+          internalType: "address[]",
+          name: "newValue",
+          type: "address[]",
+        },
+      ],
+      name: "setArray",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+    {
+      constant: true,
+      inputs: [],
+      name: "getArray",
+      outputs: [
+        {
+          internalType: "address[]",
+          name: "",
+          type: "address[]",
+        },
+      ],
+      payable: false,
+      stateMutability: "view",
+      type: "function",
+    },
+  ],
+};
