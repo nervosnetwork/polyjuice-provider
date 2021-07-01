@@ -2,5 +2,5 @@ node_modules
 lib
 .DS_Store
 build/browser/
-example/web/static/js/
+example/web/static/js/*
 .test.env

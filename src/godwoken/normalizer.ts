@@ -189,12 +189,20 @@ export interface UnoinType {
   value: any;
 }
 
+export function NormalizeFee(fee: object, { debugPath = "fee" } = {}) {
+  return normalizeObject(debugPath, fee, {
+    sudt_id: normalizeHexNumber(4),
+    amount: normalizeHexNumber(16),
+  });
+}
+
 export function NormalizeCreateAccount(
   createAccount: object,
   { debugPath = "create_account" } = {}
 ) {
   return normalizeObject(debugPath, createAccount, {
     script: toNormalize(normalizers.NormalizeScript),
+    fee: toNormalize(NormalizeFee),
   });
 }
 

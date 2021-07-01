@@ -186,7 +186,13 @@ class GodwokenUtils {
   }
 
   static createAccountRawL2Transaction(from_id, nonce, script) {
-    const create_account = { script };
+    const create_account = {
+      script,
+      fee: {
+        sudt_id: "0x1",
+        amount: "0x0",
+      },
+    };
     const enum_tag = "0x00000000";
     const create_account_part = new Reader(
       core.SerializeCreateAccount(NormalizeCreateAccount(create_account))

@@ -4,56 +4,6 @@ const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
 
 const PolyjuiceHttpProvider = require("../lib/cli");
-const TEST_ABI_ITEMS = [
-  {
-    inputs: [{ type: "address", name: "" }],
-    constant: true,
-    name: "isInstantiation",
-    payable: false,
-    outputs: [{ type: "bool", name: "" }],
-    type: "function",
-  },
-  {
-    inputs: [
-      { type: "address[]", name: "_owners" },
-      { type: "uint256", name: "_required" },
-      { type: "uint256", name: "_dailyLimit" },
-    ],
-    constant: false,
-    name: "create",
-    payable: false,
-    outputs: [{ type: "address", name: "wallet" }],
-    type: "function",
-  },
-  {
-    inputs: [
-      { type: "address", name: "" },
-      { type: "uint256", name: "" },
-    ],
-    constant: true,
-    name: "instantiations",
-    payable: false,
-    outputs: [{ type: "address", name: "" }],
-    type: "function",
-  },
-  {
-    inputs: [{ type: "address", name: "creator" }],
-    constant: true,
-    name: "getInstantiationCount",
-    payable: false,
-    outputs: [{ type: "uint256", name: "" }],
-    type: "function",
-  },
-  {
-    inputs: [
-      { indexed: false, type: "address", name: "sender" },
-      { indexed: false, type: "address", name: "instantiation" },
-    ],
-    type: "event",
-    name: "ContractInstantiation",
-    anonymous: false,
-  },
-];
 const ETH_ADDRESS = "0xFb2C72d3ffe10Ef7c9960272859a23D24db9e04A";
 const PRIVATE_KEY =
   "0xcd277d1a87ffc737b01f6f079a721fe34910b673755130399ea379200a6ef9f2";
@@ -154,36 +104,39 @@ test.serial("sign message method", (t) => {
   );
 });
 
-test.serial("proxy rpc: call_transaction", async (t) => {
-  const web3 = new Web3(provider);
-  const simplestorageV2 = new web3.eth.Contract(
-    EXAMPLE_CONTRACT.abi,
-    process.env.EXAMPLE_CONTRACT_ADDRESS
-  );
-  const result = await simplestorageV2.methods
-    .get()
-    .call({ from: ETH_ADDRESS });
-  t.is(result.slice(0, 2), "0x");
-  t.is(result.length, 42);
-});
-
 // test.serial("proxy rpc: send_transaction", async (t) => {
 //   if (process.env.MODE === "browser") {
 //     // skip test, the last test in node env might not be done, will cause duplicated-tx
 //     return t.pass();
 //   }
-//
+// 
 //   const web3 = new Web3(provider);
-//   const txRes = await web3.eth.sendTransaction({
-//     from: ETH_ADDRESS,
-//     to: `0x${Array(40).fill(0).join("")}`,
-//     value: "0x00",
-//     data: "0x00",
-//     gas: "0x30d40",
-//     gasPrice: "0x00",
-//   });
+//   const simplestorageV2 = new web3.eth.Contract(
+//     EXAMPLE_CONTRACT.abi,
+//     process.env.EXAMPLE_CONTRACT_ADDRESS
+//   );
+//   const txRes = await simplestorageV2.methods
+//     .set(ETH_ADDRESS)
+//     .send({ from: ETH_ADDRESS, gas: "0x30d40", gasPrice: "0x00" });
 //   t.is(txRes.transactionHash.slice(0, 2), "0x");
 //   t.is(txRes.transactionHash.length, 66);
 //   t.is(typeof txRes.gasUsed, "number");
 //   t.is(txRes.status, true);
+// });
+
+// test.serial("proxy rpc: call_transaction", async (t) => {
+//   if (process.env.MODE === "browser") {
+//     // skip test
+//     return t.pass();
+//   }
+// 
+//   const web3 = new Web3(provider);
+//   const simplestorageV2 = new web3.eth.Contract(
+//     EXAMPLE_CONTRACT.abi,
+//     process.env.EXAMPLE_CONTRACT_ADDRESS
+//   );
+//   const result = await simplestorageV2.methods
+//     .get();
+//   t.is(result.slice(0, 2), "0x");
+//   t.is(result.length, 42);
 // });

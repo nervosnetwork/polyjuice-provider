@@ -352,6 +352,10 @@
         {
           "name": "payment_lock_hash",
           "type": "Byte32"
+        },
+        {
+          "name": "fee",
+          "type": "Fee"
         }
       ]
     },
@@ -549,12 +553,30 @@
       "items": ["CreateAccount"]
     },
     {
+      "type": "struct",
+      "name": "Fee",
+      "fields": [
+        {
+          "name": "sudt_id",
+          "type": "Uint32"
+        },
+        {
+          "name": "amount",
+          "type": "Uint128"
+        }
+      ]
+    },
+    {
       "type": "table",
       "name": "CreateAccount",
       "fields": [
         {
           "name": "script",
           "type": "Script"
+        },
+        {
+          "name": "fee",
+          "type": "Fee"
         }
       ]
     },

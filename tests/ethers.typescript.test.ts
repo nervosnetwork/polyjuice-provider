@@ -184,6 +184,7 @@ test.serial("call set array address on contract", async (t) => {
   t.is(typeof res.wait, "function");
   const txReceipt = await res.wait();
   t.not(txReceipt, undefined);
+  t.is(txReceipt.transactionHash.slice(0, 2), "0x");
 });
 
 test.serial("call contract get array address", async (t) => {
@@ -198,6 +199,8 @@ test.serial("call contract get array address", async (t) => {
     deployer
   );
 
-  const address_array = await simpleStorageV2.callStatic.getArray();
+  const address_array = await simpleStorageV2.getArray({
+    from: process.env.ETH_ADDRESS,
+  });
   t.deepEqual(address_array, test_address_array);
 });

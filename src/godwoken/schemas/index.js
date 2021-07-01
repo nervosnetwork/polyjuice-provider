@@ -1367,6 +1367,35 @@ export class RawWithdrawalRequest {
     );
   }
 
+  getFee() {
+    return new Fee(
+      this.view.buffer.slice(
+        0 +
+          Uint32.size() +
+          Uint64.size() +
+          Uint128.size() +
+          Byte32.size() +
+          Byte32.size() +
+          Uint128.size() +
+          Uint64.size() +
+          Byte32.size() +
+          Byte32.size(),
+        0 +
+          Uint32.size() +
+          Uint64.size() +
+          Uint128.size() +
+          Byte32.size() +
+          Byte32.size() +
+          Uint128.size() +
+          Uint64.size() +
+          Byte32.size() +
+          Byte32.size() +
+          Fee.size()
+      ),
+      { validate: false }
+    );
+  }
+
   validate(compatible = false) {
     assertDataLength(this.view.byteLength, RawWithdrawalRequest.size());
     this.getNonce().validate(compatible);
@@ -1378,6 +1407,7 @@ export class RawWithdrawalRequest {
     this.getSellCapacity().validate(compatible);
     this.getOwnerLockHash().validate(compatible);
     this.getPaymentLockHash().validate(compatible);
+    this.getFee().validate(compatible);
   }
   static size() {
     return (
@@ -1390,7 +1420,8 @@ export class RawWithdrawalRequest {
       Uint128.size() +
       Uint64.size() +
       Byte32.size() +
-      Byte32.size()
+      Byte32.size() +
+      Fee.size()
     );
   }
 }
@@ -1406,7 +1437,8 @@ export function SerializeRawWithdrawalRequest(value) {
       Uint128.size() +
       Uint64.size() +
       Byte32.size() +
-      Byte32.size()
+      Byte32.size() +
+      Fee.size()
   );
   const view = new DataView(array.buffer);
   array.set(new Uint8Array(SerializeUint32(value.nonce)), 0);
@@ -1463,6 +1495,19 @@ export function SerializeRawWithdrawalRequest(value) {
       Byte32.size() +
       Uint128.size() +
       Uint64.size() +
+      Byte32.size()
+  );
+  array.set(
+    new Uint8Array(SerializeFee(value.fee)),
+    0 +
+      Uint32.size() +
+      Uint64.size() +
+      Uint128.size() +
+      Byte32.size() +
+      Byte32.size() +
+      Uint128.size() +
+      Uint64.size() +
+      Byte32.size() +
       Byte32.size()
   );
   return array.buffer;
@@ -2351,6 +2396,48 @@ export function SerializeMetaContractArgs(value) {
   }
 }
 
+export class Fee {
+  constructor(reader, { validate = true } = {}) {
+    this.view = new DataView(assertArrayBuffer(reader));
+    if (validate) {
+      this.validate();
+    }
+  }
+
+  getSudtId() {
+    return new Uint32(this.view.buffer.slice(0, 0 + Uint32.size()), {
+      validate: false,
+    });
+  }
+
+  getAmount() {
+    return new Uint128(
+      this.view.buffer.slice(
+        0 + Uint32.size(),
+        0 + Uint32.size() + Uint128.size()
+      ),
+      { validate: false }
+    );
+  }
+
+  validate(compatible = false) {
+    assertDataLength(this.view.byteLength, Fee.size());
+    this.getSudtId().validate(compatible);
+    this.getAmount().validate(compatible);
+  }
+  static size() {
+    return 0 + Uint32.size() + Uint128.size();
+  }
+}
+
+export function SerializeFee(value) {
+  const array = new Uint8Array(0 + Uint32.size() + Uint128.size());
+  const view = new DataView(array.buffer);
+  array.set(new Uint8Array(SerializeUint32(value.sudt_id)), 0);
+  array.set(new Uint8Array(SerializeUint128(value.amount)), 0 + Uint32.size());
+  return array.buffer;
+}
+
 export class CreateAccount {
   constructor(reader, { validate = true } = {}) {
     this.view = new DataView(assertArrayBuffer(reader));
@@ -2364,13 +2451,25 @@ export class CreateAccount {
     new Script(this.view.buffer.slice(offsets[0], offsets[1]), {
       validate: false,
     }).validate();
+    new Fee(this.view.buffer.slice(offsets[1], offsets[2]), {
+      validate: false,
+    }).validate();
   }
 
   getScript() {
     const start = 4;
     const offset = this.view.getUint32(start, true);
-    const offset_end = this.view.byteLength;
+    const offset_end = this.view.getUint32(start + 4, true);
     return new Script(this.view.buffer.slice(offset, offset_end), {
+      validate: false,
+    });
+  }
+
+  getFee() {
+    const start = 8;
+    const offset = this.view.getUint32(start, true);
+    const offset_end = this.view.byteLength;
+    return new Fee(this.view.buffer.slice(offset, offset_end), {
       validate: false,
     });
   }
@@ -2379,6 +2478,7 @@ export class CreateAccount {
 export function SerializeCreateAccount(value) {
   const buffers = [];
   buffers.push(SerializeScript(value.script));
+  buffers.push(SerializeFee(value.fee));
   return serializeTable(buffers);
 }
 

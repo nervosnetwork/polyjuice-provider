@@ -177,6 +177,7 @@ export class RawWithdrawalRequest {
   getSellCapacity(): Uint64;
   getOwnerLockHash(): Byte32;
   getPaymentLockHash(): Byte32;
+  getFee(): Fee;
 }
 
 export function SerializeWithdrawalRequestVec(
@@ -314,11 +315,21 @@ export class MetaContractArgs {
   value(): any;
 }
 
+export function SerializeFee(value: object): ArrayBuffer;
+export class Fee {
+  constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
+  validate(compatible?: boolean): void;
+  static size(): Number;
+  getSudtId(): Uint32;
+  getAmount(): Uint128;
+}
+
 export function SerializeCreateAccount(value: object): ArrayBuffer;
 export class CreateAccount {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
   getScript(): Script;
+  getFee(): Fee;
 }
 
 export function SerializeSUDTArgs(value: UnionType): ArrayBuffer;
