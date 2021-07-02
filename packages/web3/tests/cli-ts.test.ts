@@ -1,9 +1,12 @@
 const test = require("ava");
-const Web3 = require("web3");
+import Web3 from "web3";
+import { PolyjuiceHttpProviderCli } from "../lib/index";
+import { GodwokerOption } from "../../base/lib/util";
+import { AbiItems } from "../../base/lib/abi";
+
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
 
-const { PolyjuiceHttpProviderCli } = require("../lib/index");
 const ETH_ADDRESS = "0xFb2C72d3ffe10Ef7c9960272859a23D24db9e04A";
 const PRIVATE_KEY =
   "0xcd277d1a87ffc737b01f6f079a721fe34910b673755130399ea379200a6ef9f2";
@@ -77,7 +80,7 @@ var provider;
 test.before((t) => {
   // init provider and web3
   const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
-  const provider_config = {
+  const provider_config: GodwokerOption = {
     godwoken: {
       rollup_type_hash: process.env.ROLLUP_TYPE_HASH,
       eth_account_lock: {
@@ -89,7 +92,7 @@ test.before((t) => {
   provider = new PolyjuiceHttpProviderCli(
     godwoken_rpc_url,
     provider_config,
-    EXAMPLE_CONTRACT.abi,
+    EXAMPLE_CONTRACT.abi as AbiItems,
     PRIVATE_KEY
   );
 });
@@ -112,7 +115,7 @@ test.serial("proxy rpc: send_transaction", async (t) => {
 
   const web3 = new Web3(provider);
   const simplestorageV2 = new web3.eth.Contract(
-    EXAMPLE_CONTRACT.abi,
+    EXAMPLE_CONTRACT.abi as AbiItems,
     process.env.EXAMPLE_CONTRACT_ADDRESS
   );
   const txRes = await simplestorageV2.methods
@@ -127,7 +130,7 @@ test.serial("proxy rpc: send_transaction", async (t) => {
 test.serial("proxy rpc: call_transaction", async (t) => {
   const web3 = new Web3(provider);
   const simplestorageV2 = new web3.eth.Contract(
-    EXAMPLE_CONTRACT.abi,
+    EXAMPLE_CONTRACT.abi as AbiItems,
     process.env.EXAMPLE_CONTRACT_ADDRESS
   );
   const result = await simplestorageV2.methods

@@ -1,10 +1,8 @@
 import test from "ava";
 import { Contract, ContractFactory } from "ethers";
 import { AbiItems } from "@polyjuice-provider/base/lib/abi";
-import de from "../lib/index";
-import { PolyjuiceJsonRpcProvider } from "../lib/index";
-import { PolyjuiceWallet } from "../lib/index";
-import { PolyjuiceConfig } from "../lib/ethers/src/wallet-signer";
+import { PolyjuiceWallet, PolyjuiceJsonRpcProvider } from "../lib/index";
+import { PolyjuiceConfig } from "../lib/wallet-signer";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
@@ -73,8 +71,8 @@ const SimpleStorageV2_Abi = [
     type: "function",
   },
 ];
-var provider;
-var deployer;
+var provider: PolyjuiceJsonRpcProvider;
+var deployer: PolyjuiceWallet;
 var SimpleStorageV2_Address;
 
 var test_address_array = [
@@ -130,8 +128,7 @@ test.serial("deploy_example_contract", async (t) => {
   const tx = implementationFactory.getDeployTransaction();
   tx.gasPrice = 0;
   tx.gasLimit = 500000;
-  const res = deployer.sendTransaction(tx);
-
+  const res = await deployer.sendTransaction(tx);
   const txReceipt = await res.wait();
   t.is(txReceipt.contractAddress.slice(0, 2), "0x");
   SimpleStorageV2_Address = txReceipt.contractAddress;
@@ -172,11 +169,6 @@ test.serial("call contract get_address", async (t) => {
 });
 
 test.serial("call set array address on contract", async (t) => {
-  if (process.env.MODE === "browser") {
-    // skip test
-    return t.pass();
-  }
-
   const simpleStorageV2 = new Contract(
     SimpleStorageV2_Address,
     SimpleStorageV2_Abi,
@@ -190,19 +182,12 @@ test.serial("call set array address on contract", async (t) => {
 });
 
 test.serial("call contract get array address", async (t) => {
-  if (process.env.MODE === "browser") {
-    // skip test
-    return t.pass();
-  }
-
   const simpleStorageV2 = new Contract(
     SimpleStorageV2_Address,
     SimpleStorageV2_Abi,
     deployer
   );
 
-  const address_array = await simpleStorageV2.getArray({
-    from: process.env.ETH_ADDRESS,
-  });
+  const address_array = await simpleStorageV2.callStatic.getArray();
   t.deepEqual(address_array, test_address_array);
 });

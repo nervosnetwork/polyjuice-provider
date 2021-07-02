@@ -6,7 +6,7 @@ const nodeExternals = require('webpack-node-externals');
 const basicConfig = {
   context: path.resolve(__dirname, "./src"),
   entry: "./index.ts",
-  target: 'web',
+  target: 'node',
   mode: "production",
   output: {
     filename: "index.js",
@@ -18,7 +18,7 @@ const basicConfig = {
   },
 
   // in order to ignore all modules in node_modules folder 
-  externals: [nodeExternals(), "@polyjuice-provider/godwoken"],
+  externals: [nodeExternals()],
 
   resolve: {
     extensions: [".js", ".ts"],
@@ -64,4 +64,34 @@ const basicConfig = {
   },
 };
 
-module.exports = [basicConfig];
+//======== ethers compatibale provider and signer ===========
+// can be used in hardhat
+const ethersProvidersConfig = {...basicConfig, ...{
+  //target: 'web',
+  context: path.resolve(__dirname, "./src"),
+  entry: "./providers.ts",
+  output: {...basicConfig.output, ...{
+    path: path.resolve(__dirname, "./lib"),
+    filename: 'providers.js',
+    libraryTarget: 'umd',
+    library: 'PolyjuiceProviders',
+    libraryExport: 'default',
+    globalObject: 'this',
+  }}
+}}
+
+const ethersWalletSignerConfig = {...basicConfig, ...{
+  //target: 'web',
+  context: path.resolve(__dirname, "./src"),
+  entry: "./wallet-signer.ts",
+  output: {...basicConfig.output, ...{
+    path: path.resolve(__dirname, "./lib"),
+    filename: 'wallet-signer.js',
+    libraryTarget: 'umd',
+    library: 'PolyjuiceWalletSigner',
+    libraryExport: 'default',
+    globalObject: 'this',
+  }}
+}}
+
+module.exports = [ethersProvidersConfig, ethersWalletSignerConfig];

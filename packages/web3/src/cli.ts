@@ -11,7 +11,7 @@ import { JsonRpcResponse } from "web3-core-helpers";
 import { AbiItem } from "web3-utils";
 import { GodwokerOption } from "@polyjuice-provider/base/lib/util";
 import Signer from "@polyjuice-provider/base/lib/signer";
-import PolyjuiceHttpProvider from "./index";
+import {PolyjuiceHttpProvider} from "./providers";
 
 export interface HttpHeader {
   name: string;
@@ -32,7 +32,7 @@ export interface HttpProviderOptions {
   keepAlive?: boolean;
 }
 
-export default class PolyjuiceHttpProviderForNode extends PolyjuiceHttpProvider {
+export class PolyjuiceHttpProviderCli extends PolyjuiceHttpProvider {
   constructor(
     host: string,
     godwoken_config: GodwokerOption,

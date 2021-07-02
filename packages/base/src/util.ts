@@ -9,12 +9,21 @@ import {
   NormalizeRawL2Transaction,
 } from "@polyjuice-provider/godwoken/lib/normalizer";
 import { Reader } from "ckb-js-toolkit";
+import crossFetch from 'cross-fetch';
 
 const jaysonBrowserClient = require("jayson/lib/client/browser");
 
 const U128_MIN = BigInt(0);
 const U128_MAX = BigInt(2) ** BigInt(128) - BigInt(1);
 const EMPTY_ETH_ADDRESS = "0x" + "00".repeat(20);
+
+declare global {
+  interface Window {
+    fetch: any;
+  }
+}
+
+const fetch = typeof window !== "undefined" ? window.fetch : crossFetch; 
 
 export type EthTransaction = {
   from: HexString;

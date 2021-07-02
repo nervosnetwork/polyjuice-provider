@@ -8,7 +8,6 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "allowUmdGlobalAccess": true,
     "sourceMap": true,
     "resolveJsonModule": true,
     "allowJs": true
