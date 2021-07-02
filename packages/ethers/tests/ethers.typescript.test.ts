@@ -4,6 +4,7 @@ import { AbiItems } from "@polyjuice-provider/base/lib/abi";
 import de from "../lib/index";
 import { PolyjuiceJsonRpcProvider } from "../lib/index";
 import { PolyjuiceWallet } from "../lib/index";
+import { PolyjuiceConfig } from "../lib/ethers/src/wallet-signer";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });

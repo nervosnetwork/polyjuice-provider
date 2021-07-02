@@ -17,7 +17,7 @@ export interface PolyjuiceConfig {
   abiItems?: AbiItems;
 }
 
-export default interface PolyjuiceWallet extends Wallet {
+export interface PolyjuiceWallet extends Wallet {
   constructor(
     privateKey: BytesLike | ExternallyOwnedAccount | SigningKey,
     polyjuiceConfig: PolyjuiceConfig,
@@ -25,7 +25,7 @@ export default interface PolyjuiceWallet extends Wallet {
   );
 }
 
-export default class PolyjuiceWallet extends Wallet {
+export class PolyjuiceWallet extends Wallet {
   godwoker: Godwoker;
   abi: Abi;
 
