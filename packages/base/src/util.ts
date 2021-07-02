@@ -1,5 +1,9 @@
 import { Script, Hash, utils, HexNumber, HexString } from "@ckb-lumos/base";
-import { GodwokenUtils, RawL2Transaction, L2Transaction } from "@polyjuice-provider/godwoken";
+import {
+  GodwokenUtils,
+  RawL2Transaction,
+  L2Transaction,
+} from "@polyjuice-provider/godwoken";
 import {
   SerializeL2Transaction,
   SerializeRawL2Transaction,
@@ -9,7 +13,7 @@ import {
   NormalizeRawL2Transaction,
 } from "@polyjuice-provider/godwoken/lib/normalizer";
 import { Reader } from "ckb-js-toolkit";
-import crossFetch from 'cross-fetch';
+import crossFetch from "cross-fetch";
 
 const jaysonBrowserClient = require("jayson/lib/client/browser");
 
@@ -23,7 +27,7 @@ declare global {
   }
 }
 
-const fetch = typeof window !== "undefined" ? window.fetch : crossFetch; 
+const fetch = typeof window !== "undefined" ? window.fetch : crossFetch;
 
 export type EthTransaction = {
   from: HexString;

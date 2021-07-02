@@ -6,5 +6,8 @@
   "private": true,
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "test-publish": "yarn workspace @polyjuice-provider/godwoken test-publish && yarn workspace @polyjuice-provider/base run test-publish && yarn workspace @polyjuice-provider/ethers test-publish && yarn workspace @polyjuice-provider/web3 test-publish"
+  }
 }

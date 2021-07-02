@@ -8,7 +8,7 @@
     "node": "14"
   },
   "scripts": {
-    "fmt": "prettier --write src/* tests/*",
+    "fmt": "prettier --write src/* tests/* package.json",
     "clean": "rm -rf lib/*",
     "build": "tsc",
     "test": "MODE=browser ava && MODE=node ava --timeout=100s",
@@ -17,7 +17,8 @@
     "pack": "npm pack"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "http://registry.npmjs.org/"
   },
   "files": [
     "/lib"
@@ -44,7 +45,7 @@
   },
   "dependencies": {
     "@ckb-lumos/base": "^0.16.0",
-    "@polyjuice-provider/godwoken": "^0.0.1",
+    "@polyjuice-provider/godwoken": "^0.0.1-rc1",
     "buffer": "^6.0.3",
     "encoding": "^0.1.13",
     "eth-sig-util": "^3.0.1",

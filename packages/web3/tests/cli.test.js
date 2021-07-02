@@ -131,8 +131,9 @@ test.serial("proxy rpc: call_transaction", async (t) => {
     process.env.EXAMPLE_CONTRACT_ADDRESS
   );
   const result = await simplestorageV2.methods
-    .get().call({from: ETH_ADDRESS});
-    console.log(result);
+    .get()
+    .call({ from: ETH_ADDRESS });
+  console.log(result);
   t.is(result.slice(0, 2), "0x");
   t.is(result.length, 42);
 });

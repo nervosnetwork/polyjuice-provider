@@ -3,8 +3,7 @@ import Signer from "./signer";
 import { Godwoker, GodwokerOption, EthTransaction } from "./util";
 
 export default {
-	Abi,
-	Signer,
-	Godwoker
-}
-
+  Abi,
+  Signer,
+  Godwoker,
+};

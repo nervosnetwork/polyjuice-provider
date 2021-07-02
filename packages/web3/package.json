@@ -1,6 +1,6 @@
 {
   "name": "@polyjuice-provider/web3",
-  "version": "0.0.1",
+  "version": "0.0.1-rc1",
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
@@ -8,7 +8,7 @@
     "node": "14"
   },
   "scripts": {
-    "fmt": "prettier --write src/* tests/*",
+    "fmt": "prettier --write src/* tests/* package.json",
     "clean": "rm -rf lib/* && rm -rf dist/*",
     "build": "tsc",
     "boundle": "webpack",
@@ -20,7 +20,8 @@
     "gen-config-for-example": "cd example && node init_config.js && cd .."
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "http://registry.npmjs.org/"
   },
   "files": [
     "/lib"
