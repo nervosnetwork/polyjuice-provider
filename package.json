@@ -1,6 +1,6 @@
 {
-  "name": "@retric/test-provider",
-  "version": "0.0.1-ethers540",
+  "name": "@polyjuice-provider/core",
+  "version": "0.0.1-rc1",
   "main": "lib/index.js",
   "license": "MIT",
   "engines": {

@@ -1,4 +1,4 @@
-# (THIS BRANCH IS ONLY FOR TEST!) Polyjuice Http Provider
+# Polyjuice Http Provider
 
 a godwoken-compatible http provider for web3.js.
 
