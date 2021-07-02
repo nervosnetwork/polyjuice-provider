@@ -1,23 +1,23 @@
 Usage
 ===
 
-note: right now this project is still under development, the name `@retric/test-provider` is temporarily used as an test release. we will change the packages name soon, but here you get the idea.
+note: right now this project is still under development, `ethers` and `web3js` lib are stick together in one module, later we will spilt to different iso packages, please get back to check again.
 
-we assume you already running a godwoken-polyjuice devnet chain using [Godwoken-Kicker](https://github.com/RetricSu/godwoken-kicker) in your local environment.
+to use polyjuice-provider, we assume you already running a godwoken-polyjuice devnet chain using [Godwoken-Kicker](https://github.com/RetricSu/godwoken-kicker) in your local environment.
 
 ## if you are using `web3.js`
 
 first, install the packages:
 
 ```sh
-yarn add @retric/test-provider
+yarn add @polyjuice-provider/core
 ```
 
 ### deploy contract
 
 ```js
 const Web3 = require("web3");
-const PolyjuiceHttpProvider = require("@retric/test-provider/lib/cli");
+const PolyjuiceHttpProvider = require("@polyjuice-provider/core/lib/cli");
 
 // init provider and web3
 const godwoken_rpc_url = 'godwoken web3 rpc url'; // normally it is http://localhost:8024
@@ -33,7 +33,7 @@ const provider_config = {
 provider = new PolyjuiceHttpProvider(
   godwoken_rpc_url,
   provider_config,
-  [],
+  ['your contract abi array'],
   'your deployer private_key'
 );
 
@@ -57,7 +57,7 @@ note: later we will support using `web3.accounts` to sign transaction and deploy
 first, install the packages:
 
 ```sh
-yarn add @retric/test-provider
+yarn add @polyjuice-provider/core
 ```
 
 ### deploy contractd
@@ -73,7 +73,7 @@ import { Wallet } from "ethers";
 with
 
 ```ts
-import PolyjuiceWallet from "@retric/test-provider/lib/hardhat/wallet-signer";
+import PolyjuiceWallet from "@polyjuice-provider/core/lib/hardhat/wallet-signer";
 ```
 
 and use `PolyjuiceWallet` instead of `Wallet` in your code. 
@@ -88,7 +88,7 @@ providers.JsonRpcProvider
 with
 
 ```sh
-import { PolyjuiceJsonRpcProvider } from "@retric/test-provider/lib/hardhat/providers";
+import { PolyjuiceJsonRpcProvider } from "@polyjuice-provider/core/lib/hardhat/providers";
 ```
 
 and use `PolyjuiceJsonRpcProvider` instead of `JsonRpcProvider` in your code.
@@ -97,10 +97,9 @@ example:
 
 ```ts
 import { ContractFactory } from "ethers";
-import PolyjuiceWallet, { PolyjuiceConfig } from "@retric/test-provider/lib/hardhat/wallet-signer";
-import { PolyjuiceJsonRpcProvider } from "@retric/test-provider/lib/hardhat/providers";
+import PolyjuiceWallet, { PolyjuiceConfig } from "@polyjuice-provider/core/lib/hardhat/wallet-signer";
+import { PolyjuiceJsonRpcProvider } from "@polyjuice-provider/core/lib/hardhat/providers";
 
-export const rpc = new PolyjuiceJsonRpcProvider('godwoken web3 rpc url'); // normally it is http://localhost:8024;
 const polyjuice_config: PolyjuiceConfig = {
   godwokerOption: {
     godwoken: {
@@ -112,8 +111,10 @@ const polyjuice_config: PolyjuiceConfig = {
     },
   },
   web3RpcUrl: process.env.RPC_URL!, // normally it is http://localhost:8024;
+  abiItems: ['your contract abi array']
 };
 
+const rpc = new PolyjuiceJsonRpcProvider(polyjuice_config.godwokerOption, polyjuice_config.abiItems, 'godwoken web3 rpc url'); // normally it is http://localhost:8024;
 const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuice_config, rpc);
 const implementationFactory = new ContractFactory(
   contract.abi,
@@ -146,7 +147,7 @@ Now:
 
 ```js
 import Web3 from 'web3';
-import PolyjuiceHttpProvider from '@retric/test-provider';
+import PolyjuiceHttpProvider from '@polyjuice-provider/core';
 
 var web3 = new Web3(new PolyjuiceHttpProvider('http://localhost:8024', GodwokenOption, ['your abi items array']));
 ```
@@ -170,7 +171,7 @@ Now:
 
 ```js
 import Web3 from 'web3';
-import PolyjuiceHttpProvider from '@retric/test-provider';
+import PolyjuiceHttpProvider from '@polyjuice-provider/core';
 
 var provider = new PolyjuiceHttpProvider('http://localhost:8024', GodwokenOption, ['your abi items array']);
 var web3 = new Web3(provider);
@@ -178,4 +179,6 @@ var web3 = new Web3(provider);
 var contract = web3.eth.Contract(abi, contract_address);
 ```
 
-lastly, we will introduce more polyjuice compatible lib with ETH in future.
+if you are using `ethers`, the usage in dapp is mostly the same with deploying contract above.
+
+lastly, we will introduce more polyjuice compatible lib with ETH in the future.

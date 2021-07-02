@@ -1,16 +1,20 @@
-# Polyjuice Http Provider
+# Polyjuice Provider
 
-a godwoken-compatible http provider for web3.js.
+a godwoken-polyjuice compatible library for ethereum utilities in JavaScript like `ethers` and `web3js`.
 
-now you can call your smart-contract on godwoken with metamask and eth address.
-
-[docs](docs/usage.md)
+now you can call your smart-contract on godwoken-polyjuice with metamask and eth address.
 
 ## getting started
 
+### How to deploy contract on polyjuice
+
+[docs](docs/usage.md)
+
+### How to build
+
+install deps:
+
 ```sh
-    git clone https://github.com/RetricSu/polyjuice-providers-http.git
-    cd polyjuice-providers-http
     yarn 
 ```
 
@@ -23,13 +27,13 @@ build:
 usage:
 
 ```js
-const PolyjuiceHttpProvider = require('./PolyjuiceHttpProvider');
+const PolyjuiceHttpProvider = require('@polyjuice-provider/core');
 ```
 
 typescript supported:
 
 ```ts
-import PolyjuiceHttpProvider from './PolyjuiceHttpProvider';
+import PolyjuiceHttpProvider from '@polyjuice-provider/core';
 ```
 
 browser version lies in:
