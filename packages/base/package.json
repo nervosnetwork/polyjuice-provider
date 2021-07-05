@@ -1,6 +1,6 @@
 {
   "name": "@polyjuice-provider/base",
-  "version": "0.0.1-rc1",
+  "version": "0.0.1-rc3",
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
