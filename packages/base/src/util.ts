@@ -13,12 +13,46 @@ import {
   NormalizeRawL2Transaction,
 } from "@polyjuice-provider/godwoken/lib/normalizer";
 import { Reader } from "ckb-js-toolkit";
-import crossFetch from "cross-fetch";
+import crossFetch from "cross-fetch"; // for nodejs compatibility polyfill
+import { Buffer } from "buffer"; // for browser compatibility polyfill
+
+// replace for buffer polyfill under 0.6 version.
+// eg: for react project using webpack 4 (this is the most common case when created by running `npx create-react-app`), 
+// the default react-scripts config just use buffer@0.4.3 which doesn't include writeBigUint64LE function. 
+// code copy from https://github.com/feross/buffer/blob/master/index.js#L1497-L1513
+function writeBigUint64LE(buf, value, offset = 0){
+  let lo = Number(value & BigInt(0xffffffff))
+  buf[offset++] = lo
+  lo = lo >> 8
+  buf[offset++] = lo
+  lo = lo >> 8
+  buf[offset++] = lo
+  lo = lo >> 8
+  buf[offset++] = lo
+  let hi = Number(value >> BigInt(32) & BigInt(0xffffffff))
+  buf[offset++] = hi
+  hi = hi >> 8
+  buf[offset++] = hi
+  hi = hi >> 8
+  buf[offset++] = hi
+  hi = hi >> 8
+  buf[offset++] = hi
+  return offset
+}
+
+Buffer.prototype.writeBigUInt64LE = (value, offset) => {
+   return writeBigUint64LE(this, value, offset);
+}
 
 const jaysonBrowserClient = require("jayson/lib/client/browser");
 
 const U128_MIN = BigInt(0);
-const U128_MAX = BigInt(2) ** BigInt(128) - BigInt(1);
+const U128_MAX = BigInt('340282366920938463463374607431768211455'); 
+// 340282366920938463463374607431768211455 equals to BigInt(2) ** BigInt(128) - BigInt(1)
+// if we use formular instead of the direct result, 
+// in some case, boundler like webpack will turn ** into Math.pow(),
+// which doesn't support BigInt type thus causing error.
+// this is a known issue as https://github.com/facebook/create-react-app/issues/10785
 const EMPTY_ETH_ADDRESS = "0x" + "00".repeat(20);
 
 declare global {
