@@ -6,7 +6,7 @@ require("dotenv").config({ path: root(".test.env") });
 const browserEnv = require("browser-env");
 if (process.env.MODE === "browser") browserEnv();
 
-const PolyjuiceHttpProvider = require("../../../lib/index");
+const { Abi, Godwoker } = require("../lib/index");
 
 const TEST_ABI_ITEMS = [
   {
@@ -59,10 +59,9 @@ const TEST_ABI_ITEMS = [
   },
 ];
 var abi;
-var godwoker;
 
 test.before((t) => {
-  // init provider and web3
+  // init abi and godwoker
   const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
   const provider_config = {
     godwoken: {
@@ -73,13 +72,8 @@ test.before((t) => {
       },
     },
   };
-  const provider = new PolyjuiceHttpProvider(
-    godwoken_rpc_url,
-    provider_config,
-    TEST_ABI_ITEMS
-  );
-  abi = provider.abi;
-  godwoker = provider.godwoker;
+  abi = new Abi(TEST_ABI_ITEMS);
+  godwoker = new Godwoker(godwoken_rpc_url, provider_config);
 });
 
 test.serial("get_interested_methods", (t) => {
