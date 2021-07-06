@@ -1,8 +1,7 @@
 const test = require("ava");
 import Web3 from "web3";
 import { PolyjuiceHttpProviderCli } from "../lib/index";
-import { GodwokerOption } from "../../base/lib/util";
-import { AbiItems } from "../../base/lib/abi";
+import { GodwokerOption, AbiItems } from "@polyjuice-provider/base";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });

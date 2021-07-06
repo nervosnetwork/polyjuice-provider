@@ -3,7 +3,13 @@ require("dotenv").config({ path: "../.test.env" });
 
 const fs = require("fs");
 
-const filePath = path.resolve(__dirname, "./web/static/js/config.js");
+const js_folder = "./web/static/js"
+
+if (!fs.existsSync(js_folder)){
+  fs.mkdirSync(js_folder);
+}
+
+const filePath = path.resolve(__dirname, `${js_folder}/config.js`);
 const content = `
 const SimpleConfig = {
 	WEB3_JSON_RPC: "${process.env.WEB3_JSON_RPC}",
