@@ -10,9 +10,7 @@ import { XMLHttpRequest as XHR2 } from "xhr2-cookies";
 import { JsonRpcResponse } from "web3-core-helpers";
 import { AbiItem } from "web3-utils";
 
-import { Godwoker, GodwokerOption } from "@polyjuice-provider/base/lib/util";
-import Signer from "@polyjuice-provider/base/lib/signer";
-import { Abi } from "@polyjuice-provider/base/lib/abi";
+import { Godwoker, GodwokerOption, Signer, Abi, AbiItems } from "@polyjuice-provider/base";
 
 export interface HttpHeader {
   name: string;
@@ -38,6 +36,13 @@ export interface ExperimentalFeatureOption {
   private_key?: string;
 }
 
+export type PolyjuiceConfig = {
+  rollupTypeHash: string
+  ethAccountLockCodeHash: string
+  abiItems?: AbiItems
+  web3Url?: string
+}
+
 export class PolyjuiceHttpProvider {
   experimentalFeatureMode: boolean;
   signer: Signer;
@@ -55,13 +60,21 @@ export class PolyjuiceHttpProvider {
 
   constructor(
     host: string,
-    godwoken_config: GodwokerOption,
-    abi_items: AbiItem[] = [],
+    polyjuice_config: PolyjuiceConfig,
     options?: HttpProviderOptions
   ) {
     this.signer = new Signer();
-    this.godwoker = new Godwoker(host, godwoken_config);
-    this.abi = new Abi(abi_items);
+    const godwoker_option: GodwokerOption = {
+      godwoken: {
+        rollup_type_hash: polyjuice_config.rollupTypeHash,
+        eth_account_lock: {
+          code_hash: polyjuice_config.ethAccountLockCodeHash,
+          hash_type: "type"
+        }
+      }
+    }
+    this.godwoker = new Godwoker(host, godwoker_option);
+    this.abi = new Abi(polyjuice_config.abiItems || []);
 
     options = options || {};
 

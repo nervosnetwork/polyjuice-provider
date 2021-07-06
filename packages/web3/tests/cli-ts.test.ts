@@ -1,6 +1,6 @@
 const test = require("ava");
 import Web3 from "web3";
-import { PolyjuiceHttpProviderCli } from "../lib/index";
+import { PolyjuiceHttpProviderCli, PolyjuiceConfig } from "../lib/index";
 import { GodwokerOption, AbiItems } from "@polyjuice-provider/base";
 
 const root = require("path").join.bind(this, __dirname, "..");
@@ -79,19 +79,15 @@ var provider;
 test.before((t) => {
   // init provider and web3
   const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
-  const provider_config: GodwokerOption = {
-    godwoken: {
-      rollup_type_hash: process.env.ROLLUP_TYPE_HASH,
-      eth_account_lock: {
-        code_hash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH,
-        hash_type: "type",
-      },
-    },
+  const provider_config: PolyjuiceConfig  = {
+    rollupTypeHash: process.env.ROLLUP_TYPE_HASH,
+    ethAccountLockCodeHash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH,
+    abiItems: EXAMPLE_CONTRACT.abi as AbiItems,
+    web3Url: godwoken_rpc_url 
   };
   provider = new PolyjuiceHttpProviderCli(
     godwoken_rpc_url,
     provider_config,
-    EXAMPLE_CONTRACT.abi as AbiItems,
     PRIVATE_KEY
   );
 });
