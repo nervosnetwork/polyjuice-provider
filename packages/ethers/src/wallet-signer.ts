@@ -6,16 +6,11 @@ import { resolveProperties } from "@ethersproject/properties";
 import { getAddress } from "@ethersproject/address";
 import { GodwokerOption, Godwoker } from "@polyjuice-provider/base/lib/util";
 import { Abi, AbiItems } from "@polyjuice-provider/base/lib/abi";
+import { PolyjuiceConfig } from "./providers";
 
 import { Logger } from "@ethersproject/logger";
 import { joinSignature, Bytes, BytesLike, hexlify } from "@ethersproject/bytes";
 const logger = new Logger("Polyjuice-Wallet/0.0.1");
-
-export interface PolyjuiceConfig {
-  godwokerOption: GodwokerOption;
-  web3RpcUrl: string;
-  abiItems?: AbiItems;
-}
 
 export interface PolyjuiceWallet extends Wallet {
   constructor(
@@ -35,9 +30,19 @@ export class PolyjuiceWallet extends Wallet {
     provider?: providers.JsonRpcProvider
   ) {
     super(privateKey, provider);
-    const { web3RpcUrl, abiItems, godwokerOption } = polyjuiceConfig;
-    this.godwoker = new Godwoker(web3RpcUrl, godwokerOption);
-    this.abi = new Abi(abiItems || []);
+    const godwokerOption: GodwokerOption = {
+      godwoken: {
+        rollup_type_hash: polyjuiceConfig.rollupTypeHash,
+        eth_account_lock: {
+          code_hash: polyjuiceConfig.ethAccountLockCodeHash,
+          hash_type: "type"
+        }
+      }
+    }
+    if(!polyjuiceConfig.web3Url)throw new Error("should provide web3 rpc url in polyjuiceConfigs.");
+    
+    this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwokerOption);
+    this.abi = new Abi(polyjuiceConfig.abiItems || []);
   }
 
   signTransaction(transaction: TransactionRequest): Promise<string> {

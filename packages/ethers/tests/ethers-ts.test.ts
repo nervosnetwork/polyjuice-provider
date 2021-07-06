@@ -83,21 +83,13 @@ test.before((t) => {
   // init provider and web3
   const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
   const polyjuice_config: PolyjuiceConfig = {
-    godwokerOption: {
-      godwoken: {
-        rollup_type_hash: process.env.ROLLUP_TYPE_HASH,
-        eth_account_lock: {
-          code_hash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH,
-          hash_type: "type",
-        },
-      },
-    },
-    web3RpcUrl: godwoken_rpc_url,
+    rollupTypeHash: process.env.ROLLUP_TYPE_HASH,
+    ethAccountLockCodeHash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH,
     abiItems: SimpleStorageV2_Abi as AbiItems,
+    web3Url: godwoken_rpc_url,
   };
   provider = new PolyjuiceJsonRpcProvider(
-    polyjuice_config.godwokerOption,
-    polyjuice_config.abiItems,
+    polyjuice_config,
     godwoken_rpc_url
   );
   deployer = new PolyjuiceWallet(
