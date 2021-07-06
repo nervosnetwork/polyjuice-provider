@@ -37,20 +37,13 @@ example:
 import { ContractFactory } from "ethers";
 import { PolyjuiceWallet, PolyjuiceConfig, PolyjuiceJsonRpcProvider } from "@polyjuice-provider/ethers";
 
-export const rpc = new PolyjuiceJsonRpcProvider('godwoken web3 rpc url'); // normally it is http://localhost:8024;
 const polyjuice_config: PolyjuiceConfig = {
-  godwokerOption: {
-    godwoken: {
-      rollup_type_hash: 'godwoken rollup type hash', // you can find this value by opening your browser to access http://localhost:6101/get_rollup_type_hash,
-      eth_account_lock: {
-        code_hash: 'godwoken eth lock code hash', //  you can find this value by opening your browser to access http://localhost:6101/get_eth_acccount_lock
-        hash_type: "type",
-      },
-    },
-  },
-  web3RpcUrl: process.env.RPC_URL!, // normally it is http://localhost:8024;
+  rollupTypeHash: 'godwoken rollup type hash', // you can find this value by opening your browser to access http://localhost:6101/get_rollup_type_hash after starting kicker
+  ethAccountLockCodeHash: 'godwoken eth account lock code hash', // you can find this value by opening your browser to access http://localhost:6101/get_eth_account_lock after starting kicker  
+  abiItems: ['your abi items array'] // this is optional
+  web3Url: 'godwoken web3 rpc url', // normally it is http://localhost:8024 in devnet
 };
-
+const rpc = new PolyjuiceJsonRpcProvider(polyjuice_config, PolyjuiceConfig.web3Url); 
 const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuice_config, rpc);
 const implementationFactory = new ContractFactory(
   contract.abi,
