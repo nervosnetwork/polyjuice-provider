@@ -40,7 +40,7 @@ function writeBigUint64LE(buf, value, offset = 0){
   return offset
 }
 
-Buffer.prototype.writeBigUInt64LE = (value, offset) => {
+Buffer.prototype.writeBigUInt64LE = function (value, offset) {
    return writeBigUint64LE(this, value, offset);
 }
 
