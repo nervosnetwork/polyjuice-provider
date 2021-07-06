@@ -1,1 +1,3 @@
-# @ckb-godwoken/base
+# @polyjuice-provider/base
+
+base type and library.

@@ -1,8 +1,7 @@
 import test from "ava";
 import { Contract, ContractFactory } from "ethers";
 import { AbiItems } from "@polyjuice-provider/base/lib/abi";
-import { PolyjuiceWallet, PolyjuiceJsonRpcProvider } from "../lib/index";
-import { PolyjuiceConfig } from "../lib/wallet-signer";
+import { PolyjuiceWallet, PolyjuiceJsonRpcProvider, PolyjuiceConfig } from "../lib/index";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
