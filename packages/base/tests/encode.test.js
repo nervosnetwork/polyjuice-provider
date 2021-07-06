@@ -2,9 +2,6 @@ const test = require("ava");
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
 
-const browserEnv = require("browser-env");
-if (process.env.MODE === "browser") browserEnv();
-
 const { Godwoker } = require("../lib/index");
 
 var godwoker;

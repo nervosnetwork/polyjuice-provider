@@ -4,7 +4,7 @@
     "module": "commonjs",
     "declaration": true,
     "outDir": "./lib",
-    "lib": ["es2020", "DOM"],
+    "lib": ["es2020", "DOM", "ES2015"],
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

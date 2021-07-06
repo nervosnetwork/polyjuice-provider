@@ -3,9 +3,6 @@ const Web3EthAbi = require("web3-eth-abi");
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
 
-const browserEnv = require("browser-env");
-if (process.env.MODE === "browser") browserEnv();
-
 const { Abi, Godwoker } = require("../lib/index");
 
 const TEST_ABI_ITEMS = [
