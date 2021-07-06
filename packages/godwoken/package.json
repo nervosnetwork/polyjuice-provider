@@ -1,6 +1,6 @@
 {
   "name": "@polyjuice-provider/godwoken",
-  "version": "0.0.1-rc3",
+  "version": "0.0.1-rc4",
   "description": "Godwoken utils",
   "main": "index.js",
   "license": "MIT",
