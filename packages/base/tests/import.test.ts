@@ -11,7 +11,7 @@ import {
 } from "../lib/index";
 
 test.serial("typescript-import-from-index", (t) => {
-  t.not(Abi, undefined);
-  t.not(Godwoker, undefined);
-  t.not(Signer, undefined);
+  t.is(typeof Abi, 'function');
+  t.is(typeof Godwoker, 'function');
+  t.is(typeof Signer, 'function');
 });
