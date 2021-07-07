@@ -8,10 +8,8 @@
 import * as http from "http";
 import * as https from "https";
 import { JsonRpcResponse } from "web3-core-helpers";
-import { AbiItem } from "web3-utils";
-import { GodwokerOption } from "@polyjuice-provider/base/lib/util";
 import Signer from "@polyjuice-provider/base/lib/signer";
-import { PolyjuiceHttpProvider } from "./providers";
+import { PolyjuiceHttpProvider, PolyjuiceConfig } from "./providers";
 
 export interface HttpHeader {
   name: string;
@@ -35,12 +33,11 @@ export interface HttpProviderOptions {
 export class PolyjuiceHttpProviderCli extends PolyjuiceHttpProvider {
   constructor(
     host: string,
-    godwoken_config: GodwokerOption,
-    abi_items: AbiItem[] = [],
+    polyjuice_config: PolyjuiceConfig,
     private_key: string,
     options?: HttpProviderOptions
   ) {
-    super(host, godwoken_config, abi_items);
+    super(host, polyjuice_config);
     this.signer = new Signer(private_key);
   }
 

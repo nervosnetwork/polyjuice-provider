@@ -8,9 +8,16 @@ import { Networkish } from "@ethersproject/networks";
 import { Abi, AbiItems } from "@polyjuice-provider/base/lib/abi";
 import { Godwoker, GodwokerOption } from "@polyjuice-provider/base/lib/util";
 
+export type PolyjuiceConfig = {
+  rollupTypeHash: string
+  ethAccountLockCodeHash: string
+  abiItems?: AbiItems
+  web3Url?: string
+}
+
 export interface PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   constructor(
-    godwoker_option: GodwokerOption,
+    polyjuiceConfig: PolyjuiceConfig,
     abi: AbiItems,
     url?: ConnectionInfo | string,
     network?: Networkish
@@ -22,14 +29,23 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   godwoker: Godwoker;
 
   constructor(
-    godwoker_option: GodwokerOption,
-    abi_items: AbiItems = [],
+    polyjuice_config: PolyjuiceConfig,
     url?: ConnectionInfo | string,
     network?: Networkish
   ) {
     super(url, network);
+    const abi_items: AbiItems = polyjuice_config.abiItems || [];
     this.abi = new Abi(abi_items);
     const web3_url = typeof url === "string" ? url : url.url;
+    const godwoker_option: GodwokerOption = {
+      godwoken: {
+        rollup_type_hash: polyjuice_config.rollupTypeHash,
+        eth_account_lock: {
+          code_hash: polyjuice_config.ethAccountLockCodeHash,
+          hash_type: "type"
+        }
+      }
+    }
     this.godwoker = new Godwoker(web3_url, godwoker_option);
   }
 

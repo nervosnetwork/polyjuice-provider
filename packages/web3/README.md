@@ -13,20 +13,15 @@ const Web3 = require("web3");
 const { PolyjuiceHttpProviderCli } = require("@polyjuice-provider/web3");
 
 // init provider and web3
-const godwoken_rpc_url = 'godwoken web3 rpc url'; // normally it is http://localhost:8024
-const provider_config = {
-  godwoken: {
-    rollup_type_hash: 'godwoken rollup type hash', // you can find this value by opening your browser to access http://localhost:6101/get_rollup_type_hash
-    eth_account_lock: {
-      code_hash: 'godwoken eth lock code hash', //  you can find this value by opening your browser to access http://localhost:6101/get_eth_acccount_lock
-      hash_type: "type",
-    },
-  },
+const polyjuice_config: PolyjuiceConfig = {
+  rollupTypeHash: 'godwoken rollup type hash', // you can find this value by opening your browser to access http://localhost:6101/get_rollup_type_hash after starting kicker
+  ethAccountLockCodeHash: 'godwoken eth account lock code hash', // you can find this value by opening your browser to access http://localhost:6101/get_eth_account_lock after starting kicker  
+  abiItems: ['your abi items array'] // this is optional
+  web3Url: 'godwoken web3 rpc url', // normally it is http://localhost:8024 in devnet
 };
 provider = new PolyjuiceHttpProviderCli(
   godwoken_rpc_url,
   provider_config,
-  [],
   'your deployer private_key'
 );
 
@@ -65,10 +60,10 @@ Now:
 import Web3 from 'web3';
 import { PolyjuiceHttpProvider } from '@polyjuice-provider/web3';
 
-var web3 = new Web3(new PolyjuiceHttpProvider('http://localhost:8024', providerConfig, ['your abi items array']));
+var web3 = new Web3(new PolyjuiceHttpProvider('http://localhost:8024', polyjuiceConfig));
 ```
 
-for ```providerConfig```: see [above](#L17-L25).
+for ```polyjuiceConfig```: see above.
 
 ### init contract instance
 
@@ -89,7 +84,7 @@ Now:
 import Web3 from 'web3';
 import { PolyjuiceHttpProvider } from '@polyjuice-provider/web3';
 
-var provider = new PolyjuiceHttpProvider('http://localhost:8024', GodwokenOption, ['your abi items array']);
+var provider = new PolyjuiceHttpProvider('http://localhost:8024', polyjuiceConfig);
 var web3 = new Web3(provider);
 
 var contract = web3.eth.Contract(abi, contract_address);
