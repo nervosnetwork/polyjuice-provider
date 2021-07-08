@@ -1,32 +1,42 @@
-import { Accounts, Wallet } from "web3-eth-accounts";
-import { TransactionConfig, SignedTransaction } from "web3-core";
+import { provider, AccountsBase, TransactionConfig, SignedTransaction } from "web3-core";
 import {
   Abi,
   EthTransaction,
   Godwoker,
   GodwokerOption,
 } from "@polyjuice-provider/base";
-import { PolyjuiceConfig } from "./index";
+import { PolyjuiceConfig } from "./providers";
 import BN from "bn.js";
 import Account from "eth-lib/lib/account";
+import { utils as lumosUtils } from "@ckb-lumos/base";
+import { normalizer, RawL2Transaction } from "@polyjuice-provider/godwoken";
+import { SerializeRawL2Transaction } from "@polyjuice-provider/godwoken/schemas";
+// do not change the following require to import, otherwise it will cause error.
+// the original web3-eth-accounts Account class is exported by module.exports.
+const Accounts = require("web3-eth-accounts");
 
-export interface PolyjuiceAccounts extends Accounts {
-  constructor(polyjuiceConfig: PolyjuiceConfig);
+export interface PolyjuiceAccounts extends AccountsBase {
+  constructor(polyjuiceConfig: PolyjuiceConfig, provider?: provider);
 }
 
 export class PolyjuiceAccounts extends Accounts {
   godwoker: Godwoker;
   abi: Abi;
 
-  constructor(polyjuiceConfig: PolyjuiceConfig) {
-    super();
+  constructor(polyjuiceConfig: PolyjuiceConfig, provider?: provider) {
+    if(provider){
+      super(provider);
+    }else{
+      super();
+    }
+    
     if (!polyjuiceConfig.web3Url) {
       throw new Error("should support web3 rpc url in PolyjuiceConfig.");
     }
 
     const godwokerOption: GodwokerOption = {
       godwoken: {
-        rollup_type_hash: polyjuiceConfig.ethAccountLockCodeHash,
+        rollup_type_hash: polyjuiceConfig.rollupTypeHash,
         eth_account_lock: {
           code_hash: polyjuiceConfig.ethAccountLockCodeHash,
           hash_type: "type",
@@ -42,6 +52,7 @@ export class PolyjuiceAccounts extends Accounts {
     privateKey: string,
     callback?: (error: Error, signedTransaction?: SignedTransaction) => void
   ): Promise<SignedTransaction> {
+    const that = this;
     callback = callback || function () {};
 
     if (!_tx) {
@@ -51,6 +62,9 @@ export class PolyjuiceAccounts extends Accounts {
       return Promise.reject(error);
     }
 
+    if (!_tx.from){
+      _tx.from = this.privateKeyToAccount(privateKey).address;
+    }
     // use godwoken-polyjuice's transaction signing method
     // (which is deifferent tx structure and use a message signing)
     // to sign transaction.
@@ -73,7 +87,7 @@ export class PolyjuiceAccounts extends Accounts {
         const polyjuice_tx = args[0];
         const message = args[1];
         const _signature = Account.sign(message, privateKey);
-        const signature = this.godwoker.packSignature(_signature);
+        const signature = that.godwoker.packSignature(_signature);
         const l2_tx = { raw: polyjuice_tx, signature: signature };
 
         var result = {
@@ -81,8 +95,8 @@ export class PolyjuiceAccounts extends Accounts {
           v: "0x0", // todo: replace with real v
           r: "0x0", // todo: replace with real r
           s: signature,
-          rawTransaction: this.godwoker.serializeL2Transaction(l2_tx), // todo: replace with eth raw tx isntead of godwoken raw tx
-          transactionHash: "",
+          rawTransaction: that.godwoker.serializeL2Transaction(l2_tx), // todo: replace with eth raw tx isntead of godwoken raw tx
+          transactionHash: calcPolyjuiceTxHash(polyjuice_tx),
         };
         callback(null, result);
         return Promise.resolve(result);
@@ -99,18 +113,28 @@ export function transactionConfigToPolyjuiceEthTransaction(
 ) {
   var { from, to, value, gas, gasPrice, data, nonce } = tx;
 
+  if (!from) {
+    throw new Error("from is missing!");
+  }
+
   if (typeof from === "number") {
     //todo: handle from is number
     throw new Error("todo: handle from is number case!");
   }
+ 
+  return formatEthTransaction({ from, to, value, gas, gasPrice, data, nonce });
+}
 
+// todo: remove to @polyjuice-provider/base
+export function formatEthTransaction({ from, to, value, gas, gasPrice, data, nonce }) {
   const ethTx: EthTransaction = {
     from: from,
     to: to || `0x${"0".repeat(40)}`,
-    value: TxConfigValueTypeToString(value),
-    gas: TxConfigValueTypeToString(gasPrice),
-    data: TxConfigValueTypeToString(gasPrice),
-    nonce: TxConfigValueTypeToString(nonce),
+    value: value ? TxConfigValueTypeToString(value) : '0x00',
+    gas: gas ? TxConfigValueTypeToString(gas) : '0xe4e1c0',
+    gasPrice: gasPrice ? TxConfigValueTypeToString(gasPrice) : '0x00',
+    data: data ? TxConfigValueTypeToString(data) : '0x00',
+    nonce: nonce ? TxConfigValueTypeToString(nonce) : '0x1',
   };
   return ethTx;
 }
@@ -127,4 +151,10 @@ export function TxConfigValueTypeToString(value: number | string | BN) {
     value = value.toString(16);
   }
   return value;
+}
+
+// todo: move to @polyjuice-provider/godwoken
+export function calcPolyjuiceTxHash(tx: RawL2Transaction){
+  const tx_hash = lumosUtils.ckbHash(SerializeRawL2Transaction(normalizer.NormalizeRawL2Transaction(tx))).serializeJson().slice(0, 66);
+  return tx_hash;
 }

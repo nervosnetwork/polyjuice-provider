@@ -526,6 +526,29 @@ export class Godwoker {
     });
   }
 
+  async gw_submitSerializedL2Transaction(
+    serialize_tx: string 
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "gw_submit_l2transaction",
+        [serialize_tx],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          if (!res || res.result === undefined || res.result === null)
+            return reject(
+              new Error(
+                `failed to send gw_submitL2Transaction rpc, ${JSON.stringify(
+                  res
+                )}`
+              )
+            );
+          return resolve(res.result);
+        }
+      );
+    });
+  }
+
   async gw_getTransactionReceipt(tx_hash: Hash): Promise<string> {
     return new Promise((resolve, reject) => {
       this.client.request(
