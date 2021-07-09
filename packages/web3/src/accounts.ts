@@ -146,7 +146,7 @@ export function TxConfigValueTypeToString(value: number | string | BN) {
   if (typeof value === "number") {
     value = "0x" + BigInt(value).toString(16);
   }
-  if (typeof value != "string" || typeof value != "number") {
+  if (typeof value !== "string" || typeof value !== "number") {
     // BN.js type
     value = value.toString(16);
   }
@@ -155,6 +155,6 @@ export function TxConfigValueTypeToString(value: number | string | BN) {
 
 // todo: move to @polyjuice-provider/godwoken
 export function calcPolyjuiceTxHash(tx: RawL2Transaction){
-  const tx_hash = lumosUtils.ckbHash(SerializeRawL2Transaction(normalizer.NormalizeRawL2Transaction(tx))).serializeJson().slice(0, 66);
+  const tx_hash = lumosUtils.ckbHash(SerializeRawL2Transaction(normalizer.NormalizeRawL2Transaction(tx))).serializeJson();
   return tx_hash;
 }

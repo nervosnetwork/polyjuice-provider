@@ -11,7 +11,7 @@ yarn add @polyjuice-provider/ethers
 or
 
 ```sh
-npm install @polyjuice-provider/ethers
+npm install --save @polyjuice-provider/ethers
 ```
 
 ## Usage

@@ -11,7 +11,7 @@ yarn add @polyjuice-provider/web3
 or
 
 ```sh
-npm install @polyjuice-provider/web3 
+npm install --save @polyjuice-provider/web3 
 ```
 
 ## Usage
