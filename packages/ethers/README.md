@@ -55,7 +55,7 @@ deployer.sendTransaction(tx);
 
 a more complete and real example can be found [here](https://github.com/RetricSu/godwoken-polyjuice-compatibility-examples/commit/90ccce0288cc44f0c5ba3d338c142922518867d2#diff-86f1dc0bf3c5524626be0d195ed3872e309c3175c4cd71305b7ffcc7c1444164)
 
-## Migrate dap
+## Migrate dapp
 
 to be completed. pr is appreciated.
 
