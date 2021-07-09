@@ -1,37 +1,34 @@
 # @polyjuice-provider/ethers
 
-you will need to make the replacement below:
+this is a sub-module of @polyjuice-provider.
 
-replace
-
-```ts
-import { Wallet } from "ethers";
-```
-
-with
-
-```ts
-import { PolyjuiceWallet } from "@polyjuice-provider/ethers";
-```
-
-and use `PolyjuiceWallet` instead of `Wallet` in your code.
-
-replace
+## Install
 
 ```sh
-import { providers } from "ethers";
-providers.JsonRpcProvider
+yarn add @polyjuice-provider/ethers 
 ```
 
-with
+or
 
 ```sh
-import { PolyjuiceJsonRpcProvider } from "@polyjuice-provider/ethers";
+npm install @polyjuice-provider/ethers
 ```
 
-and use `PolyjuiceJsonRpcProvider` instead of `JsonRpcProvider` in your code.
+## Usage
 
-example:
+once you install this module, then you got two main tools to run with `ethers` for compatibility:
+
+- PolyjuiceJsonRpcProvider (compatible version of [JsonRpcProvider](https://github.com/ethers-io/ethers.js/blob/master/packages/providers/src.ts/json-rpc-provider.ts))
+- PolyjuiceWallet (compatible version of [Wallet](https://github.com/ethers-io/ethers.js/tree/master/packages/wallet))
+
+replacement:
+
+```ts
+new providers.JsonRpcProvider(..) ---> new PolyjuiceJsonRpcProvider(...)
+new Wallet(..) --> new PolyjuiceWallet(...)
+```
+
+### Example: Deploy contract
 
 ```ts
 import { ContractFactory } from "ethers";
@@ -57,3 +54,33 @@ deployer.sendTransaction(tx);
 ```
 
 a more complete and real example can be found [here](https://github.com/RetricSu/godwoken-polyjuice-compatibility-examples/commit/90ccce0288cc44f0c5ba3d338c142922518867d2#diff-86f1dc0bf3c5524626be0d195ed3872e309c3175c4cd71305b7ffcc7c1444164)
+
+## Migrate dap
+
+to be completed. pr is appreciated.
+
+## How to develop this module
+
+build:
+
+```sh
+yarn build
+```
+
+before you can run test, you should run [godwoken-kicker](https://github.com/RetricSu/godwoken-kicker) and create an .test.env file with some godwoken-polyjuice config.
+
+```sh
+cat > ./.test.env <<EOF
+WEB3_JSON_RPC=<godwoken web3 rpc>
+ROLLUP_TYPE_HASH=<godwoken rollup type hash>
+ETH_ACCOUNT_LOCK_CODE_HASH=<eth account lock code hash>
+PRIVATE_KEY=<your eth test private key, do not use in production>
+ETH_ADDRESS=<your eth test address, match with private_key above>
+EOF
+```
+
+## test
+
+```sh
+    yarn test
+```

@@ -1,5 +1,7 @@
 # @polyjuice-provider/web3
 
+this is a sub-module of @polyjuice-provider.
+
 ## Install
 
 ```sh
@@ -14,7 +16,7 @@ npm install @polyjuice-provider/web3
 
 ## Usage
 
-once you install this module, then you got three main tools you can use to run with `web3.js` for compatibility:
+once you install this module, then you got three main tools to run with `web3.js` for compatibility:
 
 - PolyjuiceHttpProvider (compatible version of [web3-providers-http](https://github.com/ChainSafe/web3.js/tree/1.x/packages/web3-providers-http))
 - PolyjuiceAccounts (compatible version of [web3.eth.accounts](https://github.com/ChainSafe/web3.js/tree/1.x/packages/web3-eth-accounts))
@@ -114,7 +116,7 @@ var web3 = new Web3(provider);
 var contract = web3.eth.Contract(abi, contract_address);
 ```
 
-## How to develop
+## How to develop this module
 
 build:
 
