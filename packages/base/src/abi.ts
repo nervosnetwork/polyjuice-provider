@@ -172,11 +172,13 @@ export class Abi {
       output_value_types,
       return_value
     );
-    const interested_value_indexs = output_value_types.map((t, index) => {
+    const interested_value_indexs: number[] = output_value_types.reduce((result, t, index) => {
       if (t === "address" || t === "address[]") {
-        return index;
+        result.push(index);
       }
-    });
+
+      return result
+    }, []);
     for await (const index of interested_value_indexs) {
       decoded_values[index + ""] = Array.isArray(decoded_values[index + ""])
         ? await Promise.all(
