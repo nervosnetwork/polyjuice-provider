@@ -95,28 +95,30 @@ test.before((t) => {
     web3Url: godwoken_rpc_url,
   };
   provider = new PolyjuiceHttpProvider(godwoken_rpc_url, provider_config);
-  //web3 = new Web3(provider);
+  web3 = new Web3(provider);
   polyjuiceAccounts = new PolyjuiceAccounts(provider_config);
 });
 
-// test.serial("replace-web3-eth-account", async (t) => {
-//   //polyjuiceAccounts.wallet.add(PRIVATE_KEY); 
-//   web3.eth.accounts = polyjuiceAccounts;
-//   web3.eth.accounts.wallet.add(PRIVATE_KEY);
-//   const simplestorageV2 = new web3.eth.Contract(
-//     EXAMPLE_CONTRACT.abi as AbiItems,
-//     process.env.EXAMPLE_CONTRACT_ADDRESS! 
-//   );
-// 
-//   const txRes = await simplestorageV2.methods
-//     .set(ETH_ADDRESS)
-//     .send({ from: ETH_ADDRESS, gas: "0x30d40", gasPrice: "0x00" });
-// 
-//   t.is(txRes.transactionHash.slice(0, 2), "0x");
-//   t.is(txRes.transactionHash.length, 66);
-//   t.is(typeof txRes.gasUsed, "number");
-//   t.is(txRes.status, true);
-// });
+test.serial("replace-web3-eth-account", async (t) => {
+  web3.eth.accounts = polyjuiceAccounts;
+  web3.eth.Contract._ethAccounts = web3.eth.accounts;
+  
+  web3.eth.accounts.wallet.add(PRIVATE_KEY);
+
+  const simplestorageV2 = new web3.eth.Contract(
+    EXAMPLE_CONTRACT.abi as AbiItems,
+    process.env.EXAMPLE_CONTRACT_ADDRESS! 
+  );
+
+  const txRes = await simplestorageV2.methods
+    .set(ETH_ADDRESS)
+    .send({ from: ETH_ADDRESS, gas: "0x30d40", gasPrice: "0x00" });
+
+  t.is(txRes.transactionHash.slice(0, 2), "0x");
+  t.is(txRes.transactionHash.length, 66);
+  t.is(typeof txRes.gasUsed, "number");
+  t.is(txRes.status, true);
+});
 
 test.serial("sign-tx-deploy", async (t) => {
   polyjuiceAccounts.wallet.add(PRIVATE_KEY);
