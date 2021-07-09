@@ -1,6 +1,6 @@
 const test = require("ava");
 import Web3 from "web3";
-import { PolyjuiceHttpProviderCli, PolyjuiceConfig } from "../lib/index";
+import { PolyjuiceConfig, PolyjuiceHttpProviderCli } from "../lib/index";
 import { GodwokerOption, AbiItems } from "@polyjuice-provider/base";
 
 const root = require("path").join.bind(this, __dirname, "..");

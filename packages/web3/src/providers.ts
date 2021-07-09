@@ -106,6 +106,23 @@ export class PolyjuiceHttpProvider {
     const { method, params } = payload;
 
     switch (method) {
+      case "eth_sendRawTransaction":
+        // todo: forbidden normal eth raw tx pass.
+        try {
+          const tx_hash = await this.godwoker.gw_submitSerializedL2Transaction(params[0]);
+          callback(null, {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id, 
+            result: tx_hash
+          });
+        } catch (error) {
+          callback(null, {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id, 
+            error: error.message
+          });
+        }
+        break;
       case "eth_sendTransaction":
         try {
           const { from, gas, gasPrice, value, data, to } = params[0];
