@@ -1,0 +1,5 @@
+dist
+lib
+node_modules
+example/web/static/js/*
+yarn-error.log
