@@ -6,7 +6,13 @@ now you can call your smart-contract on godwoken-polyjuice with metamask and eth
 
 - Web3 compatible provider: `/packages/web3`
 - ethers compatible provider: `/packages/ethers`
+- ...more providers coming
 
-`note: this project is still under development, some API might be changed in the future.`
+```sh
+yarn add @polyjuice-provider/web3
+yarn add @polyjuice-provider/ethers
+```
 
-we will introduce more compatible provider (like truffle-hdwallet-provider) in future.
+A simple react example to use `@polyjuice-provider` module can [be found here](https://github.com/RetricSu/polyjuice-provider-example).
+
+`note: this project is still under development, some APIs might be changed in the future.`
