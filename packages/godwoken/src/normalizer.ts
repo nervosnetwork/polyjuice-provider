@@ -1,10 +1,7 @@
-import { Hash, HexNumber, HexString, Script } from "@ckb-lumos/base";
+import { Hash, HexNumber, Script } from "@ckb-lumos/base";
 import { normalizers, Reader } from "ckb-js-toolkit";
 import {
   L2Transaction,
-  RawL2Transaction,
-  CreateAccount,
-  RawWithdrawalRequest,
   WithdrawalRequest,
 } from "../index";
 

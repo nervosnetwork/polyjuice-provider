@@ -9,11 +9,11 @@ import { Abi, AbiItems } from "@polyjuice-provider/base/lib/abi";
 import { Godwoker, GodwokerOption } from "@polyjuice-provider/base/lib/util";
 
 export type PolyjuiceConfig = {
-  rollupTypeHash: string
-  ethAccountLockCodeHash: string
-  abiItems?: AbiItems
-  web3Url?: string
-}
+  rollupTypeHash: string;
+  ethAccountLockCodeHash: string;
+  abiItems?: AbiItems;
+  web3Url?: string;
+};
 
 export interface PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   constructor(
@@ -42,10 +42,10 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
         rollup_type_hash: polyjuice_config.rollupTypeHash,
         eth_account_lock: {
           code_hash: polyjuice_config.ethAccountLockCodeHash,
-          hash_type: "type"
-        }
-      }
-    }
+          hash_type: "type",
+        },
+      },
+    };
     this.godwoker = new Godwoker(web3_url, godwoker_option);
   }
 

@@ -8,9 +8,14 @@ import * as https from "https";
 import { errors } from "web3-core-helpers";
 import { XMLHttpRequest as XHR2 } from "xhr2-cookies";
 import { JsonRpcResponse } from "web3-core-helpers";
-import { AbiItem } from "web3-utils";
 
-import { Godwoker, GodwokerOption, Signer, Abi, AbiItems } from "@polyjuice-provider/base";
+import {
+  Godwoker,
+  GodwokerOption,
+  Signer,
+  Abi,
+  AbiItems,
+} from "@polyjuice-provider/base";
 
 export interface HttpHeader {
   name: string;
@@ -37,11 +42,11 @@ export interface ExperimentalFeatureOption {
 }
 
 export type PolyjuiceConfig = {
-  rollupTypeHash: string
-  ethAccountLockCodeHash: string
-  abiItems?: AbiItems
-  web3Url?: string
-}
+  rollupTypeHash: string;
+  ethAccountLockCodeHash: string;
+  abiItems?: AbiItems;
+  web3Url?: string;
+};
 
 export class PolyjuiceHttpProvider {
   experimentalFeatureMode: boolean;
@@ -69,10 +74,10 @@ export class PolyjuiceHttpProvider {
         rollup_type_hash: polyjuice_config.rollupTypeHash,
         eth_account_lock: {
           code_hash: polyjuice_config.ethAccountLockCodeHash,
-          hash_type: "type"
-        }
-      }
-    }
+          hash_type: "type",
+        },
+      },
+    };
     this.godwoker = new Godwoker(host, godwoker_option);
     this.abi = new Abi(polyjuice_config.abiItems || []);
 
@@ -109,24 +114,26 @@ export class PolyjuiceHttpProvider {
       case "eth_sendRawTransaction":
         // todo: forbidden normal eth raw tx pass.
         try {
-          const tx_hash = await this.godwoker.gw_submitSerializedL2Transaction(params[0]);
+          const tx_hash = await this.godwoker.gw_submitSerializedL2Transaction(
+            params[0]
+          );
           callback(null, {
             jsonrpc: payload.jsonrpc,
-            id: payload.id, 
-            result: tx_hash
+            id: payload.id,
+            result: tx_hash,
           });
         } catch (error) {
           callback(null, {
             jsonrpc: payload.jsonrpc,
-            id: payload.id, 
-            error: error.message
+            id: payload.id,
+            error: error.message,
           });
         }
         break;
       case "eth_sendTransaction":
         try {
           const { from, gas, gasPrice, value, data } = params[0];
-          const to = params[0].to || `0x${'0'.repeat(40)}`;
+          const to = params[0].to || `0x${"0".repeat(40)}`;
 
           const data_with_short_address =
             await this.abi.refactor_data_with_short_address(
@@ -248,7 +255,7 @@ export class PolyjuiceHttpProvider {
 
       case "eth_estimateGas":
         try {
-          var new_payload = payload;
+          let new_payload = payload;
           const { data } = params[0];
 
           const data_with_short_address =
@@ -280,14 +287,14 @@ export class PolyjuiceHttpProvider {
   }
 
   _prepareRequest() {
-    var request;
+    let request;
 
     // the current runtime is a browser
     if (typeof XMLHttpRequest !== "undefined") {
       request = new XMLHttpRequest();
     } else {
       request = new XHR2();
-      var agents = {
+      let agents = {
         httpsAgent: this.httpsAgent,
         httpAgent: this.httpAgent,
         baseUrl: this.baseUrl,
@@ -324,13 +331,13 @@ export class PolyjuiceHttpProvider {
    * @param {Function} callback triggered on end with (err, result)
    */
   _send(payload, callback) {
-    var _this = this;
-    var request = this._prepareRequest();
+    let _this = this;
+    let request = this._prepareRequest();
 
     request.onreadystatechange = function () {
       if (request.readyState === 4 && request.timeout !== 1) {
-        var result = request.responseText;
-        var error = null;
+        let result = request.responseText;
+        let error = null;
 
         try {
           result = JSON.parse(result);
