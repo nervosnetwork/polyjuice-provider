@@ -9,6 +9,7 @@
   },
   "scripts": {
     "fmt": "prettier --write src/* tests/* package.json",
+    "lint": "eslint -c ../../.eslintrc.js \"src/**/*.ts\"",
     "clean": "rm -rf lib/* && rm -rf dist/*",
     "build": "tsc",
     "boundle": "webpack",
