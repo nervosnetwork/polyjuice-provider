@@ -125,7 +125,8 @@ export class PolyjuiceHttpProvider {
         break;
       case "eth_sendTransaction":
         try {
-          const { from, gas, gasPrice, value, data, to } = params[0];
+          const { from, gas, gasPrice, value, data } = params[0];
+          const to = params[0].to || `0x${'0'.repeat(40)}`;
 
           const data_with_short_address =
             await this.abi.refactor_data_with_short_address(
