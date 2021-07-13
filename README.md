@@ -15,4 +15,4 @@ yarn add @polyjuice-provider/ethers
 
 A simple react example to use `@polyjuice-provider` module can [be found here](https://github.com/RetricSu/polyjuice-provider-example).
 
-`note: this project is still under development, some API might be changed in the future.`
+`note: this project is still under development, some APIs might be changed in the future.`
