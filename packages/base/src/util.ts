@@ -563,6 +563,19 @@ export class Godwoker {
     });
   }
 
+  async getPolyjuiceCreatorAccountId(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "poly_getCreatorId",
+        [],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          return resolve(res.result);
+        }
+      );
+    }); 
+  }
+
   async eth_getTransactionReceipt(tx_hash: Hash): Promise<string> {
     return new Promise((resolve, reject) => {
       this.client.request(
@@ -601,8 +614,8 @@ export class Godwoker {
       throw new Error(`Invalid eth address length: ${address.byteLength}`);
 
     if (address.equals(Buffer.from(Array(20).fill(0))))
-      // special-case: meta-contract address should return creator
-      return "0x3";
+      // special-case: meta-contract address should return creator id
+      return await this.getPolyjuiceCreatorAccountId();
 
     try {
       // assume it is normal contract address, thus an godwoken-short-address
