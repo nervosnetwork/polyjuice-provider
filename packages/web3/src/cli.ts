@@ -100,28 +100,24 @@ export class PolyjuiceHttpProviderCli extends PolyjuiceHttpProvider {
           );
 
           await this.godwoker.waitForTransactionReceipt(tx_hash);
-          this._send(payload, function (err, result) {
-            const res = {
-              jsonrpc: result.jsonrpc,
-              id: result.id,
-            };
-            const new_res = { ...res, ...{ result: tx_hash } };
-            callback(null, new_res);
-          });
-          break;
+          const res = {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            result: tx_hash,
+          };
+          callback(null, res);
         } catch (error) {
-          this.connected = false;
-          throw error;
+          callback(null, {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            error: error.message,
+          });
         }
+        break;
 
       default:
-        try {
-          super.send(payload, callback);
-          break;
-        } catch (error) {
-          this.connected = false;
-          throw error;
-        }
+        super.send(payload, callback);
+        break;
     }
   }
 }
