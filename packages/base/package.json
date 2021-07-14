@@ -4,9 +4,6 @@
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
-  "engines": {
-    "node": "14"
-  },
   "scripts": {
     "fmt": "prettier --write src/* tests/* package.json",
     "lint": "eslint -c ../../.eslintrc.js \"src/**/*.ts\"",
