@@ -1,12 +1,6 @@
-import { Hash, HexNumber, HexString, Script } from "@ckb-lumos/base";
+import { Hash, HexNumber, Script } from "@ckb-lumos/base";
 import { normalizers, Reader } from "ckb-js-toolkit";
-import {
-  L2Transaction,
-  RawL2Transaction,
-  CreateAccount,
-  RawWithdrawalRequest,
-  WithdrawalRequest,
-} from "../index";
+import { L2Transaction, WithdrawalRequest } from "../index";
 
 // Taken for now from https://github.com/xxuejie/ckb-js-toolkit/blob/68f5ff709f78eb188ee116b2887a362123b016cc/src/normalizers.js#L17-L69,
 // later we can think about exposing those functions directly.

@@ -102,12 +102,12 @@ test.before((t) => {
 test.serial("replace-web3-eth-account", async (t) => {
   web3.eth.accounts = polyjuiceAccounts;
   web3.eth.Contract._ethAccounts = web3.eth.accounts;
-  
+
   web3.eth.accounts.wallet.add(PRIVATE_KEY);
 
   const simplestorageV2 = new web3.eth.Contract(
     EXAMPLE_CONTRACT.abi as AbiItems,
-    process.env.EXAMPLE_CONTRACT_ADDRESS! 
+    process.env.EXAMPLE_CONTRACT_ADDRESS!
   );
 
   const txRes = await simplestorageV2.methods
@@ -132,8 +132,8 @@ test.serial("sign-tx-deploy", async (t) => {
       arguments: [],
     })
     .send({ from: ETH_ADDRESS, gas: "0x30d40", gasPrice: "0x00" });
-  
-  t.is(contract._address.slice(0, 2), '0x');
+
+  t.is(contract._address.slice(0, 2), "0x");
   t.is(contract._address.length, 42);
   contract_address = contract._address;
 });
@@ -144,7 +144,7 @@ test.serial("sign-tx-send", async (t) => {
 
   const simplestorageV2 = new Contract(
     EXAMPLE_CONTRACT.abi as AbiItems,
-    contract_address 
+    contract_address
   );
 
   const txRes = await simplestorageV2.methods

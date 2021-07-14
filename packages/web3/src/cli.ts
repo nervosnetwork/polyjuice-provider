@@ -35,7 +35,7 @@ export class PolyjuiceHttpProviderCli extends PolyjuiceHttpProvider {
     host: string,
     polyjuice_config: PolyjuiceConfig,
     private_key: string,
-    options?: HttpProviderOptions
+    _options?: HttpProviderOptions
   ) {
     super(host, polyjuice_config);
     this.signer = new Signer(private_key);

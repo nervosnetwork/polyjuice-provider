@@ -1,7 +1,11 @@
 import test from "ava";
 import { Contract, ContractFactory } from "ethers";
 import { AbiItems } from "@polyjuice-provider/base/lib/abi";
-import { PolyjuiceWallet, PolyjuiceJsonRpcProvider, PolyjuiceConfig } from "../lib/index";
+import {
+  PolyjuiceWallet,
+  PolyjuiceJsonRpcProvider,
+  PolyjuiceConfig,
+} from "../lib/index";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
@@ -88,10 +92,7 @@ test.before((t) => {
     abiItems: SimpleStorageV2_Abi as AbiItems,
     web3Url: godwoken_rpc_url,
   };
-  provider = new PolyjuiceJsonRpcProvider(
-    polyjuice_config,
-    godwoken_rpc_url
-  );
+  provider = new PolyjuiceJsonRpcProvider(polyjuice_config, godwoken_rpc_url);
   deployer = new PolyjuiceWallet(
     process.env.PRIVATE_KEY,
     polyjuice_config,

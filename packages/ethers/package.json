@@ -4,11 +4,9 @@
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
-  "engines": {
-    "node": "14"
-  },
   "scripts": {
     "fmt": "prettier --write src/* tests/* package.json",
+    "lint": "eslint -c ../../.eslintrc.js \"src/**/*.ts\"",
     "clean": "rm -rf lib/* && rm -rf dist/*",
     "build": "tsc",
     "test": "ava --timeout=100s",
@@ -32,7 +30,6 @@
     ]
   },
   "devDependencies": {
-    "@retric/test-provider": "^0.0.1-ethers540",
     "@types/node": "^14.14.37",
     "ava": "^3.15.0",
     "babel-plugin-transform-runtime": "^6.23.0",

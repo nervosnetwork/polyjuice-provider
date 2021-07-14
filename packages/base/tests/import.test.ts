@@ -11,7 +11,7 @@ import {
 } from "../lib/index";
 
 test.serial("typescript-import-from-index", (t) => {
-  t.is(typeof Abi, 'function');
-  t.is(typeof Godwoker, 'function');
-  t.is(typeof Signer, 'function');
+  t.is(typeof Abi, "function");
+  t.is(typeof Godwoker, "function");
+  t.is(typeof Signer, "function");
 });

@@ -168,17 +168,20 @@ export class Abi {
     calculate_short_address: (addr: string) => Promise<string>
   ) {
     const output_value_types = abi_item.outputs.map((item) => item.type);
-    var decoded_values: object = Web3EthAbi.decodeParameters(
+    let decoded_values: object = Web3EthAbi.decodeParameters(
       output_value_types,
       return_value
     );
-    const interested_value_indexs: number[] = output_value_types.reduce((result, t, index) => {
-      if (t === "address" || t === "address[]") {
-        result.push(index);
-      }
+    const interested_value_indexs: number[] = output_value_types.reduce(
+      (result, t, index) => {
+        if (t === "address" || t === "address[]") {
+          result.push(index);
+        }
 
-      return result
-    }, []);
+        return result;
+      },
+      []
+    );
     for await (const index of interested_value_indexs) {
       decoded_values[index + ""] = Array.isArray(decoded_values[index + ""])
         ? await Promise.all(
