@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "fmt": "yarn workspaces run fmt", 
-    "lint": "yarn workspace @polyjuice-provider/godwoken lint && yarn workspace @polyjuice-provider/base lint && yarn workspace @polyjuice-provider/ethers lint && yarn workspace @polyjuice-provider/web3 lint",
+    "lint": "yarn workspaces run lint",
     "build": "yarn workspace @polyjuice-provider/godwoken build && yarn workspace @polyjuice-provider/base build && yarn workspace @polyjuice-provider/ethers build && yarn workspace @polyjuice-provider/web3 build",
     "test-publish": "yarn workspace @polyjuice-provider/godwoken test-publish && yarn workspace @polyjuice-provider/base run test-publish && yarn workspace @polyjuice-provider/ethers test-publish && yarn workspace @polyjuice-provider/web3 test-publish"
   },
