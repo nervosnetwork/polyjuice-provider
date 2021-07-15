@@ -16,6 +16,8 @@ export interface DecodedMethod {
   params: DecodedMethodParam[];
 }
 
+export const DEFAULT_ETH_ADDRESS = `0x${"0".repeat(40)}`;
+
 export class Abi {
   private abi_items: AbiItem[] = [];
   private interested_methods: AbiItem[] = [];
@@ -138,6 +140,12 @@ export class Abi {
     const decode_data = this.decode_method(data);
     const new_decode_data = decode_data.params.map(async (p) => {
       if (p.type === "address" || p.type === "address[]") {
+        if (p.value === DEFAULT_ETH_ADDRESS) {
+          // special case: 0x0000...
+          // todo: right now we keep the 0x00000.., later maybe should convert to polyjuice creator short address?
+          return p;
+        }
+
         p.value = Array.isArray(p.value)
           ? await Promise.all(
               p.value.map(async (v) => await calculate_short_address(v))
@@ -160,8 +168,8 @@ export class Abi {
   //
   // known-issue:
   // 	- when the return value is EOA address and when it haven't create account on godowken,
-  //	  then we have no idea what the original eth_address is. we are not able to recover original address.
-  //	 thus we do not support return address type which is not exist here
+  //	  we query from web3 address mapping store layer to get the origin EOA address.
+  //	  however, we do not support return address type with create2 contract address which not exist yet.
   async refactor_return_value_with_short_address(
     return_value: string,
     abi_item: AbiItem,
@@ -183,13 +191,18 @@ export class Abi {
       []
     );
     for await (const index of interested_value_indexs) {
-      decoded_values[index + ""] = Array.isArray(decoded_values[index + ""])
+      if (decoded_values[index] === DEFAULT_ETH_ADDRESS) {
+        // special case: 0x0000.. normally when calling an parameter which is un-init.
+        continue;
+      }
+
+      decoded_values[index] = Array.isArray(decoded_values[index])
         ? await Promise.all(
-            decoded_values[index + ""].map(
+            decoded_values[index].map(
               async (v) => await calculate_short_address(v)
             )
           )
-        : await calculate_short_address(decoded_values[index + ""]);
+        : await calculate_short_address(decoded_values[index]);
     }
     let decode_values_with_refactor = Object.values(decoded_values);
     decode_values_with_refactor = decode_values_with_refactor.slice(
