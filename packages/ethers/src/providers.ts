@@ -103,6 +103,9 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
               )
             );
           // todo: use an common method to format params
+          params[0].from =
+            params[0].from ||
+            (await this.godwoker.getPolyjuiceDefaultFromAddress());
           params[0].data = data_with_short_address;
           params[0].gas = params[0].gas || "0x345f3400";
           params[0].gasPrice = params[0].gasPrice || "0x00";
@@ -150,6 +153,9 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
               )
             );
           params[0].data = data_with_short_address;
+          params[0].from =
+            params[0].from ||
+            (await this.godwoker.getPolyjuiceDefaultFromAddress());
           return super.send(method, params);
         } catch (error) {
           this.emit("debug", {
