@@ -174,19 +174,20 @@ export class PolyjuiceHttpProvider {
             signature
           );
           await this.godwoker.waitForTransactionReceipt(tx_hash);
-          this._send(payload, function (err, result) {
-            const res = {
-              jsonrpc: result.jsonrpc,
-              id: result.id,
-            };
-            const new_res = { ...res, ...{ result: tx_hash } };
-            callback(null, new_res);
-          });
-          break;
+          const res = {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            result: tx_hash,
+          };
+          callback(null, res);
         } catch (error) {
-          this.connected = false;
-          throw error;
+          callback(null, {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            error: error.message,
+          });
         }
+        break;
 
       case "eth_call":
         try {
@@ -218,14 +219,12 @@ export class PolyjuiceHttpProvider {
           const abi_item =
             this.abi.get_intereted_abi_item_by_encoded_data(data);
           if (!abi_item) {
-            this._send(payload, function (err, result) {
-              const res = {
-                jsonrpc: result.jsonrpc,
-                id: result.id,
-              };
-              const new_res = { ...res, ...{ result: run_result.return_data } };
-              callback(null, new_res);
-            });
+            const res = {
+              jsonrpc: payload.jsonrpc,
+              id: payload.id,
+              result: run_result.return_data,
+            };
+            callback(null, res);
           } else {
             const return_value_with_short_address =
               await this.abi.refactor_return_value_with_short_address(
@@ -235,23 +234,21 @@ export class PolyjuiceHttpProvider {
                   this.godwoker
                 )
               );
-            this._send(payload, function (err, result) {
-              const res = {
-                jsonrpc: result.jsonrpc,
-                id: result.id,
-              };
-              const new_res = {
-                ...res,
-                ...{ result: return_value_with_short_address },
-              };
-              callback(null, new_res);
-            });
+            const res = {
+              jsonrpc: payload.jsonrpc,
+              id: payload.id,
+              result: return_value_with_short_address,
+            };
+            callback(null, res);
           }
-          break;
         } catch (error) {
-          this.connected = false;
-          throw error;
+          callback(null, {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            error: error.message,
+          });
         }
+        break;
 
       case "eth_estimateGas":
         try {
@@ -269,20 +266,18 @@ export class PolyjuiceHttpProvider {
           new_payload.params[0].data = data_with_short_address;
 
           this._send(new_payload, callback);
-          break;
         } catch (error) {
-          this.connected = false;
-          throw error;
+          callback(null, {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            error: error.message,
+          });
         }
+        break;
 
       default:
-        try {
-          this._send(payload, callback);
-          break;
-        } catch (error) {
-          this.connected = false;
-          throw error;
-        }
+        this._send(payload, callback);
+        break;
     }
   }
 
