@@ -106,11 +106,6 @@ test.serial("import class", (t) => {
 });
 
 test.serial("deploy_example_contract", async (t) => {
-  if (process.env.MODE === "browser") {
-    // skip test
-    return t.pass();
-  }
-
   const implementationFactory = new ContractFactory(
     SimpleStorageV2_Abi,
     SimpleStorageV2_ByteCode,
@@ -128,11 +123,6 @@ test.serial("deploy_example_contract", async (t) => {
 });
 
 test.serial("call set address on contract", async (t) => {
-  if (process.env.MODE === "browser") {
-    // skip test
-    return t.pass();
-  }
-
   const simpleStorageV2 = new Contract(
     SimpleStorageV2_Address,
     SimpleStorageV2_Abi,
@@ -145,11 +135,6 @@ test.serial("call set address on contract", async (t) => {
 });
 
 test.serial("call contract get_address", async (t) => {
-  if (process.env.MODE === "browser") {
-    // skip test
-    return t.pass();
-  }
-
   const simpleStorageV2 = new Contract(
     SimpleStorageV2_Address,
     SimpleStorageV2_Abi,
