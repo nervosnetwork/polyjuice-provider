@@ -5,8 +5,12 @@ import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { BigNumber } from "@ethersproject/bignumber";
 import { ConnectionInfo } from "@ethersproject/web";
 import { Networkish } from "@ethersproject/networks";
-import { Abi, AbiItems } from "@polyjuice-provider/base/lib/abi";
-import { Godwoker, GodwokerOption } from "@polyjuice-provider/base/lib/util";
+import {
+  Godwoker,
+  GodwokerOption,
+  Abi,
+  AbiItems,
+} from "@polyjuice-provider/base";
 
 export type PolyjuiceConfig = {
   rollupTypeHash: string;
@@ -18,7 +22,6 @@ export type PolyjuiceConfig = {
 export interface PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   constructor(
     polyjuiceConfig: PolyjuiceConfig,
-    abi: AbiItems,
     url?: ConnectionInfo | string,
     network?: Networkish
   );
@@ -47,6 +50,10 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
       },
     };
     this.godwoker = new Godwoker(web3_url, godwoker_option);
+  }
+
+  setAbi(abiItems: AbiItems) {
+    this.abi = new Abi(abiItems);
   }
 
   async sendTransaction(

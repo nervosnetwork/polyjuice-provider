@@ -101,6 +101,10 @@ export class PolyjuiceHttpProvider {
     }
   }
 
+  setAbi(abiItems: AbiItems) {
+    this.abi = new Abi(abiItems);
+  }
+
   async send(
     payload: any,
     callback?: (

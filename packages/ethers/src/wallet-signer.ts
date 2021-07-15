@@ -4,8 +4,12 @@ import { ExternallyOwnedAccount } from "@ethersproject/abstract-signer";
 import { SigningKey } from "@ethersproject/signing-key";
 import { resolveProperties } from "@ethersproject/properties";
 import { getAddress } from "@ethersproject/address";
-import { GodwokerOption, Godwoker } from "@polyjuice-provider/base/lib/util";
-import { Abi } from "@polyjuice-provider/base/lib/abi";
+import {
+  GodwokerOption,
+  Godwoker,
+  Abi,
+  AbiItems,
+} from "@polyjuice-provider/base";
 import { PolyjuiceConfig } from "./providers";
 
 import { Logger } from "@ethersproject/logger";
@@ -44,6 +48,10 @@ export class PolyjuiceWallet extends Wallet {
 
     this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwokerOption);
     this.abi = new Abi(polyjuiceConfig.abiItems || []);
+  }
+
+  setAbi(abiItems: AbiItems) {
+    this.abi = new Abi(abiItems);
   }
 
   signTransaction(transaction: TransactionRequest): Promise<string> {

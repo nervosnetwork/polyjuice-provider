@@ -6,6 +6,7 @@ import {
 } from "web3-core";
 import {
   Abi,
+  AbiItems,
   EthTransaction,
   Godwoker,
   GodwokerOption,
@@ -50,6 +51,10 @@ export class PolyjuiceAccounts extends Accounts {
     };
     this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwokerOption);
     this.abi = new Abi(polyjuiceConfig.abiItems || []);
+  }
+
+  setAbi(abiItems: AbiItems) {
+    this.abi = new Abi(abiItems);
   }
 
   signTransaction(
