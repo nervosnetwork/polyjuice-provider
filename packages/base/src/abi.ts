@@ -1,4 +1,5 @@
 import { AbiOutput, AbiInput, AbiItem } from "web3-utils";
+import { DEFAULT_EMPTY_ETH_ADDRESS } from "./constant";
 const Web3EthAbi = require("web3-eth-abi");
 
 export type AbiItems = AbiItem[];
@@ -15,8 +16,6 @@ export interface DecodedMethod {
   name: string;
   params: DecodedMethodParam[];
 }
-
-export const DEFAULT_ETH_ADDRESS = `0x${"0".repeat(40)}`;
 
 export class Abi {
   private abi_items: AbiItem[] = [];
@@ -140,7 +139,7 @@ export class Abi {
     const decode_data = this.decode_method(data);
     const new_decode_data = decode_data.params.map(async (p) => {
       if (p.type === "address" || p.type === "address[]") {
-        if (p.value === DEFAULT_ETH_ADDRESS) {
+        if (p.value === DEFAULT_EMPTY_ETH_ADDRESS) {
           // special case: 0x0000...
           // todo: right now we keep the 0x00000.., later maybe should convert to polyjuice creator short address?
           return p;
@@ -191,7 +190,7 @@ export class Abi {
       []
     );
     for await (const index of interested_value_indexs) {
-      if (decoded_values[index] === DEFAULT_ETH_ADDRESS) {
+      if (decoded_values[index] === DEFAULT_EMPTY_ETH_ADDRESS) {
         // special case: 0x0000.. normally when calling an parameter which is un-init.
         continue;
       }
