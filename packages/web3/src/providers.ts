@@ -206,7 +206,8 @@ export class PolyjuiceHttpProvider {
             );
 
           const t = {
-            from: from || await this.godwoker.getPolyjuiceDefaultFromAddress(),
+            from:
+              from || (await this.godwoker.getPolyjuiceDefaultFromAddress()),
             to: to,
             value: value || 0,
             data: data_with_short_address || "",
@@ -269,7 +270,9 @@ export class PolyjuiceHttpProvider {
 
           new_payload.params[0].data = data_with_short_address;
 
-          new_payload.params[0].from = new_payload.params[0].from || await this.godwoker.getPolyjuiceDefaultFromAddress();
+          new_payload.params[0].from =
+            new_payload.params[0].from ||
+            (await this.godwoker.getPolyjuiceDefaultFromAddress());
           this._send(new_payload, callback);
         } catch (error) {
           callback(null, {
