@@ -124,10 +124,71 @@ test.serial("refactor eth-address in outputs", async (t) => {
     output_value_types,
     test_values
   );
-  const new_decoded_value = await abi.refactor_return_value_with_short_address(
+  const new_test_values = await abi.refactor_return_value_with_short_address(
     test_values,
     abi_item,
     godwoker.getShortAddressByAllTypeEthAddress.bind(godwoker)
   );
-  t.not(decoded_values[0], new_decoded_value[0]);
+  const new_decoded_values = Web3EthAbi.decodeParameters(
+    output_value_types,
+    new_test_values
+  );
+  t.not(decoded_values[0], new_decoded_values[0]);
+});
+
+test.serial("refator default 0x00 address in inputs", async (t) => {
+  const testData =
+    "0x53d9d91000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a6d9c5f7d4de3cef51ad3b7235d79ccc95114daa";
+  const decodedData = abi.decode_method(testData);
+  const newTestData = await abi.refactor_data_with_short_address(
+    testData,
+    godwoker.getShortAddressByAllTypeEthAddress.bind(godwoker)
+  );
+  const newDecodedData = abi.decode_method(newTestData);
+  t.is(
+    decodedData.params[0].value[0],
+    "0x0000000000000000000000000000000000000000"
+  );
+  t.is(
+    decodedData.params[0].value[1],
+    "0xa6d9c5f7d4de3cef51ad3b7235d79ccc95114daa"
+  );
+  t.not(testData, newTestData);
+  t.notDeepEqual(decodedData, newDecodedData);
+});
+
+test.serial("refactor default 0x00 in outputs", async (t) => {
+  const abi_item = {
+    inputs: [
+      { type: "address[]", name: "_owners" },
+      { type: "uint256", name: "_required" },
+      { type: "uint256", name: "_dailyLimit" },
+    ],
+    constant: false,
+    name: "create",
+    payable: false,
+    outputs: [{ type: "address", name: "wallet" }],
+    type: "function",
+  };
+
+  const test_values = Web3EthAbi.encodeParameters(
+    ["address"],
+    ["0x0000000000000000000000000000000000000000"]
+  );
+  const output_value_types = abi_item.outputs.map((item) => item.type);
+  const decoded_values = Web3EthAbi.decodeParameters(
+    output_value_types,
+    test_values
+  );
+  const new_test_values = await abi.refactor_return_value_with_short_address(
+    test_values,
+    abi_item,
+    godwoker.getShortAddressByAllTypeEthAddress.bind(godwoker)
+  );
+  const new_decoded_value = Web3EthAbi.decodeParameters(
+    output_value_types,
+    new_test_values
+  );
+  t.is(decoded_values[0], "0x0000000000000000000000000000000000000000");
+  t.is(new_decoded_value[0], "0x0000000000000000000000000000000000000000");
 });
