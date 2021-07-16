@@ -9,6 +9,9 @@ import {
   Godwoker,
   Abi,
   AbiItems,
+  POLY_MAX_TRANSACTION_GAS_LIMIT,
+  POLY_MIN_GAS_PRICE,
+  DEFAULT_EMPTY_ETH_ADDRESS,
 } from "@polyjuice-provider/base";
 import { PolyjuiceConfig } from "./providers";
 
@@ -93,11 +96,11 @@ export class PolyjuiceWallet extends Wallet {
 
       const t = {
         from: tx.from,
-        to: tx.to || "0x" + "0".repeat(40),
+        to: tx.to || DEFAULT_EMPTY_ETH_ADDRESS,
         value: hexlify(tx.value || 0),
         data: data_with_short_address,
-        gas: hexlify(tx.gasLimit || 50000),
-        gasPrice: hexlify(tx.gasPrice || 0),
+        gas: hexlify(tx.gasLimit || POLY_MAX_TRANSACTION_GAS_LIMIT),
+        gasPrice: hexlify(tx.gasPrice || POLY_MIN_GAS_PRICE),
       };
       const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
       const message = await this.godwoker.generateMessageFromEthTransaction(t);

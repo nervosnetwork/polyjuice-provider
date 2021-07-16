@@ -10,6 +10,8 @@ import {
   GodwokerOption,
   Abi,
   AbiItems,
+  POLY_MAX_TRANSACTION_GAS_LIMIT,
+  POLY_MIN_GAS_PRICE,
 } from "@polyjuice-provider/base";
 
 export type PolyjuiceConfig = {
@@ -107,8 +109,12 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
             params[0].from ||
             (await this.godwoker.getPolyjuiceDefaultFromAddress());
           params[0].data = data_with_short_address;
-          params[0].gas = params[0].gas || "0x345f3400";
-          params[0].gasPrice = params[0].gasPrice || "0x00";
+          params[0].gas =
+            params[0].gas ||
+            `0x${BigInt(POLY_MAX_TRANSACTION_GAS_LIMIT).toString(16)}`;
+          params[0].gasPrice =
+            params[0].gasPrice ||
+            `0x${BigInt(POLY_MIN_GAS_PRICE).toString(16)}`;
           params[0].value = params[0].value || "0x00";
 
           const t = params[0];

@@ -15,6 +15,9 @@ import {
   Signer,
   Abi,
   AbiItems,
+  POLY_MAX_TRANSACTION_GAS_LIMIT,
+  POLY_MIN_GAS_PRICE,
+  DEFAULT_EMPTY_ETH_ADDRESS,
 } from "@polyjuice-provider/base";
 
 export interface HttpHeader {
@@ -137,7 +140,7 @@ export class PolyjuiceHttpProvider {
       case "eth_sendTransaction":
         try {
           const { from, gas, gasPrice, value, data } = params[0];
-          const to = params[0].to || `0x${"0".repeat(40)}`;
+          const to = params[0].to || DEFAULT_EMPTY_ETH_ADDRESS;
 
           const data_with_short_address =
             await this.abi.refactor_data_with_short_address(
@@ -211,8 +214,8 @@ export class PolyjuiceHttpProvider {
             to: to,
             value: value || 0,
             data: data_with_short_address || "",
-            gas: gas || 5000000,
-            gasPrice: gasPrice || 0,
+            gas: gas || POLY_MAX_TRANSACTION_GAS_LIMIT,
+            gasPrice: gasPrice || POLY_MIN_GAS_PRICE,
           };
 
           const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);

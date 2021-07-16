@@ -5,6 +5,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "test": "echo 'no test for godwoken'",
     "fmt": "prettier --write \"src/**/*.ts\" package.json",
     "lint": "eslint -c ../../.eslintrc.js \"src/**/*.ts\"",
     "clean": "rm -rf lib",

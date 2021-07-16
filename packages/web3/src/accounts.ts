@@ -7,9 +7,12 @@ import {
 import {
   Abi,
   AbiItems,
+  DEFAULT_EMPTY_ETH_ADDRESS,
   EthTransaction,
   Godwoker,
   GodwokerOption,
+  POLY_MAX_TRANSACTION_GAS_LIMIT,
+  POLY_MIN_GAS_PRICE,
 } from "@polyjuice-provider/base";
 import { PolyjuiceConfig } from "./providers";
 import BN from "bn.js";
@@ -147,10 +150,14 @@ export function formatEthTransaction({
 }) {
   const ethTx: EthTransaction = {
     from: from,
-    to: to || `0x${"0".repeat(40)}`,
+    to: to || DEFAULT_EMPTY_ETH_ADDRESS,
     value: value ? TxConfigValueTypeToString(value) : "0x00",
-    gas: gas ? TxConfigValueTypeToString(gas) : "0xe4e1c0",
-    gasPrice: gasPrice ? TxConfigValueTypeToString(gasPrice) : "0x00",
+    gas: gas
+      ? TxConfigValueTypeToString(gas)
+      : `0x${BigInt(POLY_MAX_TRANSACTION_GAS_LIMIT).toString(16)}`,
+    gasPrice: gasPrice
+      ? TxConfigValueTypeToString(gasPrice)
+      : `0x${BigInt(POLY_MIN_GAS_PRICE).toString(16)}`,
     data: data ? TxConfigValueTypeToString(data) : "0x00",
     nonce: nonce ? TxConfigValueTypeToString(nonce) : "0x1",
   };

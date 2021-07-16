@@ -12,6 +12,7 @@ import {
   NormalizeL2Transaction,
   NormalizeRawL2Transaction,
 } from "@polyjuice-provider/godwoken/lib/normalizer";
+import { U128_MIN, U128_MAX, DEFAULT_EMPTY_ETH_ADDRESS } from "./constant";
 import { Reader } from "ckb-js-toolkit";
 import crossFetch from "cross-fetch"; // for nodejs compatibility polyfill
 import { Buffer } from "buffer"; // for browser compatibility polyfill
@@ -45,15 +46,6 @@ Buffer.prototype.writeBigUInt64LE = function (value, offset) {
 };
 
 const jaysonBrowserClient = require("jayson/lib/client/browser");
-
-const U128_MIN = BigInt(0);
-const U128_MAX = BigInt("340282366920938463463374607431768211455");
-// 340282366920938463463374607431768211455 equals to BigInt(2) ** BigInt(128) - BigInt(1)
-// if we use formular instead of the direct result,
-// in some case, boundler like webpack will turn ** into Math.pow(),
-// which doesn't support BigInt type thus causing error.
-// this is a known issue as https://github.com/facebook/create-react-app/issues/10785
-const EMPTY_ETH_ADDRESS = "0x" + "00".repeat(20);
 
 declare global {
   interface Window {
@@ -672,7 +664,7 @@ export class Godwoker {
     const args_data = data;
 
     let args_7 = "";
-    if (to === EMPTY_ETH_ADDRESS || to === "0x" || to === "0x0") {
+    if (to === DEFAULT_EMPTY_ETH_ADDRESS || to === "0x" || to === "0x0") {
       args_7 = "0x03";
     } else {
       args_7 = "0x00";
