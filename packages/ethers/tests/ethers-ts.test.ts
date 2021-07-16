@@ -168,3 +168,22 @@ test.serial("call contract get array address", async (t) => {
   const address_array = await simpleStorageV2.callStatic.getArray();
   t.deepEqual(address_array, test_address_array);
 });
+
+// test.serial("make a lot of send at serial", async (t) => {
+//   const simpleStorageV2 = new Contract(
+//     process.env.EXAMPLE_CONTRACT_ADDRESS,
+//     SimpleStorageV2_Abi,
+//     deployer
+//   );
+// 
+//   for(let i=0;i<10;i++){
+//     const res = await simpleStorageV2.setArray(test_address_array);
+//     t.is(typeof res.wait, "function");
+//     const txReceipt = await res.wait();
+//     t.not(txReceipt, undefined);
+//     t.is(txReceipt.transactionHash.slice(0, 2), "0x");
+//     t.pass();
+//   }
+//   
+//   t.pass();  
+// });

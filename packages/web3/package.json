@@ -28,6 +28,8 @@
     "extensions": [
       "ts"
     ],
+    "failFast": true,
+    "concurrency": 1,
     "require": [
       "ts-node/register"
     ]
