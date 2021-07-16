@@ -160,43 +160,43 @@ test.serial("sign-tx-send", async (t) => {
 // test.serial("make a lot of call at short time", async (t) => {
 //   polyjuiceAccounts.wallet.add(PRIVATE_KEY);
 //   Contract.setProvider(provider, polyjuiceAccounts);
-// 
+//
 //   const simplestorageV2 = new Contract(
 //     EXAMPLE_CONTRACT.abi as AbiItems,
 //     process.env.EXAMPLE_CONTRACT_ADDRESS
 //   );
-// 
+//
 //   async function concurrentCall(){
 //     const res = await simplestorageV2.methods
 //     .get().call();
 //     console.log('cocurrently call =>', res);
 //   }
-// 
+//
 //   concurrentCall();
 //   concurrentCall();
 //   concurrentCall();
 //   concurrentCall();
 //   concurrentCall();
-// 
+//
 //   for(let i=0;i<10;i++){
 //     const res = await simplestorageV2.methods
 //     .get().call();
 //     console.log(i, res);
 //     t.pass();
 //   }
-// 
+//
 //   t.pass();
 // });
-// 
+//
 // test.serial("make a lot of send at serial", async (t) => {
 //   polyjuiceAccounts.wallet.add(PRIVATE_KEY);
 //   Contract.setProvider(provider, polyjuiceAccounts);
-// 
+//
 //   const simplestorageV2 = new Contract(
 //     EXAMPLE_CONTRACT.abi as AbiItems,
 //     process.env.EXAMPLE_CONTRACT_ADDRESS
 //   );
-// 
+//
 //   for(let i=0;i<10;i++){
 //     const txReceipt = await simplestorageV2.methods
 //     .set(ETH_ADDRESS).send({ from: ETH_ADDRESS, gas: "0x30d40", gasPrice: "0x00" });
@@ -205,19 +205,19 @@ test.serial("sign-tx-send", async (t) => {
 //     console.log(i, txReceipt);
 //     t.pass();
 //   }
-// 
+//
 //   t.pass();
 // });
-// 
+//
 // test.serial("make two send at sametime with same nonce", async (t) => {
 //   polyjuiceAccounts.wallet.add(PRIVATE_KEY);
 //   Contract.setProvider(provider, polyjuiceAccounts);
-// 
+//
 //   const simplestorageV2 = new Contract(
 //     EXAMPLE_CONTRACT.abi as AbiItems,
 //     process.env.EXAMPLE_CONTRACT_ADDRESS
 //   );
-// 
+//
 //   async function send1(){
 //     const txReceipt = await simplestorageV2.methods
 //     .set(ETH_ADDRESS).send({ from: ETH_ADDRESS, gas: "0x30d40", gasPrice: "0x00" });
@@ -228,7 +228,7 @@ test.serial("sign-tx-send", async (t) => {
 //     t.is(typeof txReceipt.gasUsed, "number");
 //     t.is(txReceipt.status, true);
 //   }
-// 
+//
 //   async function send2(){
 //     const txReceipt = await simplestorageV2.methods
 //     .set(ETH_ADDRESS).send({ from: ETH_ADDRESS, gas: "0x30e40", gasPrice: "0x00" });
@@ -239,17 +239,16 @@ test.serial("sign-tx-send", async (t) => {
 //     t.is(typeof txReceipt.gasUsed, "number");
 //     t.is(txReceipt.status, true);
 //   }
-// 
+//
 //   send1();
 //   send2();
-// 
+//
 //   const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-// 
+//
 //   for(let i=0;i<10;i++){
 //     await delay(5000);
 //     t.pass();
 //   }
-// 
+//
 //   t.pass();
 // });
-

@@ -592,12 +592,16 @@ export class Godwoker {
   }
 
   // todo: timeout should be set with > 5 blocks long, may change in mainnet.
-  async waitForTransactionReceipt(tx_hash: Hash, timeout: number = 225, loopInterval = 3) {
+  async waitForTransactionReceipt(
+    tx_hash: Hash,
+    timeout: number = 225,
+    loopInterval = 3
+  ) {
     for (let index = 0; index < timeout; index += loopInterval) {
-      const tx_receipt = await this.eth_getTransactionReceipt(
-        tx_hash
+      const tx_receipt = await this.eth_getTransactionReceipt(tx_hash);
+      console.log(
+        `keep fetching tx_receipt with ${tx_hash}, waited for ${index} seconds`
       );
-      console.log(`keep fetching tx_receipt with ${tx_hash}, waited for ${index} seconds`);
 
       await this.asyncSleep(loopInterval * 1000);
 
@@ -605,7 +609,9 @@ export class Godwoker {
         return;
       }
     }
-    throw new Error(`tx might be failed: cannot fetch tx_receipt with tx ${tx_hash} in ${timeout} seconds`);
+    throw new Error(
+      `tx might be failed: cannot fetch tx_receipt with tx ${tx_hash} in ${timeout} seconds`
+    );
   }
 
   asyncSleep(ms = 0) {

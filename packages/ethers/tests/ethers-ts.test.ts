@@ -175,7 +175,7 @@ test.serial("call contract get array address", async (t) => {
 //     SimpleStorageV2_Abi,
 //     deployer
 //   );
-// 
+//
 //   for(let i=0;i<10;i++){
 //     const res = await simpleStorageV2.setArray(test_address_array);
 //     t.is(typeof res.wait, "function");
@@ -184,6 +184,6 @@ test.serial("call contract get array address", async (t) => {
 //     t.is(txReceipt.transactionHash.slice(0, 2), "0x");
 //     t.pass();
 //   }
-//   
-//   t.pass();  
+//
+//   t.pass();
 // });
