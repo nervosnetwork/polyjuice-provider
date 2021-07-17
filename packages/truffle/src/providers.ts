@@ -1,16 +1,76 @@
 import HDWalletProvider from "@truffle/hdwallet-provider";
 import { ConstructorArguments } from "@truffle/hdwallet-provider/dist/constructor/ConstructorArguments";
 import HookedSubprovider from "@trufflesuite/web3-provider-engine/subproviders/hooked-wallet";
+import * as EthUtil from "ethereumjs-util";
+import FiltersSubprovider from "@trufflesuite/web3-provider-engine/subproviders/filters";
+import ProviderSubprovider from "@trufflesuite/web3-provider-engine/subproviders/provider";
+import ProviderEngine from "@trufflesuite/web3-provider-engine";
+// @ts-ignore
+import RpcProvider from "@trufflesuite/web3-provider-engine/subproviders/rpc";
+// @ts-ignore
+import WebsocketProvider from "@trufflesuite/web3-provider-engine/subproviders/websocket";
+import Url from "url";
+import { getOptions } from "@truffle/hdwallet-provider/dist/constructor/getOptions";
+import {
+  Godwoker,
+  GodwokerOption,
+  AbiItems,
+  POLY_MAX_TRANSACTION_GAS_LIMIT,
+  POLY_MIN_GAS_PRICE,
+  DEFAULT_EMPTY_ETH_ADDRESS,
+} from "@polyjuice-provider/base";
+import { NonceTrackerSubprovider as NonceSubProvider } from "./nonce-tracker";
 
-export interface PolyjuiceHDWalletProvider extends HDWalletProvider {}
+type PolyjuiceConfig = {
+  rollupTypeHash: string;
+  ethAccountLockCodeHash: string;
+  abiItems?: AbiItems;
+  web3Url?: string;
+};
+
+const singletonNonceSubProvider = new NonceSubProvider();
 
 export class PolyjuiceHDWalletProvider extends HDWalletProvider {
-  constructor(...args: ConstructorArguments) {
+  constructor(args: ConstructorArguments, polyjuiceConfig: PolyjuiceConfig) {
     super(...args);
+    this.engine.stop();
+    this.engine = undefined;
 
-    var that = this;
+    const {
+      providerOrUrl, // required
+      // addressIndex = 0,
+      // numberOfAddresses = 10,
+      shareNonce = true,
+      // derivationPath = `m/44'/60'/0'/0/`,
+      pollingInterval = 4000,
+      // chainId,
+      // chainSettings = {},
 
-    const tmpAccounts = this.addresses;
+      // what's left is either a mnemonic or a list of private keys
+      // ...signingAuthority
+    } = getOptions(...args);
+
+    const tmpAccounts = this.getAddresses();
+    // @ts-ignore: Private method
+    const tmpWallets = this.wallets;
+
+    const godwokerOption: GodwokerOption = {
+      godwoken: {
+        rollup_type_hash: polyjuiceConfig.rollupTypeHash,
+        eth_account_lock: {
+          code_hash: polyjuiceConfig.ethAccountLockCodeHash,
+          hash_type: "type",
+        },
+      },
+    };
+
+    const godwoker = new Godwoker(polyjuiceConfig.web3Url, godwokerOption);
+
+    this.engine = new ProviderEngine({
+      pollingInterval,
+    });
+
+    const self = this;
     this.engine.addProvider(
       new HookedSubprovider({
         getAccounts(cb: any) {
@@ -24,7 +84,8 @@ export class PolyjuiceHDWalletProvider extends HDWalletProvider {
           }
         },
         async signTransaction(txParams: any, cb: any) {
-          await that.initialized;
+          // @ts-ignore: Private method
+          await self.initialized;
           // we need to rename the 'gas' field
           txParams.gasLimit = txParams.gas;
           delete txParams.gas;
@@ -36,25 +97,35 @@ export class PolyjuiceHDWalletProvider extends HDWalletProvider {
           } else {
             cb("Account not found");
           }
-          const chain = self.chainId;
-          const KNOWN_CHAIN_IDS = new Set([1, 3, 4, 5, 42]);
-          let txOptions;
-          if (typeof chain !== "undefined" && KNOWN_CHAIN_IDS.has(chain)) {
-            txOptions = { chain };
-          } else if (typeof chain !== "undefined") {
-            const common = Common.forCustomChain(
-              1,
-              {
-                name: "custom chain",
-                chainId: chain,
-              },
-              self.hardfork
-            );
-            txOptions = { common };
-          }
-          const tx = new Transaction(txParams, txOptions);
-          tx.sign(pkey as Buffer);
-          const rawTx = `0x${tx.serialize().toString("hex")}`;
+          // @ts-ignore: Private method
+          // const chain = self.chainId;
+          // const KNOWN_CHAIN_IDS = new Set([1, 3, 4, 5, 42]);
+
+          let t = {
+            from: EthUtil.bufferToHex(txParams.from),
+            to: EthUtil.bufferToHex(txParams.to) || DEFAULT_EMPTY_ETH_ADDRESS,
+            value: EthUtil.bufferToHex(txParams.value) || "0x0",
+            data: EthUtil.bufferToHex(txParams.data),
+            gas:
+              EthUtil.bufferToHex(txParams.gasLimit) ||
+              "0x" + POLY_MAX_TRANSACTION_GAS_LIMIT.toString(16),
+            gasPrice:
+              EthUtil.bufferToHex(txParams.gasPrice) ||
+              "0x" + POLY_MIN_GAS_PRICE.toString(16),
+          };
+          const polyjuice_tx = await godwoker.assembleRawL2Transaction(t);
+          const message = await godwoker.generateMessageFromEthTransaction(t);
+          const msgHashBuff = EthUtil.toBuffer(message);
+          const sig = EthUtil.ecsign(msgHashBuff, pkey);
+          const signature = EthUtil.toRpcSig(sig.v, sig.r, sig.s);
+          const packedSignature = godwoker.packSignature(signature);
+
+          const l2_tx = {
+            raw: polyjuice_tx,
+            signature: packedSignature,
+          };
+          const rawTx = godwoker.serializeL2Transaction(l2_tx);
+
           cb(null, rawTx);
         },
         signMessage({ data, from }: any, cb: any) {
@@ -77,5 +148,37 @@ export class PolyjuiceHDWalletProvider extends HDWalletProvider {
         },
       })
     );
+
+    !shareNonce
+      ? this.engine.addProvider(new NonceSubProvider().setGodwoker(godwoker))
+      : this.engine.addProvider(
+          singletonNonceSubProvider.setGodwoker(godwoker)
+        );
+
+    this.engine.addProvider(new FiltersSubprovider());
+    if (typeof providerOrUrl === "string") {
+      const url = providerOrUrl;
+
+      const providerProtocol = (
+        Url.parse(url).protocol || "http:"
+      ).toLowerCase();
+
+      switch (providerProtocol) {
+        case "ws:":
+        case "wss:":
+          this.engine.addProvider(new WebsocketProvider({ rpcUrl: url }));
+          break;
+        default:
+          this.engine.addProvider(new RpcProvider({ rpcUrl: url }));
+      }
+    } else {
+      const provider = providerOrUrl;
+      this.engine.addProvider(new ProviderSubprovider(provider, "gw"));
+    }
+
+    // Required by the provider engine.
+    this.engine.start((err: any) => {
+      if (err) throw err;
+    });
   }
 }
