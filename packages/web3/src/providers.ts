@@ -17,7 +17,7 @@ import {
   AbiItems,
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
-  DEFAULT_EMPTY_ETH_ADDRESS,
+  formalizeEthToAddress,
 } from "@polyjuice-provider/base";
 
 export interface HttpHeader {
@@ -140,7 +140,7 @@ export class PolyjuiceHttpProvider {
       case "eth_sendTransaction":
         try {
           const { from, gas, gasPrice, value, data } = params[0];
-          const to = params[0].to || DEFAULT_EMPTY_ETH_ADDRESS;
+          const to = formalizeEthToAddress(params[0].to);
 
           const data_with_short_address =
             await this.abi.refactor_data_with_short_address(

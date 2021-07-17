@@ -7,8 +7,8 @@ import {
 import {
   Abi,
   AbiItems,
-  DEFAULT_EMPTY_ETH_ADDRESS,
   EthTransaction,
+  formalizeEthToAddress,
   Godwoker,
   GodwokerOption,
   POLY_MAX_TRANSACTION_GAS_LIMIT,
@@ -150,7 +150,7 @@ export function formatEthTransaction({
 }) {
   const ethTx: EthTransaction = {
     from: from,
-    to: to || DEFAULT_EMPTY_ETH_ADDRESS,
+    to: formalizeEthToAddress(to),
     value: value ? TxConfigValueTypeToString(value) : "0x00",
     gas: gas
       ? TxConfigValueTypeToString(gas)

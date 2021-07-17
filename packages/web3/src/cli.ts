@@ -10,7 +10,7 @@ import * as https from "https";
 import { JsonRpcResponse } from "web3-core-helpers";
 import Signer from "@polyjuice-provider/base/lib/signer";
 import { PolyjuiceHttpProvider, PolyjuiceConfig } from "./providers";
-import { DEFAULT_EMPTY_ETH_ADDRESS } from "../../base/lib";
+import { formalizeEthToAddress } from "../../base/lib";
 
 export interface HttpHeader {
   name: string;
@@ -55,7 +55,7 @@ export class PolyjuiceHttpProviderCli extends PolyjuiceHttpProvider {
       case "eth_sendTransaction":
         try {
           const { from, gas, gasPrice, value, data } = params[0];
-          const to = params[0].to || DEFAULT_EMPTY_ETH_ADDRESS;
+          const to = formalizeEthToAddress(params[0].to);
           const data_with_short_address =
             await this.abi.refactor_data_with_short_address(
               data,
