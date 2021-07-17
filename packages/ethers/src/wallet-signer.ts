@@ -11,7 +11,7 @@ import {
   AbiItems,
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
-  DEFAULT_EMPTY_ETH_ADDRESS,
+  formalizeEthToAddress
 } from "@polyjuice-provider/base";
 import { PolyjuiceConfig } from "./providers";
 
@@ -96,7 +96,7 @@ export class PolyjuiceWallet extends Wallet {
 
       const t = {
         from: tx.from,
-        to: tx.to || DEFAULT_EMPTY_ETH_ADDRESS,
+        to: formalizeEthToAddress(tx.to),
         value: hexlify(tx.value || 0),
         data: data_with_short_address,
         gas: hexlify(tx.gasLimit || POLY_MAX_TRANSACTION_GAS_LIMIT),
