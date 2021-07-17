@@ -89,6 +89,20 @@ export type RequestRpcResult = {
   data?: string;
 };
 
+export function formalizeEthToAddress(to_address: string | undefined | null) {
+  if (to_address === "0x") return DEFAULT_EMPTY_ETH_ADDRESS;
+
+  if (!to_address) return DEFAULT_EMPTY_ETH_ADDRESS;
+
+  if (typeof to_address === "string" && to_address.length !== 42)
+    throw new Error(`invalid ETH to_address length ${to_address.length}.`);
+
+  if (typeof to_address !== "string")
+    throw new Error(`invalid type of to_address ${typeof to_address}`);
+
+  return to_address;
+}
+
 export class Godwoker {
   private eth_account_lock: Omit<Script, "args">;
   private rollup_type_hash: string;

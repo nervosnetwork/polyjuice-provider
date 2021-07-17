@@ -1,0 +1,63 @@
+{
+  "name": "@polyjuice-provider/truffle",
+  "version": "0.0.1-rc5",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "author": "RetricSu <inneverland2013@gmail.com>",
+  "scripts": {
+    "fmt": "prettier --write src/* tests/* package.json",
+    "lint": "eslint -c ../../.eslintrc.js \"{src,tests}/**/*.ts\"",
+    "clean": "rm -rf lib/* && rm -rf dist/*",
+    "build": "tsc",
+    "test": "ava --timeout=100s",
+    "publish": "npm publish",
+    "test-publish": "npm publish --dry-run",
+    "pack": "npm pack"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "http://registry.npmjs.org/"
+  },
+  "files": [
+    "/lib"
+  ],
+  "ava": {
+    "extensions": [
+      "ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ]
+  },
+  "devDependencies": {
+    "@types/ethereumjs-util": "^6.1.0",
+    "@types/node": "^14.14.37",
+    "@types/web3": "1.0.20",
+    "@types/web3-provider-engine": "^14.0.1",
+    "ava": "^3.15.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "browser-env": "^3.3.0",
+    "browserify": "^17.0.0",
+    "cross-fetch": "^3.1.4",
+    "crypto-browserify": "^3.12.0",
+    "dotenv": "^10.0.0",
+    "husky": "^6.0.0",
+    "path": "^0.12.7",
+    "prettier": "^2.3.1",
+    "process": "^0.11.10",
+    "stream-browserify": "^3.0.0",
+    "ts-loader": "^8.0.12",
+    "ts-node": "^10.0.0",
+    "typescript": "^4.2.3",
+    "webpack": "^5.28.0",
+    "webpack-cli": "^4.5.0",
+    "webpack-node-externals": "^3.0.0"
+  },
+  "dependencies": {
+    "@polyjuice-provider/base": "0.0.1-rc5",
+    "@truffle/hdwallet-provider": "^1.4.1",
+    "@trufflesuite/web3-provider-engine": "15.0.13-1",
+    "ckb-js-toolkit": "^0.10.2",
+    "ethereumjs-util": "6.1.0"
+  }
+}
