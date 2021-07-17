@@ -8,9 +8,17 @@ import * as https from "https";
 import { errors } from "web3-core-helpers";
 import { XMLHttpRequest as XHR2 } from "xhr2-cookies";
 import { JsonRpcResponse } from "web3-core-helpers";
-import { AbiItem } from "web3-utils";
 
-import { Godwoker, GodwokerOption, Signer, Abi, AbiItems } from "@polyjuice-provider/base";
+import {
+  Godwoker,
+  GodwokerOption,
+  Signer,
+  Abi,
+  AbiItems,
+  POLY_MAX_TRANSACTION_GAS_LIMIT,
+  POLY_MIN_GAS_PRICE,
+  DEFAULT_EMPTY_ETH_ADDRESS,
+} from "@polyjuice-provider/base";
 
 export interface HttpHeader {
   name: string;
@@ -37,11 +45,11 @@ export interface ExperimentalFeatureOption {
 }
 
 export type PolyjuiceConfig = {
-  rollupTypeHash: string
-  ethAccountLockCodeHash: string
-  abiItems?: AbiItems
-  web3Url?: string
-}
+  rollupTypeHash: string;
+  ethAccountLockCodeHash: string;
+  abiItems?: AbiItems;
+  web3Url?: string;
+};
 
 export class PolyjuiceHttpProvider {
   experimentalFeatureMode: boolean;
@@ -69,10 +77,10 @@ export class PolyjuiceHttpProvider {
         rollup_type_hash: polyjuice_config.rollupTypeHash,
         eth_account_lock: {
           code_hash: polyjuice_config.ethAccountLockCodeHash,
-          hash_type: "type"
-        }
-      }
-    }
+          hash_type: "type",
+        },
+      },
+    };
     this.godwoker = new Godwoker(host, godwoker_option);
     this.abi = new Abi(polyjuice_config.abiItems || []);
 
@@ -96,6 +104,10 @@ export class PolyjuiceHttpProvider {
     }
   }
 
+  setAbi(abiItems: AbiItems) {
+    this.abi = new Abi(abiItems);
+  }
+
   async send(
     payload: any,
     callback?: (
@@ -109,23 +121,26 @@ export class PolyjuiceHttpProvider {
       case "eth_sendRawTransaction":
         // todo: forbidden normal eth raw tx pass.
         try {
-          const tx_hash = await this.godwoker.gw_submitSerializedL2Transaction(params[0]);
+          const tx_hash = await this.godwoker.gw_submitSerializedL2Transaction(
+            params[0]
+          );
           callback(null, {
             jsonrpc: payload.jsonrpc,
-            id: payload.id, 
-            result: tx_hash
+            id: payload.id,
+            result: tx_hash,
           });
         } catch (error) {
           callback(null, {
             jsonrpc: payload.jsonrpc,
-            id: payload.id, 
-            error: error.message
+            id: payload.id,
+            error: error.message,
           });
         }
         break;
       case "eth_sendTransaction":
         try {
-          const { from, gas, gasPrice, value, data, to } = params[0];
+          const { from, gas, gasPrice, value, data } = params[0];
+          const to = params[0].to || DEFAULT_EMPTY_ETH_ADDRESS;
 
           const data_with_short_address =
             await this.abi.refactor_data_with_short_address(
@@ -166,19 +181,20 @@ export class PolyjuiceHttpProvider {
             signature
           );
           await this.godwoker.waitForTransactionReceipt(tx_hash);
-          this._send(payload, function (err, result) {
-            const res = {
-              jsonrpc: result.jsonrpc,
-              id: result.id,
-            };
-            const new_res = { ...res, ...{ result: tx_hash } };
-            callback(null, new_res);
-          });
-          break;
+          const res = {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            result: tx_hash,
+          };
+          callback(null, res);
         } catch (error) {
-          this.connected = false;
-          throw error;
+          callback(null, {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            error: error.message,
+          });
         }
+        break;
 
       case "eth_call":
         try {
@@ -193,12 +209,13 @@ export class PolyjuiceHttpProvider {
             );
 
           const t = {
-            from: from || "0x" + "0".repeat(40),
+            from:
+              from || (await this.godwoker.getPolyjuiceDefaultFromAddress()),
             to: to,
             value: value || 0,
             data: data_with_short_address || "",
-            gas: gas || 5000000,
-            gasPrice: gasPrice || 0,
+            gas: gas || POLY_MAX_TRANSACTION_GAS_LIMIT,
+            gasPrice: gasPrice || POLY_MIN_GAS_PRICE,
           };
 
           const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
@@ -210,14 +227,12 @@ export class PolyjuiceHttpProvider {
           const abi_item =
             this.abi.get_intereted_abi_item_by_encoded_data(data);
           if (!abi_item) {
-            this._send(payload, function (err, result) {
-              const res = {
-                jsonrpc: result.jsonrpc,
-                id: result.id,
-              };
-              const new_res = { ...res, ...{ result: run_result.return_data } };
-              callback(null, new_res);
-            });
+            const res = {
+              jsonrpc: payload.jsonrpc,
+              id: payload.id,
+              result: run_result.return_data,
+            };
+            callback(null, res);
           } else {
             const return_value_with_short_address =
               await this.abi.refactor_return_value_with_short_address(
@@ -227,27 +242,25 @@ export class PolyjuiceHttpProvider {
                   this.godwoker
                 )
               );
-            this._send(payload, function (err, result) {
-              const res = {
-                jsonrpc: result.jsonrpc,
-                id: result.id,
-              };
-              const new_res = {
-                ...res,
-                ...{ result: return_value_with_short_address },
-              };
-              callback(null, new_res);
-            });
+            const res = {
+              jsonrpc: payload.jsonrpc,
+              id: payload.id,
+              result: return_value_with_short_address,
+            };
+            callback(null, res);
           }
-          break;
         } catch (error) {
-          this.connected = false;
-          throw error;
+          callback(null, {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            error: error.message,
+          });
         }
+        break;
 
       case "eth_estimateGas":
         try {
-          var new_payload = payload;
+          let new_payload = payload;
           const { data } = params[0];
 
           const data_with_short_address =
@@ -260,33 +273,34 @@ export class PolyjuiceHttpProvider {
 
           new_payload.params[0].data = data_with_short_address;
 
+          new_payload.params[0].from =
+            new_payload.params[0].from ||
+            (await this.godwoker.getPolyjuiceDefaultFromAddress());
           this._send(new_payload, callback);
-          break;
         } catch (error) {
-          this.connected = false;
-          throw error;
+          callback(null, {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            error: error.message,
+          });
         }
+        break;
 
       default:
-        try {
-          this._send(payload, callback);
-          break;
-        } catch (error) {
-          this.connected = false;
-          throw error;
-        }
+        this._send(payload, callback);
+        break;
     }
   }
 
   _prepareRequest() {
-    var request;
+    let request;
 
     // the current runtime is a browser
     if (typeof XMLHttpRequest !== "undefined") {
       request = new XMLHttpRequest();
     } else {
       request = new XHR2();
-      var agents = {
+      let agents = {
         httpsAgent: this.httpsAgent,
         httpAgent: this.httpAgent,
         baseUrl: this.baseUrl,
@@ -323,13 +337,13 @@ export class PolyjuiceHttpProvider {
    * @param {Function} callback triggered on end with (err, result)
    */
   _send(payload, callback) {
-    var _this = this;
-    var request = this._prepareRequest();
+    let _this = this;
+    let request = this._prepareRequest();
 
     request.onreadystatechange = function () {
       if (request.readyState === 4 && request.timeout !== 1) {
-        var result = request.responseText;
-        var error = null;
+        let result = request.responseText;
+        let error = null;
 
         try {
           result = JSON.parse(result);

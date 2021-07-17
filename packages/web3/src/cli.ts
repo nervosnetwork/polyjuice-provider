@@ -10,6 +10,7 @@ import * as https from "https";
 import { JsonRpcResponse } from "web3-core-helpers";
 import Signer from "@polyjuice-provider/base/lib/signer";
 import { PolyjuiceHttpProvider, PolyjuiceConfig } from "./providers";
+import { DEFAULT_EMPTY_ETH_ADDRESS } from "../../base/lib";
 
 export interface HttpHeader {
   name: string;
@@ -35,7 +36,7 @@ export class PolyjuiceHttpProviderCli extends PolyjuiceHttpProvider {
     host: string,
     polyjuice_config: PolyjuiceConfig,
     private_key: string,
-    options?: HttpProviderOptions
+    _options?: HttpProviderOptions
   ) {
     super(host, polyjuice_config);
     this.signer = new Signer(private_key);
@@ -54,7 +55,7 @@ export class PolyjuiceHttpProviderCli extends PolyjuiceHttpProvider {
       case "eth_sendTransaction":
         try {
           const { from, gas, gasPrice, value, data } = params[0];
-          const to = params[0].to || `0x${Array(40).fill(0).join("")}`;
+          const to = params[0].to || DEFAULT_EMPTY_ETH_ADDRESS;
           const data_with_short_address =
             await this.abi.refactor_data_with_short_address(
               data,
@@ -100,28 +101,24 @@ export class PolyjuiceHttpProviderCli extends PolyjuiceHttpProvider {
           );
 
           await this.godwoker.waitForTransactionReceipt(tx_hash);
-          this._send(payload, function (err, result) {
-            const res = {
-              jsonrpc: result.jsonrpc,
-              id: result.id,
-            };
-            const new_res = { ...res, ...{ result: tx_hash } };
-            callback(null, new_res);
-          });
-          break;
+          const res = {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            result: tx_hash,
+          };
+          callback(null, res);
         } catch (error) {
-          this.connected = false;
-          throw error;
+          callback(null, {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            error: error.message,
+          });
         }
+        break;
 
       default:
-        try {
-          super.send(payload, callback);
-          break;
-        } catch (error) {
-          this.connected = false;
-          throw error;
-        }
+        super.send(payload, callback);
+        break;
     }
   }
 }

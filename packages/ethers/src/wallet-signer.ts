@@ -1,15 +1,22 @@
 import { Wallet, providers } from "ethers";
-import { Provider, TransactionRequest } from "@ethersproject/abstract-provider";
+import { TransactionRequest } from "@ethersproject/abstract-provider";
 import { ExternallyOwnedAccount } from "@ethersproject/abstract-signer";
 import { SigningKey } from "@ethersproject/signing-key";
 import { resolveProperties } from "@ethersproject/properties";
 import { getAddress } from "@ethersproject/address";
-import { GodwokerOption, Godwoker } from "@polyjuice-provider/base/lib/util";
-import { Abi, AbiItems } from "@polyjuice-provider/base/lib/abi";
+import {
+  GodwokerOption,
+  Godwoker,
+  Abi,
+  AbiItems,
+  POLY_MAX_TRANSACTION_GAS_LIMIT,
+  POLY_MIN_GAS_PRICE,
+  DEFAULT_EMPTY_ETH_ADDRESS,
+} from "@polyjuice-provider/base";
 import { PolyjuiceConfig } from "./providers";
 
 import { Logger } from "@ethersproject/logger";
-import { joinSignature, Bytes, BytesLike, hexlify } from "@ethersproject/bytes";
+import { joinSignature, BytesLike, hexlify } from "@ethersproject/bytes";
 const logger = new Logger("Polyjuice-Wallet/0.0.1");
 
 export interface PolyjuiceWallet extends Wallet {
@@ -35,14 +42,19 @@ export class PolyjuiceWallet extends Wallet {
         rollup_type_hash: polyjuiceConfig.rollupTypeHash,
         eth_account_lock: {
           code_hash: polyjuiceConfig.ethAccountLockCodeHash,
-          hash_type: "type"
-        }
-      }
-    }
-    if(!polyjuiceConfig.web3Url)throw new Error("should provide web3 rpc url in polyjuiceConfigs.");
-    
+          hash_type: "type",
+        },
+      },
+    };
+    if (!polyjuiceConfig.web3Url)
+      throw new Error("should provide web3 rpc url in polyjuiceConfigs.");
+
     this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwokerOption);
     this.abi = new Abi(polyjuiceConfig.abiItems || []);
+  }
+
+  setAbi(abiItems: AbiItems) {
+    this.abi = new Abi(abiItems);
   }
 
   signTransaction(transaction: TransactionRequest): Promise<string> {
@@ -84,11 +96,11 @@ export class PolyjuiceWallet extends Wallet {
 
       const t = {
         from: tx.from,
-        to: tx.to || "0x" + "0".repeat(40),
+        to: tx.to || DEFAULT_EMPTY_ETH_ADDRESS,
         value: hexlify(tx.value || 0),
         data: data_with_short_address,
-        gas: hexlify(tx.gasLimit || 50000),
-        gasPrice: hexlify(tx.gasPrice || 0),
+        gas: hexlify(tx.gasLimit || POLY_MAX_TRANSACTION_GAS_LIMIT),
+        gasPrice: hexlify(tx.gasPrice || POLY_MIN_GAS_PRICE),
       };
       const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
       const message = await this.godwoker.generateMessageFromEthTransaction(t);

@@ -1,9 +1,18 @@
-import { provider, AccountsBase, TransactionConfig, SignedTransaction } from "web3-core";
+import {
+  provider,
+  AccountsBase,
+  TransactionConfig,
+  SignedTransaction,
+} from "web3-core";
 import {
   Abi,
+  AbiItems,
+  DEFAULT_EMPTY_ETH_ADDRESS,
   EthTransaction,
   Godwoker,
   GodwokerOption,
+  POLY_MAX_TRANSACTION_GAS_LIMIT,
+  POLY_MIN_GAS_PRICE,
 } from "@polyjuice-provider/base";
 import { PolyjuiceConfig } from "./providers";
 import BN from "bn.js";
@@ -24,12 +33,12 @@ export class PolyjuiceAccounts extends Accounts {
   abi: Abi;
 
   constructor(polyjuiceConfig: PolyjuiceConfig, provider?: provider) {
-    if(provider){
+    if (provider) {
       super(provider);
-    }else{
+    } else {
       super();
     }
-    
+
     if (!polyjuiceConfig.web3Url) {
       throw new Error("should support web3 rpc url in PolyjuiceConfig.");
     }
@@ -47,6 +56,10 @@ export class PolyjuiceAccounts extends Accounts {
     this.abi = new Abi(polyjuiceConfig.abiItems || []);
   }
 
+  setAbi(abiItems: AbiItems) {
+    this.abi = new Abi(abiItems);
+  }
+
   signTransaction(
     _tx: TransactionConfig,
     privateKey: string,
@@ -62,13 +75,13 @@ export class PolyjuiceAccounts extends Accounts {
       return Promise.reject(error);
     }
 
-    if (!_tx.from){
+    if (!_tx.from) {
       _tx.from = this.privateKeyToAccount(privateKey).address;
     }
     // use godwoken-polyjuice's transaction signing method
     // (which is deifferent tx structure and use a message signing)
     // to sign transaction.
-    var tx = transactionConfigToPolyjuiceEthTransaction(_tx);
+    let tx = transactionConfigToPolyjuiceEthTransaction(_tx);
 
     try {
       // Otherwise, get the missing info from the Ethereum Node
@@ -90,7 +103,7 @@ export class PolyjuiceAccounts extends Accounts {
         const signature = that.godwoker.packSignature(_signature);
         const l2_tx = { raw: polyjuice_tx, signature: signature };
 
-        var result = {
+        let result = {
           messageHash: message,
           v: "0x0", // todo: replace with real v
           r: "0x0", // todo: replace with real r
@@ -111,7 +124,7 @@ export class PolyjuiceAccounts extends Accounts {
 export function transactionConfigToPolyjuiceEthTransaction(
   tx: TransactionConfig
 ) {
-  var { from, to, value, gas, gasPrice, data, nonce } = tx;
+  let { from, to, value, gas, gasPrice, data, nonce } = tx;
 
   if (!from) {
     throw new Error("from is missing!");
@@ -121,20 +134,32 @@ export function transactionConfigToPolyjuiceEthTransaction(
     //todo: handle from is number
     throw new Error("todo: handle from is number case!");
   }
- 
+
   return formatEthTransaction({ from, to, value, gas, gasPrice, data, nonce });
 }
 
 // todo: remove to @polyjuice-provider/base
-export function formatEthTransaction({ from, to, value, gas, gasPrice, data, nonce }) {
+export function formatEthTransaction({
+  from,
+  to,
+  value,
+  gas,
+  gasPrice,
+  data,
+  nonce,
+}) {
   const ethTx: EthTransaction = {
     from: from,
-    to: to || `0x${"0".repeat(40)}`,
-    value: value ? TxConfigValueTypeToString(value) : '0x00',
-    gas: gas ? TxConfigValueTypeToString(gas) : '0xe4e1c0',
-    gasPrice: gasPrice ? TxConfigValueTypeToString(gasPrice) : '0x00',
-    data: data ? TxConfigValueTypeToString(data) : '0x00',
-    nonce: nonce ? TxConfigValueTypeToString(nonce) : '0x1',
+    to: to || DEFAULT_EMPTY_ETH_ADDRESS,
+    value: value ? TxConfigValueTypeToString(value) : "0x00",
+    gas: gas
+      ? TxConfigValueTypeToString(gas)
+      : `0x${BigInt(POLY_MAX_TRANSACTION_GAS_LIMIT).toString(16)}`,
+    gasPrice: gasPrice
+      ? TxConfigValueTypeToString(gasPrice)
+      : `0x${BigInt(POLY_MIN_GAS_PRICE).toString(16)}`,
+    data: data ? TxConfigValueTypeToString(data) : "0x00",
+    nonce: nonce ? TxConfigValueTypeToString(nonce) : "0x1",
   };
   return ethTx;
 }
@@ -146,7 +171,7 @@ export function TxConfigValueTypeToString(value: number | string | BN) {
   if (typeof value === "number") {
     value = "0x" + BigInt(value).toString(16);
   }
-  if (typeof value != "string" || typeof value != "number") {
+  if (typeof value !== "string" || typeof value !== "number") {
     // BN.js type
     value = value.toString(16);
   }
@@ -154,7 +179,11 @@ export function TxConfigValueTypeToString(value: number | string | BN) {
 }
 
 // todo: move to @polyjuice-provider/godwoken
-export function calcPolyjuiceTxHash(tx: RawL2Transaction){
-  const tx_hash = lumosUtils.ckbHash(SerializeRawL2Transaction(normalizer.NormalizeRawL2Transaction(tx))).serializeJson().slice(0, 66);
+export function calcPolyjuiceTxHash(tx: RawL2Transaction) {
+  const tx_hash = lumosUtils
+    .ckbHash(
+      SerializeRawL2Transaction(normalizer.NormalizeRawL2Transaction(tx))
+    )
+    .serializeJson();
   return tx_hash;
 }

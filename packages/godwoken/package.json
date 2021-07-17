@@ -1,11 +1,13 @@
 {
   "name": "@polyjuice-provider/godwoken",
-  "version": "0.0.1-rc4",
+  "version": "0.0.1-rc5",
   "description": "Godwoken utils",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "test": "echo 'no test for godwoken'",
     "fmt": "prettier --write \"src/**/*.ts\" package.json",
+    "lint": "eslint -c ../../.eslintrc.js \"src/**/*.ts\"",
     "clean": "rm -rf lib",
     "build": "tsc",
     "publish": "npm publish",
