@@ -17,7 +17,7 @@ import {
   AbiItems,
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
-  DEFAULT_EMPTY_ETH_ADDRESS,
+  formalizeEthToAddress,
 } from "@polyjuice-provider/base";
 import { NonceTrackerSubprovider as NonceSubProvider } from "./nonce-tracker";
 
@@ -103,7 +103,7 @@ export class PolyjuiceHDWalletProvider extends HDWalletProvider {
 
           let t = {
             from: EthUtil.bufferToHex(txParams.from),
-            to: EthUtil.bufferToHex(txParams.to) || DEFAULT_EMPTY_ETH_ADDRESS,
+            to: formalizeEthToAddress(EthUtil.bufferToHex(txParams.to)),
             value: EthUtil.bufferToHex(txParams.value) || "0x0",
             data: EthUtil.bufferToHex(txParams.data),
             gas:
