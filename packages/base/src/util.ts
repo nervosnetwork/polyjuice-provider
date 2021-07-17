@@ -94,7 +94,7 @@ export function formalizeEthToAddress(to_address: string | undefined | null) {
 
   if (!to_address) return DEFAULT_EMPTY_ETH_ADDRESS;
 
-  if (typeof to_address === "string" && to_address.length != 42)
+  if (typeof to_address === "string" && to_address.length !== 42)
     throw new Error(`invalid ETH to_address length ${to_address.length}.`);
 
   if (typeof to_address !== "string")
