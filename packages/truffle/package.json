@@ -1,14 +1,12 @@
 {
   "name": "@polyjuice-provider/truffle",
-  "version": "0.0.1-rc4",
+  "version": "0.0.1-rc5",
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
-  "engines": {
-    "node": "14"
-  },
   "scripts": {
-    "fmt": "prettier --write src/* tests/* package.json",
+    "fmt": "prettier --write src/* package.json",
+    "lint": "echo 'no lint yet'",
     "clean": "rm -rf lib/* && rm -rf dist/*",
     "build": "tsc",
     "boundle": "webpack",
@@ -56,7 +54,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
-    "@polyjuice-provider/base": "0.0.1-rc4",
+    "@polyjuice-provider/base": "0.0.1-rc5",
     "@truffle/hdwallet-provider": "^1.4.1"
   }
 }
