@@ -12,48 +12,40 @@ import {
   NormalizeL2Transaction,
   NormalizeRawL2Transaction,
 } from "@polyjuice-provider/godwoken/lib/normalizer";
+import { U128_MIN, U128_MAX, DEFAULT_EMPTY_ETH_ADDRESS } from "./constant";
 import { Reader } from "ckb-js-toolkit";
 import crossFetch from "cross-fetch"; // for nodejs compatibility polyfill
 import { Buffer } from "buffer"; // for browser compatibility polyfill
 
 // replace for buffer polyfill under 0.6 version.
-// eg: for react project using webpack 4 (this is the most common case when created by running `npx create-react-app`), 
-// the default react-scripts config just use buffer@0.4.3 which doesn't include writeBigUint64LE function. 
+// eg: for react project using webpack 4 (this is the most common case when created by running `npx create-react-app`),
+// the default react-scripts config just use buffer@0.4.3 which doesn't include writeBigUint64LE function.
 // code copy from https://github.com/feross/buffer/blob/master/index.js#L1497-L1513
-function writeBigUint64LE(buf, value, offset = 0){
-  let lo = Number(value & BigInt(0xffffffff))
-  buf[offset++] = lo
-  lo = lo >> 8
-  buf[offset++] = lo
-  lo = lo >> 8
-  buf[offset++] = lo
-  lo = lo >> 8
-  buf[offset++] = lo
-  let hi = Number(value >> BigInt(32) & BigInt(0xffffffff))
-  buf[offset++] = hi
-  hi = hi >> 8
-  buf[offset++] = hi
-  hi = hi >> 8
-  buf[offset++] = hi
-  hi = hi >> 8
-  buf[offset++] = hi
-  return offset
+function writeBigUint64LE(buf, value, offset = 0) {
+  let lo = Number(value & BigInt(0xffffffff));
+  buf[offset++] = lo;
+  lo = lo >> 8;
+  buf[offset++] = lo;
+  lo = lo >> 8;
+  buf[offset++] = lo;
+  lo = lo >> 8;
+  buf[offset++] = lo;
+  let hi = Number((value >> BigInt(32)) & BigInt(0xffffffff));
+  buf[offset++] = hi;
+  hi = hi >> 8;
+  buf[offset++] = hi;
+  hi = hi >> 8;
+  buf[offset++] = hi;
+  hi = hi >> 8;
+  buf[offset++] = hi;
+  return offset;
 }
 
 Buffer.prototype.writeBigUInt64LE = function (value, offset) {
-   return writeBigUint64LE(this, value, offset);
-}
+  return writeBigUint64LE(this, value, offset);
+};
 
 const jaysonBrowserClient = require("jayson/lib/client/browser");
-
-const U128_MIN = BigInt(0);
-const U128_MAX = BigInt('340282366920938463463374607431768211455'); 
-// 340282366920938463463374607431768211455 equals to BigInt(2) ** BigInt(128) - BigInt(1)
-// if we use formular instead of the direct result, 
-// in some case, boundler like webpack will turn ** into Math.pow(),
-// which doesn't support BigInt type thus causing error.
-// this is a known issue as https://github.com/facebook/create-react-app/issues/10785
-const EMPTY_ETH_ADDRESS = "0x" + "00".repeat(20);
 
 declare global {
   interface Window {
@@ -527,7 +519,7 @@ export class Godwoker {
   }
 
   async gw_submitSerializedL2Transaction(
-    serialize_tx: string 
+    serialize_tx: string
   ): Promise<string> {
     return new Promise((resolve, reject) => {
       this.client.request(
@@ -563,6 +555,28 @@ export class Godwoker {
     });
   }
 
+  async getPolyjuiceCreatorAccountId(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.request("poly_getCreatorId", [], (err: any, res: any) => {
+        if (err) return reject(err);
+        return resolve(res.result);
+      });
+    });
+  }
+
+  async getPolyjuiceDefaultFromAddress(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "poly_getDefaultFromAddress",
+        [],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          return resolve(res.result);
+        }
+      );
+    });
+  }
+
   async eth_getTransactionReceipt(tx_hash: Hash): Promise<string> {
     return new Promise((resolve, reject) => {
       this.client.request(
@@ -577,17 +591,27 @@ export class Godwoker {
     });
   }
 
-  async waitForTransactionReceipt(tx_hash: Hash) {
-    while (true) {
-      await this.asyncSleep(3000);
+  // todo: timeout should be set with > 5 blocks long, may change in mainnet.
+  async waitForTransactionReceipt(
+    tx_hash: Hash,
+    timeout: number = 225,
+    loopInterval = 3
+  ) {
+    for (let index = 0; index < timeout; index += loopInterval) {
       const tx_receipt = await this.eth_getTransactionReceipt(tx_hash);
-      console.log(`keep waitting for tx_receipt..`);
+      console.log(
+        `keep fetching tx_receipt with ${tx_hash}, waited for ${index} seconds`
+      );
 
-      if (tx_receipt) {
-        break;
+      await this.asyncSleep(loopInterval * 1000);
+
+      if (tx_receipt !== null) {
+        return;
       }
     }
-    return;
+    throw new Error(
+      `tx might be failed: cannot fetch tx_receipt with tx ${tx_hash} in ${timeout} seconds`
+    );
   }
 
   asyncSleep(ms = 0) {
@@ -601,8 +625,8 @@ export class Godwoker {
       throw new Error(`Invalid eth address length: ${address.byteLength}`);
 
     if (address.equals(Buffer.from(Array(20).fill(0))))
-      // special-case: meta-contract address should return creator
-      return "0x3";
+      // special-case: meta-contract address should return creator id
+      return await this.getPolyjuiceCreatorAccountId();
 
     try {
       // assume it is normal contract address, thus an godwoken-short-address
@@ -650,7 +674,7 @@ export class Godwoker {
     const args_data = data;
 
     let args_7 = "";
-    if (to === EMPTY_ETH_ADDRESS || to === "0x" || to === "0x0") {
+    if (to === DEFAULT_EMPTY_ETH_ADDRESS || to === "0x" || to === "0x0") {
       args_7 = "0x03";
     } else {
       args_7 = "0x00";

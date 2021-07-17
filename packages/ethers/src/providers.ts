@@ -5,20 +5,25 @@ import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { BigNumber } from "@ethersproject/bignumber";
 import { ConnectionInfo } from "@ethersproject/web";
 import { Networkish } from "@ethersproject/networks";
-import { Abi, AbiItems } from "@polyjuice-provider/base/lib/abi";
-import { Godwoker, GodwokerOption } from "@polyjuice-provider/base/lib/util";
+import {
+  Godwoker,
+  GodwokerOption,
+  Abi,
+  AbiItems,
+  POLY_MAX_TRANSACTION_GAS_LIMIT,
+  POLY_MIN_GAS_PRICE,
+} from "@polyjuice-provider/base";
 
 export type PolyjuiceConfig = {
-  rollupTypeHash: string
-  ethAccountLockCodeHash: string
-  abiItems?: AbiItems
-  web3Url?: string
-}
+  rollupTypeHash: string;
+  ethAccountLockCodeHash: string;
+  abiItems?: AbiItems;
+  web3Url?: string;
+};
 
 export interface PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   constructor(
     polyjuiceConfig: PolyjuiceConfig,
-    abi: AbiItems,
     url?: ConnectionInfo | string,
     network?: Networkish
   );
@@ -42,11 +47,15 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
         rollup_type_hash: polyjuice_config.rollupTypeHash,
         eth_account_lock: {
           code_hash: polyjuice_config.ethAccountLockCodeHash,
-          hash_type: "type"
-        }
-      }
-    }
+          hash_type: "type",
+        },
+      },
+    };
     this.godwoker = new Godwoker(web3_url, godwoker_option);
+  }
+
+  setAbi(abiItems: AbiItems) {
+    this.abi = new Abi(abiItems);
   }
 
   async sendTransaction(
@@ -96,9 +105,16 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
               )
             );
           // todo: use an common method to format params
+          params[0].from =
+            params[0].from ||
+            (await this.godwoker.getPolyjuiceDefaultFromAddress());
           params[0].data = data_with_short_address;
-          params[0].gas = params[0].gas || "0x345f3400";
-          params[0].gasPrice = params[0].gasPrice || "0x00";
+          params[0].gas =
+            params[0].gas ||
+            `0x${BigInt(POLY_MAX_TRANSACTION_GAS_LIMIT).toString(16)}`;
+          params[0].gasPrice =
+            params[0].gasPrice ||
+            `0x${BigInt(POLY_MIN_GAS_PRICE).toString(16)}`;
           params[0].value = params[0].value || "0x00";
 
           const t = params[0];
@@ -143,6 +159,9 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
               )
             );
           params[0].data = data_with_short_address;
+          params[0].from =
+            params[0].from ||
+            (await this.godwoker.getPolyjuiceDefaultFromAddress());
           return super.send(method, params);
         } catch (error) {
           this.emit("debug", {

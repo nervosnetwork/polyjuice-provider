@@ -79,11 +79,11 @@ var provider;
 test.before((t) => {
   // init provider and web3
   const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
-  const provider_config: PolyjuiceConfig  = {
+  const provider_config: PolyjuiceConfig = {
     rollupTypeHash: process.env.ROLLUP_TYPE_HASH,
     ethAccountLockCodeHash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH,
     abiItems: EXAMPLE_CONTRACT.abi as AbiItems,
-    web3Url: godwoken_rpc_url 
+    web3Url: godwoken_rpc_url,
   };
   provider = new PolyjuiceHttpProviderCli(
     godwoken_rpc_url,
@@ -103,11 +103,6 @@ test.serial("sign message method", (t) => {
 });
 
 test.serial("proxy rpc: send_transaction", async (t) => {
-  if (process.env.MODE === "browser") {
-    // skip test, the last test in node env might not be done, will cause duplicated-tx
-    return t.pass();
-  }
-
   const web3 = new Web3(provider);
   const simplestorageV2 = new web3.eth.Contract(
     EXAMPLE_CONTRACT.abi as AbiItems,
@@ -128,10 +123,91 @@ test.serial("proxy rpc: call_transaction", async (t) => {
     EXAMPLE_CONTRACT.abi as AbiItems,
     process.env.EXAMPLE_CONTRACT_ADDRESS
   );
-  const result = await simplestorageV2.methods
-    .get()
-    .call({ from: ETH_ADDRESS });
+  const result = await simplestorageV2.methods.get().call();
   console.log(result);
   t.is(result.slice(0, 2), "0x");
   t.is(result.length, 42);
+});
+
+test.serial("change abi then send_transaction", async (t) => {
+  const BoxContractArtifact = {
+    _format: "hh-sol-artifact-1",
+    contractName: "Box",
+    sourceName: "contracts/Box.sol",
+    abi: [
+      {
+        inputs: [
+          {
+            internalType: "uint256",
+            name: "newValue",
+            type: "uint256",
+          },
+        ],
+        name: "store",
+        outputs: [],
+        stateMutability: "nonpayable",
+        type: "function",
+      },
+      {
+        inputs: [],
+        name: "value",
+        outputs: [
+          {
+            internalType: "uint256",
+            name: "",
+            type: "uint256",
+          },
+        ],
+        stateMutability: "view",
+        type: "function",
+      },
+    ],
+    bytecode:
+      "0x608060405234801561001057600080fd5b5061012c806100206000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c80633fa4f2451460375780636057361d146051575b600080fd5b603d6069565b6040516048919060bf565b60405180910390f35b6067600480360381019060639190608c565b606f565b005b60005481565b8060008190555050565b60008135905060868160e2565b92915050565b600060208284031215609d57600080fd5b600060a9848285016079565b91505092915050565b60b98160d8565b82525050565b600060208201905060d2600083018460b2565b92915050565b6000819050919050565b60e98160d8565b811460f357600080fd5b5056fea264697066735822122018acbfb64cb7fec944af4a19d7713a95b22bc970b54ea8b247b407b117c3a28664736f6c63430008030033",
+    deployedBytecode:
+      "0x6080604052348015600f57600080fd5b506004361060325760003560e01c80633fa4f2451460375780636057361d146051575b600080fd5b603d6069565b6040516048919060bf565b60405180910390f35b6067600480360381019060639190608c565b606f565b005b60005481565b8060008190555050565b60008135905060868160e2565b92915050565b600060208284031215609d57600080fd5b600060a9848285016079565b91505092915050565b60b98160d8565b82525050565b600060208201905060d2600083018460b2565b92915050565b6000819050919050565b60e98160d8565b811460f357600080fd5b5056fea264697066735822122018acbfb64cb7fec944af4a19d7713a95b22bc970b54ea8b247b407b117c3a28664736f6c63430008030033",
+    linkReferences: {},
+    deployedLinkReferences: {},
+  };
+  provider.setAbi(BoxContractArtifact.abi);
+  let web3 = new Web3(provider);
+  // const deployTxReceipt = await web3.eth.sendTransaction({
+  //   from: ETH_ADDRESS,
+  //   to: '0x'+'00'.repeat(20),
+  //   gas: 0x30d40,
+  //   gasPrice: "0x00",
+  //   value: "0x00",
+  //   data: BoxContractArtifact.bytecode
+  // });
+  // const contractAddress = deployTxReceipt.contractAddress;
+  // const box = new web3.eth.Contract(
+  //   BoxContractArtifact.abi as AbiItems,
+  //   contractAddress
+  // );
+  // const txReceipt = await box.methods.store(123).send({from: ETH_ADDRESS, gas: 0x30d40, gasPrice: "0x00",});
+  // t.is(txReceipt.transactionHash.slice(0, 2), "0x");
+  // t.is(txReceipt.transactionHash.length, 66);
+  // t.is(txReceipt.status, true);
+
+  // change another contract using the same provider, should not working
+  const simplestorageV2 = new web3.eth.Contract(
+    EXAMPLE_CONTRACT.abi as AbiItems,
+    process.env.EXAMPLE_CONTRACT_ADDRESS
+  );
+  const shortAddress = await simplestorageV2.methods
+    .get()
+    .call({ from: ETH_ADDRESS });
+  t.not(shortAddress, ETH_ADDRESS);
+
+  // change provider's abi, and try again
+  provider.setAbi(EXAMPLE_CONTRACT.abi);
+  web3.setProvider(provider);
+  const newSimplestorageV2 = new web3.eth.Contract(
+    EXAMPLE_CONTRACT.abi as AbiItems,
+    process.env.EXAMPLE_CONTRACT_ADDRESS
+  );
+  const ethAddress = await newSimplestorageV2.methods
+    .get()
+    .call({ from: ETH_ADDRESS });
+  t.is(ethAddress, ETH_ADDRESS);
 });

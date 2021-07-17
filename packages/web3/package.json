@@ -1,14 +1,12 @@
 {
   "name": "@polyjuice-provider/web3",
-  "version": "0.0.1-rc4",
+  "version": "0.0.1-rc5",
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
-  "engines": {
-    "node": "14"
-  },
   "scripts": {
     "fmt": "prettier --write src/* tests/* package.json",
+    "lint": "eslint -c ../../.eslintrc.js \"src/**/*.ts\"",
     "clean": "rm -rf lib/* && rm -rf dist/*",
     "build": "tsc",
     "boundle": "webpack",
@@ -30,6 +28,8 @@
     "extensions": [
       "ts"
     ],
+    "failFast": true,
+    "concurrency": 1,
     "require": [
       "ts-node/register"
     ]
@@ -56,7 +56,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
-    "@polyjuice-provider/base": "0.0.1-rc4",
+    "@polyjuice-provider/base": "0.0.1-rc5",
     "buffer": "^6.0.3",
     "encoding": "^0.1.13",
     "web3": "^1.4.0",

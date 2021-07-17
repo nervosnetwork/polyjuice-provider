@@ -102,12 +102,12 @@ test.before((t) => {
 test.serial("replace-web3-eth-account", async (t) => {
   web3.eth.accounts = polyjuiceAccounts;
   web3.eth.Contract._ethAccounts = web3.eth.accounts;
-  
+
   web3.eth.accounts.wallet.add(PRIVATE_KEY);
 
   const simplestorageV2 = new web3.eth.Contract(
     EXAMPLE_CONTRACT.abi as AbiItems,
-    process.env.EXAMPLE_CONTRACT_ADDRESS! 
+    process.env.EXAMPLE_CONTRACT_ADDRESS!
   );
 
   const txRes = await simplestorageV2.methods
@@ -132,8 +132,8 @@ test.serial("sign-tx-deploy", async (t) => {
       arguments: [],
     })
     .send({ from: ETH_ADDRESS, gas: "0x30d40", gasPrice: "0x00" });
-  
-  t.is(contract._address.slice(0, 2), '0x');
+
+  t.is(contract._address.slice(0, 2), "0x");
   t.is(contract._address.length, 42);
   contract_address = contract._address;
 });
@@ -144,7 +144,7 @@ test.serial("sign-tx-send", async (t) => {
 
   const simplestorageV2 = new Contract(
     EXAMPLE_CONTRACT.abi as AbiItems,
-    contract_address 
+    contract_address
   );
 
   const txRes = await simplestorageV2.methods
@@ -156,3 +156,99 @@ test.serial("sign-tx-send", async (t) => {
   t.is(typeof txRes.gasUsed, "number");
   t.is(txRes.status, true);
 });
+
+// test.serial("make a lot of call at short time", async (t) => {
+//   polyjuiceAccounts.wallet.add(PRIVATE_KEY);
+//   Contract.setProvider(provider, polyjuiceAccounts);
+//
+//   const simplestorageV2 = new Contract(
+//     EXAMPLE_CONTRACT.abi as AbiItems,
+//     process.env.EXAMPLE_CONTRACT_ADDRESS
+//   );
+//
+//   async function concurrentCall(){
+//     const res = await simplestorageV2.methods
+//     .get().call();
+//     console.log('cocurrently call =>', res);
+//   }
+//
+//   concurrentCall();
+//   concurrentCall();
+//   concurrentCall();
+//   concurrentCall();
+//   concurrentCall();
+//
+//   for(let i=0;i<10;i++){
+//     const res = await simplestorageV2.methods
+//     .get().call();
+//     console.log(i, res);
+//     t.pass();
+//   }
+//
+//   t.pass();
+// });
+//
+// test.serial("make a lot of send at serial", async (t) => {
+//   polyjuiceAccounts.wallet.add(PRIVATE_KEY);
+//   Contract.setProvider(provider, polyjuiceAccounts);
+//
+//   const simplestorageV2 = new Contract(
+//     EXAMPLE_CONTRACT.abi as AbiItems,
+//     process.env.EXAMPLE_CONTRACT_ADDRESS
+//   );
+//
+//   for(let i=0;i<10;i++){
+//     const txReceipt = await simplestorageV2.methods
+//     .set(ETH_ADDRESS).send({ from: ETH_ADDRESS, gas: "0x30d40", gasPrice: "0x00" });
+//     //console.log(`receive txHash: ${txHash}`);
+//     //const txReceipt = await provider.godwoker.waitForTransactionReceipt(txHash);
+//     console.log(i, txReceipt);
+//     t.pass();
+//   }
+//
+//   t.pass();
+// });
+//
+// test.serial("make two send at sametime with same nonce", async (t) => {
+//   polyjuiceAccounts.wallet.add(PRIVATE_KEY);
+//   Contract.setProvider(provider, polyjuiceAccounts);
+//
+//   const simplestorageV2 = new Contract(
+//     EXAMPLE_CONTRACT.abi as AbiItems,
+//     process.env.EXAMPLE_CONTRACT_ADDRESS
+//   );
+//
+//   async function send1(){
+//     const txReceipt = await simplestorageV2.methods
+//     .set(ETH_ADDRESS).send({ from: ETH_ADDRESS, gas: "0x30d40", gasPrice: "0x00" });
+//     console.log('finished send1');
+//     console.log(txReceipt);
+//     t.is(txReceipt.transactionHash.slice(0, 2), "0x");
+//     t.is(txReceipt.transactionHash.length, 66);
+//     t.is(typeof txReceipt.gasUsed, "number");
+//     t.is(txReceipt.status, true);
+//   }
+//
+//   async function send2(){
+//     const txReceipt = await simplestorageV2.methods
+//     .set(ETH_ADDRESS).send({ from: ETH_ADDRESS, gas: "0x30e40", gasPrice: "0x00" });
+//     console.log('finished send2');
+//     console.log(txReceipt);
+//     t.is(txReceipt.transactionHash.slice(0, 2), "0x");
+//     t.is(txReceipt.transactionHash.length, 66);
+//     t.is(typeof txReceipt.gasUsed, "number");
+//     t.is(txReceipt.status, true);
+//   }
+//
+//   send1();
+//   send2();
+//
+//   const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+//
+//   for(let i=0;i<10;i++){
+//     await delay(5000);
+//     t.pass();
+//   }
+//
+//   t.pass();
+// });

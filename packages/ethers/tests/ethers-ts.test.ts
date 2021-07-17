@@ -1,7 +1,11 @@
 import test from "ava";
 import { Contract, ContractFactory } from "ethers";
 import { AbiItems } from "@polyjuice-provider/base/lib/abi";
-import { PolyjuiceWallet, PolyjuiceJsonRpcProvider, PolyjuiceConfig } from "../lib/index";
+import {
+  PolyjuiceWallet,
+  PolyjuiceJsonRpcProvider,
+  PolyjuiceConfig,
+} from "../lib/index";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
@@ -88,10 +92,7 @@ test.before((t) => {
     abiItems: SimpleStorageV2_Abi as AbiItems,
     web3Url: godwoken_rpc_url,
   };
-  provider = new PolyjuiceJsonRpcProvider(
-    polyjuice_config,
-    godwoken_rpc_url
-  );
+  provider = new PolyjuiceJsonRpcProvider(polyjuice_config, godwoken_rpc_url);
   deployer = new PolyjuiceWallet(
     process.env.PRIVATE_KEY,
     polyjuice_config,
@@ -105,11 +106,6 @@ test.serial("import class", (t) => {
 });
 
 test.serial("deploy_example_contract", async (t) => {
-  if (process.env.MODE === "browser") {
-    // skip test
-    return t.pass();
-  }
-
   const implementationFactory = new ContractFactory(
     SimpleStorageV2_Abi,
     SimpleStorageV2_ByteCode,
@@ -127,11 +123,6 @@ test.serial("deploy_example_contract", async (t) => {
 });
 
 test.serial("call set address on contract", async (t) => {
-  if (process.env.MODE === "browser") {
-    // skip test
-    return t.pass();
-  }
-
   const simpleStorageV2 = new Contract(
     SimpleStorageV2_Address,
     SimpleStorageV2_Abi,
@@ -144,11 +135,6 @@ test.serial("call set address on contract", async (t) => {
 });
 
 test.serial("call contract get_address", async (t) => {
-  if (process.env.MODE === "browser") {
-    // skip test
-    return t.pass();
-  }
-
   const simpleStorageV2 = new Contract(
     SimpleStorageV2_Address,
     SimpleStorageV2_Abi,
@@ -182,3 +168,22 @@ test.serial("call contract get array address", async (t) => {
   const address_array = await simpleStorageV2.callStatic.getArray();
   t.deepEqual(address_array, test_address_array);
 });
+
+// test.serial("make a lot of send at serial", async (t) => {
+//   const simpleStorageV2 = new Contract(
+//     process.env.EXAMPLE_CONTRACT_ADDRESS,
+//     SimpleStorageV2_Abi,
+//     deployer
+//   );
+//
+//   for(let i=0;i<10;i++){
+//     const res = await simpleStorageV2.setArray(test_address_array);
+//     t.is(typeof res.wait, "function");
+//     const txReceipt = await res.wait();
+//     t.not(txReceipt, undefined);
+//     t.is(txReceipt.transactionHash.slice(0, 2), "0x");
+//     t.pass();
+//   }
+//
+//   t.pass();
+// });
