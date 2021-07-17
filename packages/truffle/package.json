@@ -5,8 +5,8 @@
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
   "scripts": {
-    "fmt": "prettier --write src/* package.json",
-    "lint": "echo 'no lint yet'",
+    "fmt": "prettier --write src/* tests/* package.json",
+    "lint": "eslint -c ../../.eslintrc.js \"{src,tests}/**/*.ts\"",
     "clean": "rm -rf lib/* && rm -rf dist/*",
     "build": "tsc",
     "boundle": "webpack",
@@ -33,7 +33,10 @@
     ]
   },
   "devDependencies": {
+    "@types/ethereumjs-util": "^6.1.0",
     "@types/node": "^14.14.37",
+    "@types/web3": "1.0.20",
+    "@types/web3-provider-engine": "^14.0.1",
     "ava": "^3.15.0",
     "babel-plugin-transform-runtime": "^6.23.0",
     "browser-env": "^3.3.0",
@@ -55,6 +58,9 @@
   },
   "dependencies": {
     "@polyjuice-provider/base": "0.0.1-rc5",
-    "@truffle/hdwallet-provider": "^1.4.1"
+    "@truffle/hdwallet-provider": "^1.4.1",
+    "@trufflesuite/web3-provider-engine": "15.0.13-1",
+    "ckb-js-toolkit": "^0.10.2",
+    "ethereumjs-util": "6.1.0"
   }
 }
