@@ -9,13 +9,10 @@
     "lint": "eslint -c ../../.eslintrc.js \"{src,tests}/**/*.ts\"",
     "clean": "rm -rf lib/* && rm -rf dist/*",
     "build": "tsc",
-    "boundle": "webpack",
-    "example": "yarn boundle && yarn gen-config-for-example && cp ./dist/PolyjuiceHttpProvider.js example/web/static/js/ && node example/web/server.js",
     "test": "ava --timeout=100s",
     "publish": "npm publish",
     "test-publish": "npm publish --dry-run",
-    "pack": "npm pack",
-    "gen-config-for-example": "cd example && node init_config.js && cd .."
+    "pack": "npm pack"
   },
   "publishConfig": {
     "access": "public",

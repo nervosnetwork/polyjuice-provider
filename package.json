@@ -5,14 +5,16 @@
   "author": "RetricSu <inneverland2013@gmail.com>",
   "private": true,
   "workspaces": [
+    "packages/godwoken",
+    "packages/base",
     "packages/*"
   ],
   "scripts": {
     "fmt": "yarn workspaces run fmt", 
     "lint": "yarn workspaces run lint",
     "test": "yarn workspaces run test",
-    "build": "yarn workspace @polyjuice-provider/godwoken build && yarn workspace @polyjuice-provider/base build && yarn workspace @polyjuice-provider/ethers build && yarn workspace @polyjuice-provider/web3 build",
-    "test-publish": "yarn workspace @polyjuice-provider/godwoken test-publish && yarn workspace @polyjuice-provider/base run test-publish && yarn workspace @polyjuice-provider/ethers test-publish && yarn workspace @polyjuice-provider/web3 test-publish"
+    "build": "yarn workspaces run build",
+    "test-publish": "yarn workspaces test-publish"
   },
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "^4.28.3",
