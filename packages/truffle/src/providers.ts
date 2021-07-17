@@ -21,7 +21,7 @@ import {
 } from "@polyjuice-provider/base";
 import { NonceTrackerSubprovider as NonceSubProvider } from "./nonce-tracker";
 
-type PolyjuiceConfig = {
+export type PolyjuiceConfig = {
   rollupTypeHash: string;
   ethAccountLockCodeHash: string;
   abiItems?: AbiItems;
