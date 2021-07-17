@@ -11,7 +11,7 @@ import {
   AbiItems,
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
-  formalizeEthToAddress
+  formalizeEthToAddress,
 } from "@polyjuice-provider/base";
 import { PolyjuiceConfig } from "./providers";
 
