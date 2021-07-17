@@ -44,7 +44,7 @@ before you can run test, you should run [godwoken-kicker](https://github.com/Ret
 
 ```sh
 cat > ./.test.env <<EOF
-truffle_JSON_RPC=<godwoken truffle rpc>
+WEB3_JSON_RPC=<godwoken web3 rpc>
 ROLLUP_TYPE_HASH=<godwoken rollup type hash>
 ETH_ACCOUNT_LOCK_CODE_HASH=<eth account lock code hash>
 PRIVATE_KEY=<your eth test private key, do not use in production>
