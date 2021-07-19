@@ -16,7 +16,7 @@
     "env": ". scripts/tool.sh && prepare_env_files",
     "test": "yarn workspaces run test",
     "build": "yarn workspaces run build",
-    "test-publish": "yarn workspaces test-publish"
+    "test-publish": "yarn workspaces run test-publish"
   },
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "^4.28.3",

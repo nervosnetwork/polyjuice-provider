@@ -1,6 +1,6 @@
 {
   "name": "@polyjuice-provider/base",
-  "version": "0.0.1-rc5",
+  "version": "0.0.1-rc6",
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
@@ -53,7 +53,7 @@
   },
   "dependencies": {
     "@ckb-lumos/base": "^0.16.0",
-    "@polyjuice-provider/godwoken": "^0.0.1-rc5",
+    "@polyjuice-provider/godwoken": "^0.0.1-rc6",
     "buffer": "^6.0.3",
     "encoding": "^0.1.13",
     "eth-sig-util": "^3.0.1",
