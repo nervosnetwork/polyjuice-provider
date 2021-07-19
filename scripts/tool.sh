@@ -17,8 +17,9 @@ generate_test_env(){
     read;
     ethAccountLockCodeHash=${REPLY}
 
-    printf "Private key: ";
-    read;
+    printf "(development-only) Private key: ";
+    read -s;
+    printf '%b\n'
     privateKey=${REPLY}
 
     node ./scripts/util.js privateKeyToEthAddress ${privateKey}
