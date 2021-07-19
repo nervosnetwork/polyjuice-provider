@@ -10,8 +10,10 @@
     "packages/*"
   ],
   "scripts": {
-    "fmt": "yarn workspaces run fmt", 
+    "fmt": "yarn workspaces run fmt",
     "lint": "yarn workspaces run lint",
+    "paste-env": ". scripts/tool.sh && paste_env_file_to_all_workspaces .test.env",
+    "env": ". scripts/tool.sh && prepare_env_files",
     "test": "yarn workspaces run test",
     "build": "yarn workspaces run build",
     "test-publish": "yarn workspaces test-publish"
@@ -20,5 +22,8 @@
     "@typescript-eslint/eslint-plugin": "^4.28.3",
     "@typescript-eslint/parser": "^4.28.3",
     "eslint": "^7.30.0"
+  },
+  "devDependencies": {
+    "commander": "^8.0.0"
   }
 }

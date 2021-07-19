@@ -16,3 +16,30 @@ yarn add @polyjuice-provider/ethers
 A simple react example to use `@polyjuice-provider` module can [be found here](https://github.com/RetricSu/polyjuice-provider-example).
 
 `note: this project is still under development, some APIs might be changed in the future.`
+
+## How to develop this project
+
+```sh
+yarn
+yarn build
+```
+
+## Test
+
+start a devnet via [Godwoken-Kicker](https://github.com/RetricSu/godwoken-kicker) on your local environment.
+
+run
+
+```sh
+yarn env
+```
+
+to generate .env file accross all workspace. the terminal will ask you to enter some polyjuice config.
+
+default web3 rpc url is `localhost:8024`, if you want to use that default value, just press enter directly.
+
+then you can run all tests
+
+```sh
+yarn test
+```
