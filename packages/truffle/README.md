@@ -28,6 +28,8 @@ new HDWalletProvider(..) --> new PolyjuiceHDWalletProvider(...)
 
 ### Deploy contract With Truffle
 
+due to an known issue, you should set `skipDryRun: true` in [truffle-config.js](https://github.com/RetricSu/polyjuice-provider/blob/add-truffle-deploy-example/packages/simple-storage-v2/truffle-config.js#L90) otherwiese you will enconter an balance unsuffice error.
+
 see this [example](https://github.com/RetricSu/polyjuice-provider/tree/add-truffle-deploy-example/packages/simple-storage-v2).
 
 or this [stand-alone one](https://github.com/RetricSu/simple-storage-v2/tree/support-deploy).
