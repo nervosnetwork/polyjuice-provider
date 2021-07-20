@@ -36,10 +36,10 @@ const Web3 = require("web3");
 const { PolyjuiceHttpProvider, PolyjuiceAccounts } = require("@polyjuice-provider/web3");
 
 const polyjuice_config: PolyjuiceConfig = {
-  rollupTypeHash: 'godwoken rollup type hash', // you can find this value by opening your browser to access http://localhost:6101/get_rollup_type_hash after starting kicker
-  ethAccountLockCodeHash: 'godwoken eth account lock code hash', // you can find this value by opening your browser to access http://localhost:6101/get_eth_account_lock after starting kicker  
-  abiItems: ['your abi items array'] // this is optional, you can pass [] if you want
-  web3Url: 'godwoken web3 rpc url', // normally it is http://localhost:8024 in devnet
+  rollupTypeHash: 'godwoken rollup type hash', 
+  ethAccountLockCodeHash: 'godwoken eth account lock code hash', 
+  abiItems: ['your abi items array'], // this is optional
+  web3Url: 'godwoken web3 rpc url', 
 };
 
 provider = new PolyjuiceHttpProvider(

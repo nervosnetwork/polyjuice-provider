@@ -19,6 +19,10 @@ A simple react example to use `@polyjuice-provider` module can [be found here](h
 
 `note: this project is still under development, some APIs might be changed in the future.`
 
+## Getting-Started
+
+read [the doc](docs/get-started.md).
+
 ## How It Works?
 
 there are three main differences between Godwoken-Polyjuice and Ethereum:
