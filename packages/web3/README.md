@@ -38,7 +38,7 @@ const { PolyjuiceHttpProvider, PolyjuiceAccounts } = require("@polyjuice-provide
 const polyjuice_config: PolyjuiceConfig = {
   rollupTypeHash: 'godwoken rollup type hash', 
   ethAccountLockCodeHash: 'godwoken eth account lock code hash', 
-  abiItems: ['your abi items array'] // this is optional
+  abiItems: ['your abi items array'], // this is optional
   web3Url: 'godwoken web3 rpc url', 
 };
 
