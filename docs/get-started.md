@@ -6,6 +6,11 @@ libraries:
 - [web3.js](#web3)  
 - [truffle](#truffle)
 
+some examples:
+
+- [React using ethers and web3 providers](https://github.com/RetricSu/polyjuice-provider-example)
+- [depoly contract to polyjuice using Truffle](https://github.com/RetricSu/simple-storage-v2)
+
 <a name="ethers"/>
 
 ## ethers
