@@ -1,7 +1,7 @@
 import test from "ava";
 import Web3 from "web3";
-import { PolyjuiceConfig, PolyjuiceHttpProvider } from "../lib/providers";
-import { AbiItems } from "@polyjuice-provider/base";
+import { PolyjuiceHttpProvider } from "../lib/providers";
+import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
 import { PolyjuiceAccounts } from "../lib/accounts";
 
 const Contract = require("web3-eth-contract");
@@ -89,8 +89,6 @@ test.before((t) => {
   // init provider and web3
   const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
   const provider_config: PolyjuiceConfig = {
-    rollupTypeHash: process.env.ROLLUP_TYPE_HASH,
-    ethAccountLockCodeHash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH,
     abiItems: EXAMPLE_CONTRACT.abi as AbiItems,
     web3Url: godwoken_rpc_url,
   };

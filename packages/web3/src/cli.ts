@@ -9,8 +9,11 @@ import * as http from "http";
 import * as https from "https";
 import { JsonRpcResponse } from "web3-core-helpers";
 import Signer from "@polyjuice-provider/base/lib/signer";
-import { PolyjuiceHttpProvider, PolyjuiceConfig } from "./providers";
-import { formalizeEthToAddress } from "../../base/lib";
+import { PolyjuiceHttpProvider } from "./providers";
+import {
+  formalizeEthToAddress,
+  PolyjuiceConfig,
+} from "@polyjuice-provider/base";
 
 export interface HttpHeader {
   name: string;
@@ -49,6 +52,7 @@ export class PolyjuiceHttpProviderCli extends PolyjuiceHttpProvider {
       result: JsonRpcResponse | undefined
     ) => void
   ) {
+    await this.godwoker.init();
     const { method, params } = payload;
 
     switch (method) {

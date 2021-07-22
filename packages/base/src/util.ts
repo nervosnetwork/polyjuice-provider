@@ -72,9 +72,9 @@ export type L2TransactionArgs = {
 };
 
 export type GodwokerOption = {
-  godwoken: {
-    rollup_type_hash: Hash;
-    eth_account_lock: Omit<Script, "args">;
+  godwoken?: {
+    rollup_type_hash?: Hash;
+    eth_account_lock?: Omit<Script, "args">;
   };
   queryEthAddressByShortAddress?: (short_address: string) => string;
   saveEthAddressShortAddressMapping?: (
@@ -107,13 +107,13 @@ export class Godwoker {
   private eth_account_lock: Omit<Script, "args">;
   private rollup_type_hash: string;
   private client: any;
-  private godwkenUtils: GodwokenUtils;
+  private godwokenUtils: GodwokenUtils;
   private queryEthAddressByShortAddress;
   private saveEthAddressShortAddressMapping;
 
-  constructor(host: string, option: GodwokerOption) {
+  constructor(host: string, option?: GodwokerOption) {
     const callServer = function (request: any, callback: any) {
-      const opt = option.request_option || {
+      const opt = option?.request_option || {
         method: "POST",
         body: request,
         headers: {
@@ -132,12 +132,62 @@ export class Godwoker {
         });
     };
     this.client = jaysonBrowserClient(callServer);
-    this.godwkenUtils = new GodwokenUtils(option.godwoken.rollup_type_hash);
-    this.eth_account_lock = option.godwoken.eth_account_lock;
-    this.rollup_type_hash = option.godwoken.rollup_type_hash;
-    this.queryEthAddressByShortAddress = option.queryEthAddressByShortAddress;
+    this.godwokenUtils = new GodwokenUtils(option?.godwoken?.rollup_type_hash);
+    this.eth_account_lock = option?.godwoken?.eth_account_lock;
+    this.rollup_type_hash = option?.godwoken?.rollup_type_hash;
+    this.queryEthAddressByShortAddress = option?.queryEthAddressByShortAddress;
     this.saveEthAddressShortAddressMapping =
-      option.saveEthAddressShortAddressMapping;
+      option?.saveEthAddressShortAddressMapping;
+  }
+
+  // call init if you haven't pass rollup configs to constructor
+  async init(): Promise<void> {
+    if (!this.rollup_type_hash) {
+      this.rollup_type_hash = await this.getRollupTypeHash();
+    }
+
+    if (!this.eth_account_lock.code_hash) {
+      this.eth_account_lock = {
+        code_hash: await this.getEthAccountLockHash(),
+        hash_type: "type",
+      };
+    }
+
+    if (!this.godwokenUtils.rollupTypeHash)
+      this.godwokenUtils = new GodwokenUtils(this.rollup_type_hash);
+  }
+
+  initSync(): Promise<void> {
+    const that = this;
+    const rollupPromise = () => {
+      return this.rollup_type_hash
+        ? this.rollup_type_hash
+        : this.getRollupTypeHash();
+    };
+    const ethAccountPromise = () => {
+      return this.eth_account_lock?.code_hash
+        ? this.eth_account_lock?.code_hash
+        : this.getEthAccountLockHash();
+    };
+
+    return Promise.all([
+      rollupPromise(), // this.getRollupTypeHash(),
+      ethAccountPromise(), // this.getEthAccountLockHash()
+    ])
+      .then(function (args) {
+        that.rollup_type_hash = args[0];
+        that.eth_account_lock = {
+          code_hash: args[1],
+          hash_type: "type",
+        };
+        if (!that.godwokenUtils.rollupTypeHash)
+          that.godwokenUtils = new GodwokenUtils(that.rollup_type_hash);
+
+        return Promise.resolve();
+      })
+      .catch(function (err) {
+        return Promise.reject(err);
+      });
   }
 
   packSignature(_signature: Hash): Hash {
@@ -329,7 +379,6 @@ export class Godwoker {
   ): boolean {
     const source_short_address =
       this.computeShortAddressByEoaEthAddress(eth_address);
-    console.log(source_short_address, _target_short_address);
     return (
       source_short_address.toLowerCase() === _target_short_address.toLowerCase()
     );
@@ -421,7 +470,7 @@ export class Godwoker {
     receiver_script_hash: string,
     is_add_prefix_in_signing_message: boolean = false
   ) {
-    return this.godwkenUtils.generateTransactionMessageToSign(
+    return this.godwokenUtils.generateTransactionMessageToSign(
       tx,
       sender_script_hash,
       receiver_script_hash,
@@ -569,6 +618,45 @@ export class Godwoker {
     });
   }
 
+  async getRollupTypeHash(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "poly_getRollupTypeHash",
+        [],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          return resolve(res.result);
+        }
+      );
+    });
+  }
+
+  async getEthAccountLockHash(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "poly_getEthAccountLockHash",
+        [],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          return resolve(res.result);
+        }
+      );
+    });
+  }
+
+  async getContractValidatorHash(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.client.request(
+        "poly_getContractValidatorTypeHash",
+        [],
+        (err: any, res: any) => {
+          if (err) return reject(err);
+          return resolve(res.result);
+        }
+      );
+    });
+  }
+
   async getPolyjuiceCreatorAccountId(): Promise<string> {
     return new Promise((resolve, reject) => {
       this.client.request("poly_getCreatorId", [], (err: any, res: any) => {
@@ -671,10 +759,10 @@ export class Godwoker {
       Buffer.from("POLY", "utf8").toString("hex");
 
     // gas limit
-    const args_8_16 = this.UInt64ToLeBytes(BigInt(gasLimit));
+    const args_8_16 = this.UInt64ToLeBytes(BigInt(gasLimit!));
     // gas price
     const args_16_32 = this.UInt128ToLeBytes(
-      gasPrice === "0x" ? BigInt(0) : BigInt(gasPrice)
+      gasPrice === "0x" ? BigInt(0) : BigInt(gasPrice!)
     );
     // value
     const args_32_48 = this.UInt128ToLeBytes(

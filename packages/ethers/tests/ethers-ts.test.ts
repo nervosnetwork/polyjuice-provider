@@ -1,11 +1,7 @@
 import test from "ava";
 import { Contract, ContractFactory } from "ethers";
-import { AbiItems } from "@polyjuice-provider/base/lib/abi";
-import {
-  PolyjuiceWallet,
-  PolyjuiceJsonRpcProvider,
-  PolyjuiceConfig,
-} from "../lib/index";
+import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
+import { PolyjuiceWallet, PolyjuiceJsonRpcProvider } from "../lib/index";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
@@ -87,8 +83,6 @@ test.before((t) => {
   // init provider and web3
   const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
   const polyjuice_config: PolyjuiceConfig = {
-    rollupTypeHash: process.env.ROLLUP_TYPE_HASH,
-    ethAccountLockCodeHash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH,
     abiItems: SimpleStorageV2_Abi as AbiItems,
     web3Url: godwoken_rpc_url,
   };

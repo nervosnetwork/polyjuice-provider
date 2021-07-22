@@ -2,8 +2,6 @@ import { AbiOutput, AbiInput, AbiItem } from "web3-utils";
 import { DEFAULT_EMPTY_ETH_ADDRESS } from "./constant";
 const Web3EthAbi = require("web3-eth-abi");
 
-export type AbiItems = AbiItem[];
-
 export interface MethodIDs {
   [method_id: string]: AbiItem;
 }

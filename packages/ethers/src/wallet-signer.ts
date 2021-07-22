@@ -5,6 +5,7 @@ import { SigningKey } from "@ethersproject/signing-key";
 import { resolveProperties } from "@ethersproject/properties";
 import { getAddress } from "@ethersproject/address";
 import {
+  PolyjuiceConfig,
   GodwokerOption,
   Godwoker,
   Abi,
@@ -13,7 +14,6 @@ import {
   POLY_MIN_GAS_PRICE,
   formalizeEthToAddress,
 } from "@polyjuice-provider/base";
-import { PolyjuiceConfig } from "./providers";
 
 import { Logger } from "@ethersproject/logger";
 import { joinSignature, BytesLike, hexlify } from "@ethersproject/bytes";
@@ -59,6 +59,7 @@ export class PolyjuiceWallet extends Wallet {
 
   signTransaction(transaction: TransactionRequest): Promise<string> {
     return resolveProperties(transaction).then(async (tx) => {
+      await this.godwoker.init();
       if (tx.from != null) {
         if (getAddress(tx.from) !== this.address) {
           logger.throwArgumentError(

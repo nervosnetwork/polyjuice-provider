@@ -12,6 +12,7 @@ import { JsonRpcResponse } from "web3-core-helpers";
 import {
   Godwoker,
   GodwokerOption,
+  PolyjuiceConfig,
   Signer,
   Abi,
   AbiItems,
@@ -43,13 +44,6 @@ export interface ExperimentalFeatureOption {
   mode: boolean;
   private_key?: string;
 }
-
-export type PolyjuiceConfig = {
-  rollupTypeHash: string;
-  ethAccountLockCodeHash: string;
-  abiItems?: AbiItems;
-  web3Url?: string;
-};
 
 export class PolyjuiceHttpProvider {
   experimentalFeatureMode: boolean;
@@ -115,6 +109,7 @@ export class PolyjuiceHttpProvider {
       result: JsonRpcResponse | undefined
     ) => void
   ) {
+    await this.godwoker.init();
     const { method, params } = payload;
 
     switch (method) {
