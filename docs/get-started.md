@@ -41,20 +41,59 @@ new providers.JsonRpcProvider(..) ---> new PolyjuiceJsonRpcProvider(...)
 new Wallet(..) --> new PolyjuiceWallet(...)
 ```
 
+init library:
+
+```ts
+import { ContractFactory } from "ethers";
+import { PolyjuiceWallet, PolyjuiceConfig, PolyjuiceJsonRpcProvider } from "@polyjuice-provider/ethers";
+
+const polyjuiceConfig: PolyjuiceConfig = {
+  rollupTypeHash: 'godwoken rollup type hash', // this is optional 
+  ethAccountLockCodeHash: 'godwoken eth account lock code hash', // this is optional
+  abiItems: ['your abi items array'],
+  web3Url: 'godwoken web3 rpc url', 
+};
+
+const rpc = new PolyjuiceJsonRpcProvider(polyjuiceConfig, polyjuiceConfig.web3Url); 
+const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceConfig, rpc);
+```
+
+you can let provider find the polyjuiceConfig info by themself as well:
+
+```ts
+`const `polyjuiceConfig: PolyjuiceConfig = {
+  abiItems: ['your abi items array'],
+  web3Url: 'godwoken web3 rpc url', 
+};
+
+const rpc = new PolyjuiceJsonRpcProvider(polyjuiceConfig, polyjuiceConfig.web3Url); 
+const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceConfig, rpc);
+```
+
+that way provider will fetch polyjucieConfig from web3 rpc server when those information are empty.
+
+sometimes `abiItem` can be omitted from constructor too: when you are not interacting with smart contracts, therefore there is no AbiItems needed to pass.
+
+```ts
+const `polyjuiceConfig: PolyjuiceConfig = {
+  web3Url: 'godwoken web3 rpc url', 
+};
+
+const rpc = new PolyjuiceJsonRpcProvider(polyjuiceConfig, polyjuiceConfig.web3Url); 
+const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceConfig, rpc);
+```
+
 #### Example: Deploy contract
 
 ```ts
 import { ContractFactory } from "ethers";
 import { PolyjuiceWallet, PolyjuiceConfig, PolyjuiceJsonRpcProvider } from "@polyjuice-provider/ethers";
 
-const polyjuice_config: PolyjuiceConfig = {
-  rollupTypeHash: 'godwoken rollup type hash', 
-  ethAccountLockCodeHash: 'godwoken eth account lock code hash', 
-  abiItems: ['your abi items array'], // this is optional
+const polyjuiceConfig: PolyjuiceConfig = {
   web3Url: 'godwoken web3 rpc url', 
 };
-const rpc = new PolyjuiceJsonRpcProvider(polyjuice_config, PolyjuiceConfig.web3Url); 
-const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuice_config, rpc);
+const rpc = new PolyjuiceJsonRpcProvider(polyjuiceConfig, polyjuiceConfig.web3Url); 
+const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceConfig, rpc);
 const implementationFactory = new ContractFactory(
   contract.abi,
   contract.bytecode,
@@ -77,9 +116,7 @@ import { providers, ContractFactory, Signer } from "ethers";
 import { PolyjuiceHttpProvider } from "@polyjuice-provider/web3";
 
 const polyjuiceConfig: PolyjuiceConfig = {
-  rollupTypeHash: 'godwoken rollup type hash', 
-  ethAccountLockCodeHash: 'godwoken eth account lock code hash', 
-  abiItems: ['your abi items array'], // this is optional
+  abiItems: ['your abi items array'],
   web3Url: 'godwoken web3 rpc url', 
 };
 
@@ -183,24 +220,73 @@ new Web3HttpProvider(..) --> new PolyjuiceHttpProvider(...)
 new Web3EthAccounts(..) ---> new PolyjuiceAccounts(...)
 ```
 
+init library:
+
+```ts
+const { PolyjuiceHDWalletProvider } = require("@polyjuice-provider/truffle");
+const { PolyjuiceHttpProvider } = require("@polyjuice-provider/web3");
+
+const polyjuiceConfig: PolyjuiceConfig = {
+  rollupTypeHash: 'godwoken rollup type hash', // this is optional 
+  ethAccountLockCodeHash: 'godwoken eth account lock code hash', // this is optional
+  abiItems: ['your abi items array'],
+  web3Url: 'godwoken web3 rpc url', 
+};
+
+provider = new PolyjuiceHDWalletProvider(
+  polyjuiceConfig.web3Url,
+  polyjuiceConfig,
+);
+polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig);
+```
+
+you can let provider find the polyjuiceConfig info by themself as well:
+
+```ts
+`const `polyjuiceConfig: PolyjuiceConfig = {
+  abiItems: ['your abi items array'],
+  web3Url: 'godwoken web3 rpc url', 
+};
+
+provider = new PolyjuiceHttpProvider(
+  polyjuiceConfig.web3Url,
+  polyjuiceConfig,
+);
+polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig);
+```
+
+that way provider will fetch polyjucieConfig from web3 rpc server when those information are empty.
+
+sometimes `abiItem` can be omitted from constructor too: when you are not interacting with smart contracts, therefore there is no AbiItems needed to pass.
+
+```ts
+const `polyjuiceConfig: PolyjuiceConfig = {
+  web3Url: 'godwoken web3 rpc url', 
+};
+
+provider = new PolyjuiceHttpProvider(
+  polyjuiceConfig.web3Url,
+  polyjuiceConfig,
+);
+polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig);
+```
+
 #### Example: Deploy contract
 
 ```js
 const Web3 = require("web3");
 const { PolyjuiceHttpProvider, PolyjuiceAccounts } = require("@polyjuice-provider/web3");
 
-const polyjuice_config: PolyjuiceConfig = {
-  rollupTypeHash: 'godwoken rollup type hash', 
-  ethAccountLockCodeHash: 'godwoken eth account lock code hash', 
-  abiItems: ['your abi items array'], // this is optional
+const polyjuiceConfig: PolyjuiceConfig = {
+  abiItems: ['your abi items array'],
   web3Url: 'godwoken web3 rpc url', 
 };
 
 provider = new PolyjuiceHttpProvider(
-  godwoken_rpc_url,
-  provider_config,
+  godwokenRpcUrl,
+  polyjuiceConfig,
 );
-polyjuiceAccounts = new PolyjuiceAccounts(polyjuice_config);
+polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig);
 
 const web3 = new Web3(provider);
 web3.eth.accounts = polyjuiceAccounts;
@@ -222,47 +308,16 @@ const contract_deployed_address = contractInstance._address;
 
 ### Migrate dapp
 
-if your dapp are using `web3.js` and `metamask`, you can simply change it like following:
-
-### init web3
-
-Before:
-
-```js
-import Web3 from 'web3';
-
-var web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8024'));
-```
-
-Now:
+if your dapp are using `web3.js` and `metamask`, you can change it like this:
 
 ```js
 import Web3 from 'web3';
 import { PolyjuiceHttpProvider } from '@polyjuice-provider/web3';
 
-var web3 = new Web3(new PolyjuiceHttpProvider('http://localhost:8024', polyjuiceConfig));
-```
-
-for ```polyjuiceConfig```: see above.
-
-### init contract instance
-
-Before:
-
-```js
-import Web3 from 'web3';
-
-var provider = new Web3.providers.HttpProvider('http://localhost:8024');
-var web3 = new Web3(provider);
-
-var contract = web3.eth.Contract(abi, contract_address);
-```
-
-Now:
-
-```js
-import Web3 from 'web3';
-import { PolyjuiceHttpProvider } from '@polyjuice-provider/web3';
+const polyjuiceConfig: PolyjuiceConfig = {
+  abiItems: ['your abi items array'],
+  web3Url: 'godwoken web3 rpc url', 
+};
 
 var provider = new PolyjuiceHttpProvider('http://localhost:8024', polyjuiceConfig);
 var web3 = new Web3(provider);
@@ -306,21 +361,13 @@ use `PolyjuiceHDWalletProvider` in truffle-config.js for your truffle project.
 const { PolyjuiceHDWalletProvider } = require("@polyjuice-provider/truffle");
 const { PolyjuiceHttpProvider } = require("@polyjuice-provider/web3");
 
-const root = require("path").join.bind(this, __dirname, ".");
-require("dotenv").config({ path: root(".env") });
-
-const rpc_url = new URL(process.env.WEB3_JSON_RPC);
-
-const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
-const polyjuice_config = {
-  rollupTypeHash: process.env.ROLLUP_TYPE_HASH,
-  ethAccountLockCodeHash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH,
-  web3Url: godwoken_rpc_url,
+const polyjuiceConfig = {
+  web3Url: process.env.WEB3_JSON_RPC,
 };
 
 const polyjuiceHttpProvider = new PolyjuiceHttpProvider(
-  polyjuice_config.web3Url,
-  polyjuice_config
+  polyjuiceConfig.web3Url,
+  polyjuiceConfig
 );
 const polyjuiceTruffleProvider = new PolyjuiceHDWalletProvider(
   [
@@ -329,14 +376,12 @@ const polyjuiceTruffleProvider = new PolyjuiceHDWalletProvider(
       providerOrUrl: polyjuiceHttpProvider,
     },
   ],
-  polyjuice_config
+  polyjuiceConfig
 );
 
 module.exports = {
   networks: {
     development: {
-      host: rpc_url.hostname, // Localhost (default: none)
-      port: rpc_url.port, // Standard Ethereum port (default: none)
       gasPrice: "0", // important for dryRun mode. 0 must be string type.
       network_id: "*", // Any network (default: none)
       provider: () => polyjuiceTruffleProvider,
