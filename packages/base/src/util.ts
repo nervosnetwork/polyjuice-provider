@@ -89,6 +89,11 @@ export type RequestRpcResult = {
   data?: string;
 };
 
+export enum RequireResult {
+  canBeEmpty,
+  canNotBeEmpty,
+}
+
 export function formalizeEthToAddress(to_address: string | undefined | null) {
   if (to_address === "0x") return DEFAULT_EMPTY_ETH_ADDRESS;
 
@@ -197,6 +202,30 @@ export class Godwoker {
     return signature;
   }
 
+  async jsonRPC(
+    method: string,
+    params: any[],
+    _errMsgWhenNoResult?: string,
+    requireResult = RequireResult.canNotBeEmpty
+  ): Promise<any> {
+    const errMsgWhenNoResult = _errMsgWhenNoResult || "";
+    const errWhenNoResult = new Error(
+      `result from jsonRPC ${method} is null or undefined. ${errMsgWhenNoResult}`
+    );
+    return new Promise((resolve, reject) => {
+      this.client.request(method, params, (err: any, res: any) => {
+        if (err) return reject(err);
+        if (!res) return reject(new Error("Rpc Response not found!"));
+        if (res.error) return reject(res.error);
+        if (requireResult === RequireResult.canBeEmpty)
+          return resolve(res.result); // here result might be non-exsit
+        if (res.result === undefined || res.result === null)
+          return reject(errWhenNoResult);
+        return resolve(res.result);
+      });
+    });
+  }
+
   computeScriptHashByEoaEthAddress(eth_address: string): string {
     const layer2_lock: Script = {
       code_hash: this.eth_account_lock.code_hash,
@@ -208,60 +237,28 @@ export class Godwoker {
   }
 
   async getScriptByScriptHash(_script_hash: string): Promise<Script> {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "gw_get_script",
-        [_script_hash],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          if (!res || res.result === undefined || res.result === null)
-            return reject(
-              new Error(`unable to fetch script from ${_script_hash}`)
-            );
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `unable to fetch script from ${_script_hash}`;
+    return this.jsonRPC("gw_get_script", [_script_hash], errorWhenNoResult);
   }
 
   async getScriptHashByAccountId(account_id: number): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "gw_get_script_hash",
-        [`0x${BigInt(account_id).toString(16)}`],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          if (!res || res.result === undefined || res.result === null)
-            return reject(
-              new Error(
-                `unable to fetch account script hash from 0x${BigInt(
-                  account_id
-                ).toString(16)}`
-              )
-            );
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `unable to fetch account script hash from 0x${BigInt(
+      account_id
+    ).toString(16)}`;
+    return this.jsonRPC(
+      "gw_get_script_hash",
+      [`0x${BigInt(account_id).toString(16)}`],
+      errorWhenNoResult
+    );
   }
 
   async getAccountIdByScriptHash(script_hash: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "gw_get_account_id_by_script_hash",
-        [script_hash],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          if (!res || res.result === undefined || res.result === null)
-            return reject(
-              new Error(
-                `unable to fetch account id from script hash ${script_hash}`
-              )
-            );
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `unable to fetch account id from script hash ${script_hash}`;
+    return this.jsonRPC(
+      "gw_get_account_id_by_script_hash",
+      [script_hash],
+      errorWhenNoResult
+    );
   }
 
   async getAccountIdByEoaEthAddress(eth_address: string): Promise<string> {
@@ -271,41 +268,21 @@ export class Godwoker {
       args: this.rollup_type_hash + eth_address.slice(2),
     };
     const lock_hash = utils.computeScriptHash(layer2_lock);
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "gw_get_account_id_by_script_hash",
-        [lock_hash],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          if (!res || res.result === undefined || res.result === null)
-            return reject(
-              new Error(
-                `unable to fetch account id from ${eth_address}, lock_hash is ${lock_hash}`
-              )
-            );
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `unable to fetch account id from ${eth_address}, lock_hash is ${lock_hash}`;
+    return this.jsonRPC(
+      "gw_get_account_id_by_script_hash",
+      [lock_hash],
+      errorWhenNoResult
+    );
   }
 
   async getScriptHashByShortAddress(_address: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "gw_get_script_hash_by_short_address",
-        [_address],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          if (!res || !res || res.result === undefined || res.result === null)
-            return reject(
-              new Error(
-                `unable to fetch script hash from short address: ${_address}`
-              )
-            );
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `unable to fetch script from ${_address}`;
+    return this.jsonRPC(
+      "gw_get_script_hash_by_short_address",
+      [_address],
+      errorWhenNoResult
+    );
   }
 
   computeShortAddressByEoaEthAddress(
@@ -388,20 +365,12 @@ export class Godwoker {
   async defaultQueryEthAddressByShortAddress(
     _short_address: string
   ): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "poly_getEthAddressByGodwokenShortAddress",
-        [_short_address],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          if (!res || res.result === undefined || res.result === null)
-            return reject(
-              new Error(`unable to fetch eth address from ${_short_address}`)
-            );
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `unable to fetch eth address from ${_short_address}`;
+    return this.jsonRPC(
+      "poly_getEthAddressByGodwokenShortAddress",
+      [_short_address],
+      errorWhenNoResult
+    );
   }
 
   // default method
@@ -409,43 +378,21 @@ export class Godwoker {
     _eth_address: string,
     _short_address: string
   ) {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "poly_saveEthAddressGodwokenShortAddressMapping",
-        [_eth_address, _short_address],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          if (!res || res.result !== "ok")
-            return reject(
-              new Error(
-                `unable to save eth address and short address in web3 server.`
-              )
-            );
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `unable to save eth address and short address in web3 server.`;
+    return this.jsonRPC(
+      "poly_saveEthAddressGodwokenShortAddressMapping",
+      [_eth_address, _short_address],
+      errorWhenNoResult
+    );
   }
 
   async getNonce(account_id: number): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "gw_get_nonce",
-        [`0x${account_id.toString(16)}`],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          if (!res || res.result === undefined || res.result === null)
-            return reject(
-              new Error(
-                `unable to fetch nonce, account_id:${account_id}, ${JSON.stringify(
-                  res
-                )}`
-              )
-            );
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `unable to fetch nonce, account_id: ${account_id}}`;
+    return this.jsonRPC(
+      "gw_get_nonce",
+      [`0x${account_id.toString(16)}`],
+      errorWhenNoResult
+    );
   }
 
   async assembleRawL2Transaction(
@@ -513,46 +460,22 @@ export class Godwoker {
   ): Promise<string> {
     const l2_tx = { raw: raw_tx, signature: signature };
     const serialize_tx = this.serializeL2Transaction(l2_tx);
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "gw_execute_l2_tranaction",
-        [serialize_tx],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          if (!res || res.result === undefined || res.result === null)
-            return reject(
-              new Error(
-                `failed to send gw_executeL2Tranaction rpc, ${JSON.stringify(
-                  res
-                )}`
-              )
-            );
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `failed to get gw_execute_l2transaction runResult.`;
+    return this.jsonRPC(
+      "gw_execute_l2transaction",
+      [serialize_tx],
+      errorWhenNoResult
+    );
   }
 
   async gw_executeRawL2Transaction(raw_tx: RawL2Transaction): Promise<any> {
     const serialize_tx = this.serializeRawL2Transaction(raw_tx);
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "gw_execute_raw_l2transaction",
-        [serialize_tx],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          if (!res || res.result === undefined || res.result === null)
-            return reject(
-              new Error(
-                `failed to send gw_executeRawL2Tranaction rpc, ${JSON.stringify(
-                  res
-                )}`
-              )
-            );
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `failed to get gw_execute_l2transaction runResult`;
+    return this.jsonRPC(
+      "gw_execute_raw_l2transaction",
+      [serialize_tx],
+      errorWhenNoResult
+    );
   }
 
   async gw_submitL2Transaction(
@@ -561,136 +484,74 @@ export class Godwoker {
   ): Promise<string> {
     const l2_tx = { raw: raw_tx, signature: signature };
     const serialize_tx = this.serializeL2Transaction(l2_tx);
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "gw_submit_l2transaction",
-        [serialize_tx],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          if (!res || res.result === undefined || res.result === null)
-            return reject(
-              new Error(
-                `failed to send gw_submitL2Transaction rpc, ${JSON.stringify(
-                  res
-                )}`
-              )
-            );
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `failed to get gw_submit_l2transaction txHash, l2_tx: ${JSON.stringify(
+      l2_tx,
+      null,
+      2
+    )}`;
+    return this.jsonRPC(
+      "gw_submit_l2transaction",
+      [serialize_tx],
+      errorWhenNoResult
+    );
   }
 
   async gw_submitSerializedL2Transaction(
     serialize_tx: string
   ): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "gw_submit_l2transaction",
-        [serialize_tx],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          if (!res || res.result === undefined || res.result === null)
-            return reject(
-              new Error(
-                `failed to send gw_submitL2Transaction rpc, ${JSON.stringify(
-                  res
-                )}`
-              )
-            );
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `failed to get gw_submit_l2transaction txHash, serialize_tx: serialize_tx`;
+    return this.jsonRPC(
+      "gw_submit_l2transaction",
+      [serialize_tx],
+      errorWhenNoResult
+    );
   }
 
   async gw_getTransactionReceipt(tx_hash: Hash): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "gw_get_transaction_receipt",
-        [tx_hash],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          //if(!res || res.result === undefined || res.result === null) resolve( Error(`failed to send gw_getTransactionReceipt rpc, ${JSON.stringify(res)}`);
-          return resolve(res.result);
-        }
-      );
-    });
+    return this.jsonRPC(
+      "gw_get_transaction_receipt",
+      [tx_hash],
+      null,
+      RequireResult.canBeEmpty
+    );
   }
 
   async getRollupTypeHash(): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "poly_getRollupTypeHash",
-        [],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `unable to fetch rollupTypeHash from web3 server.`;
+    return this.jsonRPC("poly_getRollupTypeHash", [], errorWhenNoResult);
   }
 
   async getEthAccountLockHash(): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "poly_getEthAccountLockHash",
-        [],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `unable to fetch ethAccountLockHash from web3 server.`;
+    return this.jsonRPC("poly_getEthAccountLockHash", [], errorWhenNoResult);
   }
 
   async getContractValidatorHash(): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "poly_getContractValidatorTypeHash",
-        [],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `unable to fetch ContractValidatorHash from web3 server.`;
+    return this.jsonRPC(
+      "poly_getContractValidatorTypeHash",
+      [],
+      errorWhenNoResult
+    );
   }
 
   async getPolyjuiceCreatorAccountId(): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.request("poly_getCreatorId", [], (err: any, res: any) => {
-        if (err) return reject(err);
-        return resolve(res.result);
-      });
-    });
+    const errorWhenNoResult = `unable to fetch creatorId from web3 server.`;
+    return this.jsonRPC("poly_getCreatorId", [], errorWhenNoResult);
   }
 
   async getPolyjuiceDefaultFromAddress(): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "poly_getDefaultFromAddress",
-        [],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          return resolve(res.result);
-        }
-      );
-    });
+    const errorWhenNoResult = `unable to fetch defaultFromAddress from web3 server.`;
+    return this.jsonRPC("poly_getDefaultFromAddress", [], errorWhenNoResult);
   }
 
   async eth_getTransactionReceipt(tx_hash: Hash): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.client.request(
-        "eth_getTransactionReceipt",
-        [tx_hash],
-        (err: any, res: any) => {
-          if (err) return reject(err);
-          //if(!res || res.result === undefined || res.result === null) resolve( Error(`failed to send gw_getTransactionReceipt rpc, ${JSON.stringify(res)}`);
-          return resolve(res.result);
-        }
-      );
-    });
+    return this.jsonRPC(
+      "eth_getTransactionReceipt",
+      [tx_hash],
+      null,
+      RequireResult.canBeEmpty
+    );
   }
 
   // todo: timeout should be set with > 5 blocks long, may change in mainnet.
