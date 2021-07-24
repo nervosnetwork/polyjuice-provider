@@ -45,7 +45,7 @@ export class Abi {
   }
 
   filter_interested_inputs(_abiItem: AbiItem): AbiInput[] {
-    if(!_abiItem.inputs) return [];
+    if (!_abiItem.inputs) return [];
 
     return _abiItem.inputs.filter(
       (input) => input.type === "address" || input.type === "address[]"
@@ -53,7 +53,7 @@ export class Abi {
   }
 
   filter_interested_outputs(_abiItem: AbiItem): AbiOutput[] {
-    if(!_abiItem.outputs) return [];
+    if (!_abiItem.outputs) return [];
 
     return _abiItem.outputs.filter(
       (output) => output.type === "address" || output.type === "address[]"
@@ -71,9 +71,11 @@ export class Abi {
   decode_method(data: string) {
     const method_id = data.slice(2, 10);
     const abiItem = this.interested_method_ids[method_id];
-    if (!abiItem) 
-      throw new Error(`can not find abiItems in interested_method_ids, id: ${method_id}`);
-    
+    if (!abiItem)
+      throw new Error(
+        `can not find abiItems in interested_method_ids, id: ${method_id}`
+      );
+
     let decoded = Web3EthAbi.decodeParameters(
       abiItem.inputs,
       "0x" + data.slice(10)
@@ -83,7 +85,7 @@ export class Abi {
       params: [],
     };
 
-    if(!abiItem.inputs)return retData;
+    if (!abiItem.inputs) return retData;
 
     for (let i = 0; i < decoded.__length__; i++) {
       let param = decoded[i];
@@ -179,7 +181,7 @@ export class Abi {
     abi_item: AbiItem,
     calculate_short_address: (addr: string) => Promise<string>
   ) {
-    if(!abi_item.outputs)return return_value;
+    if (!abi_item.outputs) return return_value;
 
     const output_value_types = abi_item.outputs.map((item) => item.type);
     let decoded_values: { [key: string]: any } = Web3EthAbi.decodeParameters(

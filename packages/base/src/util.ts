@@ -4,7 +4,7 @@ import {
   RawL2Transaction,
   L2Transaction,
   RunResult,
-  TransactionReceipt as GwTransactionReceipt
+  TransactionReceipt as GwTransactionReceipt,
 } from "@polyjuice-provider/godwoken";
 import {
   SerializeL2Transaction,
@@ -64,10 +64,10 @@ export interface EthTransactionReceipt {
   transactionIndex: HexNumber;
   gasUsed: HexNumber;
   cumulativeGasUsed: HexNumber;
-  logsBloom: HexString,
-  logs: EthLogItem[],
-  contractAddress: HexString,
-  status: EthTransactionStatus,
+  logsBloom: HexString;
+  logs: EthLogItem[];
+  contractAddress: HexString;
+  status: EthTransactionStatus;
 }
 
 export interface EthLogItem {
@@ -84,8 +84,8 @@ export interface EthLogItem {
 
 export enum EthTransactionStatus {
   success = "0x1",
-  failure = "0x0"
-};
+  failure = "0x0",
+}
 
 export type EthAddress = HexString;
 
@@ -335,7 +335,9 @@ export class Godwoker {
     return short_address;
   }
 
-  async getShortAddressByAllTypeEthAddress(_address: string): Promise<HexString> {
+  async getShortAddressByAllTypeEthAddress(
+    _address: string
+  ): Promise<HexString> {
     // todo: support create2 address in such case that it haven't create real contract yet.
     try {
       // assume it is an contract address (thus already an short address)
@@ -351,7 +353,9 @@ export class Godwoker {
     }
   }
 
-  async getEthAddressByAllTypeShortAddress(_short_address: HexString): Promise<HexString> {
+  async getEthAddressByAllTypeShortAddress(
+    _short_address: HexString
+  ): Promise<HexString> {
     // todo: support create2 address in such case which it haven't create real contract yet.
     try {
       // first, query on-chain
@@ -502,7 +506,9 @@ export class Godwoker {
     );
   }
 
-  async gw_executeRawL2Transaction(raw_tx: RawL2Transaction): Promise<RunResult> {
+  async gw_executeRawL2Transaction(
+    raw_tx: RawL2Transaction
+  ): Promise<RunResult> {
     const serialize_tx = this.serializeRawL2Transaction(raw_tx);
     const errorWhenNoResult = `failed to get gw_execute_l2transaction runResult`;
     return this.jsonRPC(
@@ -541,7 +547,9 @@ export class Godwoker {
     );
   }
 
-  async gw_getTransactionReceipt(tx_hash: Hash): Promise<GwTransactionReceipt | null> {
+  async gw_getTransactionReceipt(
+    tx_hash: Hash
+  ): Promise<GwTransactionReceipt | null> {
     return this.jsonRPC(
       "gw_get_transaction_receipt",
       [tx_hash],
@@ -579,7 +587,9 @@ export class Godwoker {
     return this.jsonRPC("poly_getDefaultFromAddress", [], errorWhenNoResult);
   }
 
-  async eth_getTransactionReceipt(tx_hash: Hash): Promise<EthTransactionReceipt | null> {
+  async eth_getTransactionReceipt(
+    tx_hash: Hash
+  ): Promise<EthTransactionReceipt | null> {
     return this.jsonRPC(
       "eth_getTransactionReceipt",
       [tx_hash],
