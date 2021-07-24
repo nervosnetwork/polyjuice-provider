@@ -75,7 +75,7 @@ that way provider will fetch polyjucieConfig from web3 rpc server when those inf
 sometimes `abiItem` can be omitted from constructor too: when you are not interacting with smart contracts, therefore there is no AbiItems needed to pass.
 
 ```ts
-const `polyjuiceConfig: PolyjuiceConfig = {
+const polyjuiceConfig: PolyjuiceConfig = {
   web3Url: 'godwoken web3 rpc url', 
 };
 
@@ -223,8 +223,7 @@ new Web3EthAccounts(..) ---> new PolyjuiceAccounts(...)
 init library:
 
 ```ts
-const { PolyjuiceHDWalletProvider } = require("@polyjuice-provider/truffle");
-const { PolyjuiceHttpProvider } = require("@polyjuice-provider/web3");
+const { PolyjuiceHttpProvider, PolyjuiceAccounts } = require("@polyjuice-provider/web3");
 
 const polyjuiceConfig: PolyjuiceConfig = {
   rollupTypeHash: 'godwoken rollup type hash', // this is optional 
@@ -233,7 +232,7 @@ const polyjuiceConfig: PolyjuiceConfig = {
   web3Url: 'godwoken web3 rpc url', 
 };
 
-provider = new PolyjuiceHDWalletProvider(
+provider = new PolyjuiceHttpProvider(
   polyjuiceConfig.web3Url,
   polyjuiceConfig,
 );
@@ -260,7 +259,7 @@ that way provider will fetch polyjucieConfig from web3 rpc server when those inf
 sometimes `abiItem` can be omitted from constructor too: when you are not interacting with smart contracts, therefore there is no AbiItems needed to pass.
 
 ```ts
-const `polyjuiceConfig: PolyjuiceConfig = {
+const polyjuiceConfig: PolyjuiceConfig = {
   web3Url: 'godwoken web3 rpc url', 
 };
 
