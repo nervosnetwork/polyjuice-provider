@@ -3,6 +3,8 @@ import {
   GodwokenUtils,
   RawL2Transaction,
   L2Transaction,
+  RunResult,
+  TransactionReceipt as GwTransactionReceipt
 } from "@polyjuice-provider/godwoken";
 import {
   SerializeL2Transaction,
@@ -21,7 +23,7 @@ import { Buffer } from "buffer"; // for browser compatibility polyfill
 // eg: for react project using webpack 4 (this is the most common case when created by running `npx create-react-app`),
 // the default react-scripts config just use buffer@0.4.3 which doesn't include writeBigUint64LE function.
 // code copy from https://github.com/feross/buffer/blob/master/index.js#L1497-L1513
-function writeBigUint64LE(buf, value, offset = 0) {
+function writeBigUint64LE(buf: any, value: any, offset = 0) {
   let lo = Number(value & BigInt(0xffffffff));
   buf[offset++] = lo;
   lo = lo >> 8;
@@ -54,6 +56,38 @@ declare global {
 }
 
 const fetch = typeof window !== "undefined" ? window.fetch : crossFetch;
+
+export interface EthTransactionReceipt {
+  transactionHash: Hash;
+  blockHash: Hash;
+  blockNumber: HexNumber;
+  transactionIndex: HexNumber;
+  gasUsed: HexNumber;
+  cumulativeGasUsed: HexNumber;
+  logsBloom: HexString,
+  logs: EthLogItem[],
+  contractAddress: HexString,
+  status: EthTransactionStatus,
+}
+
+export interface EthLogItem {
+  address: HexString;
+  blockHash: Hash;
+  blockNumber: HexNumber;
+  transactionIndex: HexNumber;
+  transactionHash: Hash;
+  data: HexString;
+  logIndex: HexNumber;
+  topics: HexString[];
+  removed: boolean;
+}
+
+export enum EthTransactionStatus {
+  success = "0x1",
+  failure = "0x0"
+};
+
+export type EthAddress = HexString;
 
 export type EthTransaction = {
   from: HexString;
@@ -109,8 +143,8 @@ export function formalizeEthToAddress(to_address: string | undefined | null) {
 }
 
 export class Godwoker {
-  private eth_account_lock: Omit<Script, "args">;
-  private rollup_type_hash: string;
+  private eth_account_lock: Omit<Script, "args"> | undefined;
+  private rollup_type_hash: string | undefined;
   private client: any;
   private godwokenUtils: GodwokenUtils;
   private queryEthAddressByShortAddress;
@@ -126,13 +160,13 @@ export class Godwoker {
         },
       };
       fetch(host, opt)
-        .then(function (res) {
+        .then(function (res: Response) {
           return res.text();
         })
-        .then(function (text) {
+        .then(function (text: Response) {
           callback(null, text);
         })
-        .catch(function (err) {
+        .catch(function (err: Error) {
           callback(err);
         });
     };
@@ -151,7 +185,7 @@ export class Godwoker {
       this.rollup_type_hash = await this.getRollupTypeHash();
     }
 
-    if (!this.eth_account_lock.code_hash) {
+    if (!this.eth_account_lock?.code_hash) {
       this.eth_account_lock = {
         code_hash: await this.getEthAccountLockHash(),
         hash_type: "type",
@@ -195,7 +229,7 @@ export class Godwoker {
       });
   }
 
-  packSignature(_signature: Hash): Hash {
+  packSignature(_signature: HexString): HexString {
     let v = Number.parseInt(_signature.slice(-2), 16);
     if (v >= 27) v -= 27;
     const signature = _signature.slice(0, -2) + v.toString(16).padStart(2, "0");
@@ -205,7 +239,7 @@ export class Godwoker {
   async jsonRPC(
     method: string,
     params: any[],
-    _errMsgWhenNoResult?: string,
+    _errMsgWhenNoResult?: string | null,
     requireResult = RequireResult.canNotBeEmpty
   ): Promise<any> {
     const errMsgWhenNoResult = _errMsgWhenNoResult || "";
@@ -226,10 +260,10 @@ export class Godwoker {
     });
   }
 
-  computeScriptHashByEoaEthAddress(eth_address: string): string {
+  computeScriptHashByEoaEthAddress(eth_address: string): HexString {
     const layer2_lock: Script = {
-      code_hash: this.eth_account_lock.code_hash,
-      hash_type: this.eth_account_lock.hash_type as "type" | "data",
+      code_hash: this.eth_account_lock?.code_hash || "",
+      hash_type: this.eth_account_lock?.hash_type as "type" | "data",
       args: this.rollup_type_hash + eth_address.slice(2),
     };
     const lock_hash = utils.computeScriptHash(layer2_lock);
@@ -241,7 +275,7 @@ export class Godwoker {
     return this.jsonRPC("gw_get_script", [_script_hash], errorWhenNoResult);
   }
 
-  async getScriptHashByAccountId(account_id: number): Promise<string> {
+  async getScriptHashByAccountId(account_id: number): Promise<HexString> {
     const errorWhenNoResult = `unable to fetch account script hash from 0x${BigInt(
       account_id
     ).toString(16)}`;
@@ -252,7 +286,7 @@ export class Godwoker {
     );
   }
 
-  async getAccountIdByScriptHash(script_hash: string): Promise<string> {
+  async getAccountIdByScriptHash(script_hash: string): Promise<HexNumber> {
     const errorWhenNoResult = `unable to fetch account id from script hash ${script_hash}`;
     return this.jsonRPC(
       "gw_get_account_id_by_script_hash",
@@ -261,10 +295,10 @@ export class Godwoker {
     );
   }
 
-  async getAccountIdByEoaEthAddress(eth_address: string): Promise<string> {
+  async getAccountIdByEoaEthAddress(eth_address: string): Promise<HexNumber> {
     const layer2_lock: Script = {
-      code_hash: this.eth_account_lock.code_hash,
-      hash_type: this.eth_account_lock.hash_type as "type" | "data",
+      code_hash: this.eth_account_lock?.code_hash || "",
+      hash_type: this.eth_account_lock?.hash_type as "type" | "data",
       args: this.rollup_type_hash + eth_address.slice(2),
     };
     const lock_hash = utils.computeScriptHash(layer2_lock);
@@ -276,7 +310,7 @@ export class Godwoker {
     );
   }
 
-  async getScriptHashByShortAddress(_address: string): Promise<string> {
+  async getScriptHashByShortAddress(_address: string): Promise<HexString> {
     const errorWhenNoResult = `unable to fetch script from ${_address}`;
     return this.jsonRPC(
       "gw_get_script_hash_by_short_address",
@@ -288,7 +322,7 @@ export class Godwoker {
   computeShortAddressByEoaEthAddress(
     _address: string,
     write_callback?: (eth_address: string, short_address: string) => void
-  ): string {
+  ): HexString {
     const short_address = this.computeScriptHashByEoaEthAddress(_address).slice(
       0,
       42
@@ -301,7 +335,7 @@ export class Godwoker {
     return short_address;
   }
 
-  async getShortAddressByAllTypeEthAddress(_address: string): Promise<string> {
+  async getShortAddressByAllTypeEthAddress(_address: string): Promise<HexString> {
     // todo: support create2 address in such case that it haven't create real contract yet.
     try {
       // assume it is an contract address (thus already an short address)
@@ -317,7 +351,7 @@ export class Godwoker {
     }
   }
 
-  async getEthAddressByAllTypeShortAddress(_short_address: string) {
+  async getEthAddressByAllTypeShortAddress(_short_address: HexString): Promise<HexString> {
     // todo: support create2 address in such case which it haven't create real contract yet.
     try {
       // first, query on-chain
@@ -325,7 +359,7 @@ export class Godwoker {
         _short_address
       );
       const script = await this.getScriptByScriptHash(script_hash);
-      if (script.code_hash === this.eth_account_lock.code_hash) {
+      if (script.code_hash === this.eth_account_lock?.code_hash) {
         return "0x" + script.args.slice(66, 106);
       }
       // assume it is normal contract address.
@@ -364,7 +398,7 @@ export class Godwoker {
   // default method
   async defaultQueryEthAddressByShortAddress(
     _short_address: string
-  ): Promise<string> {
+  ): Promise<HexString> {
     const errorWhenNoResult = `unable to fetch eth address from ${_short_address}`;
     return this.jsonRPC(
       "poly_getEthAddressByGodwokenShortAddress",
@@ -377,7 +411,7 @@ export class Godwoker {
   async defaultSaveEthAddressShortAddressMapping(
     _eth_address: string,
     _short_address: string
-  ) {
+  ): Promise<string> {
     const errorWhenNoResult = `unable to save eth address and short address in web3 server.`;
     return this.jsonRPC(
       "poly_saveEthAddressGodwokenShortAddressMapping",
@@ -386,7 +420,7 @@ export class Godwoker {
     );
   }
 
-  async getNonce(account_id: number): Promise<string> {
+  async getNonce(account_id: number): Promise<HexNumber> {
     const errorWhenNoResult = `unable to fetch nonce, account_id: ${account_id}}`;
     return this.jsonRPC(
       "gw_get_nonce",
@@ -416,7 +450,7 @@ export class Godwoker {
     sender_script_hash: string,
     receiver_script_hash: string,
     is_add_prefix_in_signing_message: boolean = false
-  ) {
+  ): string {
     return this.godwokenUtils.generateTransactionMessageToSign(
       tx,
       sender_script_hash,
@@ -425,7 +459,7 @@ export class Godwoker {
     );
   }
 
-  async generateMessageFromEthTransaction(tx: EthTransaction) {
+  async generateMessageFromEthTransaction(tx: EthTransaction): Promise<string> {
     const { from, to } = tx;
 
     const to_id = await this.allTypeEthAddressToAccountId(to);
@@ -444,12 +478,12 @@ export class Godwoker {
     return message;
   }
 
-  serializeL2Transaction(tx: L2Transaction) {
+  serializeL2Transaction(tx: L2Transaction): HexString {
     const _tx = NormalizeL2Transaction(tx);
     return new Reader(SerializeL2Transaction(_tx)).serializeJson();
   }
 
-  serializeRawL2Transaction(tx: RawL2Transaction) {
+  serializeRawL2Transaction(tx: RawL2Transaction): HexString {
     const _tx = NormalizeRawL2Transaction(tx);
     return new Reader(SerializeRawL2Transaction(_tx)).serializeJson();
   }
@@ -457,7 +491,7 @@ export class Godwoker {
   async gw_executeL2Tranaction(
     raw_tx: RawL2Transaction,
     signature: HexString
-  ): Promise<string> {
+  ): Promise<RunResult> {
     const l2_tx = { raw: raw_tx, signature: signature };
     const serialize_tx = this.serializeL2Transaction(l2_tx);
     const errorWhenNoResult = `failed to get gw_execute_l2transaction runResult.`;
@@ -468,7 +502,7 @@ export class Godwoker {
     );
   }
 
-  async gw_executeRawL2Transaction(raw_tx: RawL2Transaction): Promise<any> {
+  async gw_executeRawL2Transaction(raw_tx: RawL2Transaction): Promise<RunResult> {
     const serialize_tx = this.serializeRawL2Transaction(raw_tx);
     const errorWhenNoResult = `failed to get gw_execute_l2transaction runResult`;
     return this.jsonRPC(
@@ -481,7 +515,7 @@ export class Godwoker {
   async gw_submitL2Transaction(
     raw_tx: RawL2Transaction,
     signature: HexString
-  ): Promise<string> {
+  ): Promise<Hash> {
     const l2_tx = { raw: raw_tx, signature: signature };
     const serialize_tx = this.serializeL2Transaction(l2_tx);
     const errorWhenNoResult = `failed to get gw_submit_l2transaction txHash, l2_tx: ${JSON.stringify(
@@ -497,8 +531,8 @@ export class Godwoker {
   }
 
   async gw_submitSerializedL2Transaction(
-    serialize_tx: string
-  ): Promise<string> {
+    serialize_tx: HexString
+  ): Promise<Hash> {
     const errorWhenNoResult = `failed to get gw_submit_l2transaction txHash, serialize_tx: serialize_tx`;
     return this.jsonRPC(
       "gw_submit_l2transaction",
@@ -507,7 +541,7 @@ export class Godwoker {
     );
   }
 
-  async gw_getTransactionReceipt(tx_hash: Hash): Promise<string> {
+  async gw_getTransactionReceipt(tx_hash: Hash): Promise<GwTransactionReceipt | null> {
     return this.jsonRPC(
       "gw_get_transaction_receipt",
       [tx_hash],
@@ -516,17 +550,17 @@ export class Godwoker {
     );
   }
 
-  async getRollupTypeHash(): Promise<string> {
+  async getRollupTypeHash(): Promise<HexString> {
     const errorWhenNoResult = `unable to fetch rollupTypeHash from web3 server.`;
     return this.jsonRPC("poly_getRollupTypeHash", [], errorWhenNoResult);
   }
 
-  async getEthAccountLockHash(): Promise<string> {
+  async getEthAccountLockHash(): Promise<HexString> {
     const errorWhenNoResult = `unable to fetch ethAccountLockHash from web3 server.`;
     return this.jsonRPC("poly_getEthAccountLockHash", [], errorWhenNoResult);
   }
 
-  async getContractValidatorHash(): Promise<string> {
+  async getContractValidatorHash(): Promise<HexString> {
     const errorWhenNoResult = `unable to fetch ContractValidatorHash from web3 server.`;
     return this.jsonRPC(
       "poly_getContractValidatorTypeHash",
@@ -535,17 +569,17 @@ export class Godwoker {
     );
   }
 
-  async getPolyjuiceCreatorAccountId(): Promise<string> {
+  async getPolyjuiceCreatorAccountId(): Promise<HexNumber> {
     const errorWhenNoResult = `unable to fetch creatorId from web3 server.`;
     return this.jsonRPC("poly_getCreatorId", [], errorWhenNoResult);
   }
 
-  async getPolyjuiceDefaultFromAddress(): Promise<string> {
+  async getPolyjuiceDefaultFromAddress(): Promise<HexString> {
     const errorWhenNoResult = `unable to fetch defaultFromAddress from web3 server.`;
     return this.jsonRPC("poly_getDefaultFromAddress", [], errorWhenNoResult);
   }
 
-  async eth_getTransactionReceipt(tx_hash: Hash): Promise<string> {
+  async eth_getTransactionReceipt(tx_hash: Hash): Promise<EthTransactionReceipt | null> {
     return this.jsonRPC(
       "eth_getTransactionReceipt",
       [tx_hash],

@@ -18,14 +18,23 @@ export function u32ToHex(value: number): HexString;
 export function toBuffer(ab: ArrayBuffer): Buffer;
 
 export interface RunResult {
-  read_values: Map<Hash, Hash>;
-  write_values: Map<Hash, Hash>;
   return_data: HexString;
-  account_count?: HexNumber;
-  new_scripts: Map<Hash, HexString>;
-  write_data: Map<Hash, HexString>;
-  read_data: Map<Hash, HexNumber>;
+  logs: LogItem[];
 }
+
+export interface LogItem {
+  account_id: HexNumber;
+  service_flag: HexNumber;
+  data: HexString;
+}
+
+export interface TransactionReceipt {
+  tx_witness_hash: Hash,
+  post_state: AccountMerkleState,
+  read_data_hashes: Hash[],
+  logs: LogItem[],
+}
+
 export interface RawL2Transaction {
   from_id: HexNumber;
   to_id: HexNumber;
@@ -154,7 +163,7 @@ export declare class Godwoken {
 }
 
 export declare class GodwokenUtils {
-  constructor(rollup_type_hash: Hash);
+  constructor(rollup_type_hash: Hash | undefined);
   get rollupTypeHash(): string;
   generateTransactionMessageToSign(
     raw_l2tx: RawL2Transaction,
