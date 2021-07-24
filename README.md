@@ -60,9 +60,9 @@ yarn env
 
 to generate .env file accross all workspace. the terminal will ask you to enter some polyjuice config.
 
-default web3 rpc url is `localhost:8024`, if you want to use that default value, just press enter directly.
+default web3 rpc url is `localhost:8024`, if you want to use that default value, just press enter directly. the rollup type hash and eth account lock hash are optional parameters too, you can skip those as well.
 
-then you can run all tests
+finally, you can run all tests with
 
 ```sh
 yarn test
