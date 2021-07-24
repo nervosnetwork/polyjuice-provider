@@ -16,7 +16,7 @@ npm install --save @polyjuice-provider/truffle
 
 ## Usage
 
-read [docs here](../../docs/api.md#truffle)
+read [docs here](../../docs/get-started.md#truffle)
 
 ## How to develop this module
 

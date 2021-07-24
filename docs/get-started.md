@@ -61,7 +61,7 @@ const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceCon
 you can let provider find the polyjuiceConfig info by themself as well:
 
 ```ts
-`const `polyjuiceConfig: PolyjuiceConfig = {
+const polyjuiceConfig: PolyjuiceConfig = {
   abiItems: ['your abi items array'],
   web3Url: 'godwoken web3 rpc url', 
 };
@@ -243,7 +243,7 @@ polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig);
 you can let provider find the polyjuiceConfig info by themself as well:
 
 ```ts
-`const `polyjuiceConfig: PolyjuiceConfig = {
+const polyjuiceConfig: PolyjuiceConfig = {
   abiItems: ['your abi items array'],
   web3Url: 'godwoken web3 rpc url', 
 };

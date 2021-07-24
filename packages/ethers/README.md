@@ -14,7 +14,7 @@ npm install --save @polyjuice-provider/ethers
 
 ## Usage
 
-read [docs here](../../docs/api.md#ethers)
+read [docs here](../../docs/get-started.md#ethers)
 
 ## How to develop this module
 

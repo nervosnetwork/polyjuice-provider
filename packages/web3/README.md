@@ -16,7 +16,7 @@ npm install --save @polyjuice-provider/web3
 
 ## Usage
 
-read [docs here](../../docs/api.md#web3)
+read [docs here](../../docs/get-started.md#web3)
 
 ## How to develop this module
 
