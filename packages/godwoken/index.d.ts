@@ -155,6 +155,7 @@ export declare class Godwoken {
 
 export declare class GodwokenUtils {
   constructor(rollup_type_hash: Hash);
+  get rollupTypeHash(): string;
   generateTransactionMessageToSign(
     raw_l2tx: RawL2Transaction,
     sender_script_hash: string,

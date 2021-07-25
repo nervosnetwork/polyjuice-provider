@@ -1,7 +1,7 @@
 const test = require("ava");
 import Web3 from "web3";
-import { PolyjuiceConfig, PolyjuiceHttpProviderCli } from "../lib/index";
-import { GodwokerOption, AbiItems } from "@polyjuice-provider/base";
+import { PolyjuiceHttpProviderCli } from "../lib/index";
+import { PolyjuiceConfig, AbiItems } from "@polyjuice-provider/base";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
@@ -80,8 +80,6 @@ test.before((t) => {
   // init provider and web3
   const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
   const provider_config: PolyjuiceConfig = {
-    rollupTypeHash: process.env.ROLLUP_TYPE_HASH,
-    ethAccountLockCodeHash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH,
     abiItems: EXAMPLE_CONTRACT.abi as AbiItems,
     web3Url: godwoken_rpc_url,
   };
@@ -124,7 +122,6 @@ test.serial("proxy rpc: call_transaction", async (t) => {
     process.env.EXAMPLE_CONTRACT_ADDRESS
   );
   const result = await simplestorageV2.methods.get().call();
-  console.log(result);
   t.is(result.slice(0, 2), "0x");
   t.is(result.length, 42);
 });

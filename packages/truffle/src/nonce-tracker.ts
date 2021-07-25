@@ -44,6 +44,7 @@ NonceTrackerSubprovider.prototype.handleRequest = function (
     case "eth_sendRawTransaction":
       // allow the request to continue normally
       next(async function (err, result, cb) {
+        await self.godwoker.init();
         // only update local nonce if tx was submitted correctly
         if (err) return cb();
 

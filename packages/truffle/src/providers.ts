@@ -14,23 +14,18 @@ import { getOptions } from "@truffle/hdwallet-provider/dist/constructor/getOptio
 import {
   Godwoker,
   GodwokerOption,
-  AbiItems,
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
   formalizeEthToAddress,
+  PolyjuiceConfig,
 } from "@polyjuice-provider/base";
 import { NonceTrackerSubprovider as NonceSubProvider } from "./nonce-tracker";
-
-export type PolyjuiceConfig = {
-  rollupTypeHash: string;
-  ethAccountLockCodeHash: string;
-  abiItems?: AbiItems;
-  web3Url?: string;
-};
 
 const singletonNonceSubProvider = new NonceSubProvider();
 
 export class PolyjuiceHDWalletProvider extends HDWalletProvider {
+  godwoker: Godwoker;
+
   constructor(args: ConstructorArguments, polyjuiceConfig: PolyjuiceConfig) {
     super(...args);
     this.engine.stop();
@@ -64,7 +59,7 @@ export class PolyjuiceHDWalletProvider extends HDWalletProvider {
       },
     };
 
-    const godwoker = new Godwoker(polyjuiceConfig.web3Url, godwokerOption);
+    this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwokerOption);
 
     this.engine = new ProviderEngine({
       pollingInterval,
@@ -84,6 +79,7 @@ export class PolyjuiceHDWalletProvider extends HDWalletProvider {
           }
         },
         async signTransaction(txParams: any, cb: any) {
+          await self.godwoker.init();
           // @ts-ignore: Private method
           await self.initialized;
           // we need to rename the 'gas' field
@@ -113,18 +109,20 @@ export class PolyjuiceHDWalletProvider extends HDWalletProvider {
               EthUtil.bufferToHex(txParams.gasPrice) ||
               "0x" + POLY_MIN_GAS_PRICE.toString(16),
           };
-          const polyjuice_tx = await godwoker.assembleRawL2Transaction(t);
-          const message = await godwoker.generateMessageFromEthTransaction(t);
+          const polyjuice_tx = await self.godwoker.assembleRawL2Transaction(t);
+          const message = await self.godwoker.generateMessageFromEthTransaction(
+            t
+          );
           const msgHashBuff = EthUtil.toBuffer(message);
           const sig = EthUtil.ecsign(msgHashBuff, pkey);
           const signature = EthUtil.toRpcSig(sig.v, sig.r, sig.s);
-          const packedSignature = godwoker.packSignature(signature);
+          const packedSignature = self.godwoker.packSignature(signature);
 
           const l2_tx = {
             raw: polyjuice_tx,
             signature: packedSignature,
           };
-          const rawTx = godwoker.serializeL2Transaction(l2_tx);
+          const rawTx = self.godwoker.serializeL2Transaction(l2_tx);
 
           cb(null, rawTx);
         },
@@ -150,9 +148,11 @@ export class PolyjuiceHDWalletProvider extends HDWalletProvider {
     );
 
     !shareNonce
-      ? this.engine.addProvider(new NonceSubProvider().setGodwoker(godwoker))
+      ? this.engine.addProvider(
+          new NonceSubProvider().setGodwoker(self.godwoker)
+        )
       : this.engine.addProvider(
-          singletonNonceSubProvider.setGodwoker(godwoker)
+          singletonNonceSubProvider.setGodwoker(self.godwoker)
         );
 
     this.engine.addProvider(new FiltersSubprovider());

@@ -8,18 +8,12 @@ import { Networkish } from "@ethersproject/networks";
 import {
   Godwoker,
   GodwokerOption,
+  PolyjuiceConfig,
   Abi,
   AbiItems,
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
 } from "@polyjuice-provider/base";
-
-export type PolyjuiceConfig = {
-  rollupTypeHash: string;
-  ethAccountLockCodeHash: string;
-  abiItems?: AbiItems;
-  web3Url?: string;
-};
 
 export interface PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   constructor(
@@ -93,6 +87,7 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   }
 
   async send(method: string, params: Array<any>): Promise<any> {
+    await this.godwoker.init();
     switch (method) {
       case "eth_call":
         try {
