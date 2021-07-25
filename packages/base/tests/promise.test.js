@@ -4,6 +4,8 @@ require("dotenv").config({ path: root(".test.env") });
 
 const { Godwoker } = require("../lib/index");
 
+var godwoker;
+
 test.cb("initSync without any config", (t) => {
   const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
   godwoker = new Godwoker(godwoken_rpc_url);

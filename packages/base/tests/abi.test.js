@@ -55,6 +55,7 @@ const TEST_ABI_ITEMS = [
     anonymous: false,
   },
 ];
+var godwoker;
 var abi;
 
 test.before(async (t) => {
