@@ -1,6 +1,6 @@
 {
   "name": "@polyjuice-provider/ethers",
-  "version": "0.0.1-rc6",
+  "version": "0.0.1-rc7",
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
@@ -51,7 +51,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
-    "@polyjuice-provider/base": "0.0.1-rc6",
+    "@polyjuice-provider/base": "0.0.1-rc7",
     "buffer": "^6.0.3",
     "encoding": "^0.1.13",
     "ethers": "^5.4.0"
