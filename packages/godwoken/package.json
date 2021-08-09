@@ -20,6 +20,7 @@
   },
   "files": [
     "/lib",
+    "/src",
     "index.js",
     "index.d.ts",
     "/schemas"
