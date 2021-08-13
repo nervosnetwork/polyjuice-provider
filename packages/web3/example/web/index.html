@@ -18,15 +18,13 @@
             // init provider and web3
             const godwoken_rpc_url = SimpleConfig.WEB3_JSON_RPC;
             const provider_config = {
-              godwoken: {
-                rollup_type_hash: SimpleConfig.ROLLUP_TYPE_HASH,
-                eth_account_lock: {
-                  code_hash: SimpleConfig.ETH_ACCOUNT_LOCK_CODE_HASH,
-                  hash_type: "type",
-                },
-              },
+              rollupTypeHash: SimpleConfig.ROLLUP_TYPE_HASH,
+              ethAccountLockCodeHash: SimpleConfig.ETH_ACCOUNT_LOCK_CODE_HASH, 
+              web3Url: godwoken_rpc_url,
+              abiItems: SimpleContract.abi
             };
-            const p = new PolyjuiceHttpProvider(godwoken_rpc_url, provider_config, SimpleContract.abi);
+            console.log(provider_config);
+            const p = new PolyjuiceHttpProvider(godwoken_rpc_url, provider_config);
             const web3 = new Web3(p);
             
             console.log(`Hey, welcome to our example dapp on polyjuice!`);
