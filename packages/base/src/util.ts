@@ -142,6 +142,15 @@ export function formalizeEthToAddress(to_address: string | undefined | null) {
   return to_address;
 }
 
+export function verifyHttpUrl(_url: string) {
+  const url = new URL(_url);
+  if (url.protocol === "https:" || url.protocol === "http:") {
+    return true;
+  }
+
+  return false;
+}
+
 export class Godwoker {
   private eth_account_lock: Omit<Script, "args"> | undefined;
   private rollup_type_hash: string | undefined;
@@ -369,7 +378,7 @@ export class Godwoker {
       // assume it is normal contract address.
       return _short_address;
     } catch (error) {
-      // not on-chain, asume it is  eoa address
+      // not on-chain, assume it is  eoa address
       // which haven't create account on godwoken yet
       const query_callback = this.queryEthAddressByShortAddress
         ? this.queryEthAddressByShortAddress
