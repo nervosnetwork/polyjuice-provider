@@ -5,7 +5,7 @@ this is a sub-module of @polyjuice-provider.
 ## Install
 
 ```sh
-yarn add @polyjuice-provider/ethers 
+yarn add @polyjuice-provider/ethers
 ```
 
 or
@@ -34,14 +34,14 @@ new Wallet(..) --> new PolyjuiceWallet(...)
 import { ContractFactory } from "ethers";
 import { PolyjuiceWallet, PolyjuiceConfig, PolyjuiceJsonRpcProvider } from "@polyjuice-provider/ethers";
 
-const polyjuice_config: PolyjuiceConfig = {
-  rollupTypeHash: 'godwoken rollup type hash', 
-  ethAccountLockCodeHash: 'godwoken eth account lock code hash', 
+const polyjuiceConfig: PolyjuiceConfig = {
+  rollupTypeHash: 'godwoken rollup type hash',
+  ethAccountLockCodeHash: 'godwoken eth account lock code hash',
   abiItems: ['your abi items array'], // this is optional
-  web3Url: 'godwoken web3 rpc url', 
+  web3Url: 'godwoken web3 rpc url',
 };
-const rpc = new PolyjuiceJsonRpcProvider(polyjuice_config, PolyjuiceConfig.web3Url); 
-const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuice_config, rpc);
+const rpc = new PolyjuiceJsonRpcProvider(polyjuiceConfig, polyjuiceConfig.web3Url);
+const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceConfig, rpc);
 const implementationFactory = new ContractFactory(
   contract.abi,
   contract.bytecode,
@@ -61,13 +61,13 @@ if your dapp are using `ethers` and `metamask`, you can simply change it like fo
 
 ```ts
 import { providers, ContractFactory, Signer } from "ethers";
-import { PolyjuiceHttpProvider } from "@polyjuice-provider/web3";
+import { PolyjuiceConfig, PolyjuiceHttpProvider } from "@polyjuice-provider/web3";
 
 const polyjuiceConfig: PolyjuiceConfig = {
-  rollupTypeHash: 'godwoken rollup type hash', 
-  ethAccountLockCodeHash: 'godwoken eth account lock code hash', 
+  rollupTypeHash: 'godwoken rollup type hash',
+  ethAccountLockCodeHash: 'godwoken eth account lock code hash',
   abiItems: ['your abi items array'], // this is optional
-  web3Url: 'godwoken web3 rpc url', 
+  web3Url: 'godwoken web3 rpc url',
 };
 
 export async function createEthersSignerWithMetamask(): Promise<
@@ -118,7 +118,7 @@ if you want to use `Metamask` and `ethers.Contract` to deploy contract, then do 
 ```ts
 const deployContractWithEtherContractFactory = async () => {
   const signer = await createEthersSignerWithMetamask();
-  
+
   const contractDeployer = new ContractFactory(
     'your contract abi',
     'your contract compiled bytecode',
@@ -131,8 +131,8 @@ const deployContractWithEtherContractFactory = async () => {
   };
   const contract = await contractDeployer.deploy(overrides);
   await contract.deployed();
-  // ! please do not use `contract.address` as contractAddress here. 
-  // due to an known issue, it is wrong eth address in polyjuice. 
+  // ! please do not use `contract.address` as contractAddress here.
+  // due to an known issue, it is wrong eth address in polyjuice.
   // instead, you should get address through txReceipt.
   const txReceipt = await rpc.eth_getTransactionReceipt(contract.deployTransaction.hash);
   console.log(`contract address: ${txReceipt.contractAddress)}`);
