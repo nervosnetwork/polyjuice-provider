@@ -88,6 +88,8 @@ const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceCon
 when init websocket provider, one thing to pay attention is that you still need to feed PolyjuiceConfig with web3-http-rpc-url:
 
 ```ts
+import { PolyjuiceWebsocketProvider } from "@polyjuice-provider/ethers";
+
 const wsRpcUrl = "ws://localhost:8024/ws";
 const httpRpcUrl = "http://localhost:8024";
 
@@ -242,7 +244,7 @@ new Web3WsProvider(..) --> new PolyjuiceWebsocketProvider(...)
 init library:
 
 ```ts
-const { PolyjuiceHttpProvider, PolyjuiceAccounts } = require("@polyjuice-provider/web3");
+import { PolyjuiceHttpProvider, PolyjuiceAccounts } from "@polyjuice-provider/web3";
 
 const polyjuiceConfig: PolyjuiceConfig = {
   rollupTypeHash: 'godwoken rollup type hash', // this is optional 
@@ -292,6 +294,8 @@ polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig);
 when init websocket provider, one thing to pay attention is that you still need to feed PolyjuiceConfig with web3-http-rpc-url:
 
 ```ts
+import { PolyjuiceWebsocketProvider } from "@polyjuice-provider/web3";
+
 const wsRpcUrl = "ws://localhost:8024/ws";
 const httpRpcUrl = "http://localhost:8024";
 
@@ -300,7 +304,7 @@ const polyjuiceConfig: PolyjuiceConfig = {
   web3Url: httpRpcUrl, // this must be http/https url, ws url will not work here!
 };
 
-const rpc = new PolyjuiceWebsocketProvider(polyjuiceConfig, wsRpcUrl); 
+const rpc = new PolyjuiceWebsocketProvider(wsRpcUrl, polyjuiceConfig); 
 ```
 
 #### Example: Deploy contract
