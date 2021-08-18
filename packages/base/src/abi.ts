@@ -2,8 +2,6 @@ import { AbiOutput, AbiInput, AbiItem } from "web3-utils";
 import { DEFAULT_EMPTY_ETH_ADDRESS } from "./constant";
 const Web3EthAbi = require("web3-eth-abi");
 
-export type AbiItems = AbiItem[];
-
 export interface MethodIDs {
   [method_id: string]: AbiItem;
 }
@@ -47,12 +45,16 @@ export class Abi {
   }
 
   filter_interested_inputs(_abiItem: AbiItem): AbiInput[] {
+    if (!_abiItem.inputs) return [];
+
     return _abiItem.inputs.filter(
       (input) => input.type === "address" || input.type === "address[]"
     );
   }
 
   filter_interested_outputs(_abiItem: AbiItem): AbiOutput[] {
+    if (!_abiItem.outputs) return [];
+
     return _abiItem.outputs.filter(
       (output) => output.type === "address" || output.type === "address[]"
     );
@@ -69,53 +71,58 @@ export class Abi {
   decode_method(data: string) {
     const method_id = data.slice(2, 10);
     const abiItem = this.interested_method_ids[method_id];
-    if (abiItem) {
-      let decoded = Web3EthAbi.decodeParameters(
-        abiItem.inputs,
-        "0x" + data.slice(10)
+    if (!abiItem)
+      throw new Error(
+        `can not find abiItems in interested_method_ids, id: ${method_id}`
       );
-      let retData: DecodedMethod = {
-        name: abiItem.name,
-        params: [],
-      };
 
-      for (let i = 0; i < decoded.__length__; i++) {
-        let param = decoded[i];
-        let parsedParam = param;
-        const isUint = abiItem.inputs[i].type.indexOf("uint") === 0;
-        const isInt = abiItem.inputs[i].type.indexOf("int") === 0;
-        const isAddress = abiItem.inputs[i].type.indexOf("address") === 0;
+    let decoded = Web3EthAbi.decodeParameters(
+      abiItem.inputs,
+      "0x" + data.slice(10)
+    );
+    let retData: DecodedMethod = {
+      name: abiItem.name || "",
+      params: [],
+    };
 
-        if (isUint || isInt) {
-          const isArray = Array.isArray(param);
+    if (!abiItem.inputs) return retData;
 
-          if (isArray) {
-            parsedParam = param.map((val) => BigInt(val).toString());
-          } else {
-            parsedParam = BigInt(param).toString();
-          }
+    for (let i = 0; i < decoded.__length__; i++) {
+      let param = decoded[i];
+      let parsedParam = param;
+      const isUint = abiItem.inputs[i].type.indexOf("uint") === 0;
+      const isInt = abiItem.inputs[i].type.indexOf("int") === 0;
+      const isAddress = abiItem.inputs[i].type.indexOf("address") === 0;
+
+      if (isUint || isInt) {
+        const isArray = Array.isArray(param);
+
+        if (isArray) {
+          parsedParam = param.map((val: any) => BigInt(val).toString());
+        } else {
+          parsedParam = BigInt(param).toString();
         }
-
-        // Addresses returned by web3 are randomly cased so we need to standardize and lowercase all
-        if (isAddress) {
-          const isArray = Array.isArray(param);
-
-          if (isArray) {
-            parsedParam = param.map((_) => _.toLowerCase());
-          } else {
-            parsedParam = param.toLowerCase();
-          }
-        }
-
-        retData.params.push({
-          name: abiItem.inputs[i].name,
-          value: parsedParam,
-          type: abiItem.inputs[i].type,
-        });
       }
 
-      return retData;
+      // Addresses returned by web3 are randomly cased so we need to standardize and lowercase all
+      if (isAddress) {
+        const isArray = Array.isArray(param);
+
+        if (isArray) {
+          parsedParam = param.map((_: any) => _.toLowerCase());
+        } else {
+          parsedParam = param.toLowerCase();
+        }
+      }
+
+      retData.params.push({
+        name: abiItem.inputs[i].name,
+        value: parsedParam,
+        type: abiItem.inputs[i].type,
+      });
     }
+
+    return retData;
   }
 
   // todo: use this func to remove all repeated code.
@@ -174,13 +181,15 @@ export class Abi {
     abi_item: AbiItem,
     calculate_short_address: (addr: string) => Promise<string>
   ) {
+    if (!abi_item.outputs) return return_value;
+
     const output_value_types = abi_item.outputs.map((item) => item.type);
-    let decoded_values: object = Web3EthAbi.decodeParameters(
+    let decoded_values: { [key: string]: any } = Web3EthAbi.decodeParameters(
       output_value_types,
       return_value
     );
     const interested_value_indexs: number[] = output_value_types.reduce(
-      (result, t, index) => {
+      (result: number[], t, index) => {
         if (t === "address" || t === "address[]") {
           result.push(index);
         }
@@ -198,7 +207,7 @@ export class Abi {
       decoded_values[index] = Array.isArray(decoded_values[index])
         ? await Promise.all(
             decoded_values[index].map(
-              async (v) => await calculate_short_address(v)
+              async (v: any) => await calculate_short_address(v)
             )
           )
         : await calculate_short_address(decoded_values[index]);

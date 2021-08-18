@@ -11,10 +11,10 @@ import {
   formalizeEthToAddress,
   Godwoker,
   GodwokerOption,
+  PolyjuiceConfig,
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
 } from "@polyjuice-provider/base";
-import { PolyjuiceConfig } from "./providers";
 import BN from "bn.js";
 import Account from "eth-lib/lib/account";
 import { utils as lumosUtils } from "@ckb-lumos/base";
@@ -82,37 +82,39 @@ export class PolyjuiceAccounts extends Accounts {
     // (which is deifferent tx structure and use a message signing)
     // to sign transaction.
     let tx = transactionConfigToPolyjuiceEthTransaction(_tx);
-
     try {
       // Otherwise, get the missing info from the Ethereum Node
-      return Promise.all([
-        this.godwoker.assembleRawL2Transaction(tx),
-        this.godwoker.generateMessageFromEthTransaction(tx),
-      ]).then(function (args) {
-        if (!args[0] || !args[1]) {
-          const error = new Error(
-            "assembleRawL2Transaction or generateMessageFromEthTransaction is failed."
-          );
-          callback(error);
-          return Promise.reject(error);
-        }
+      return this.godwoker.initSync().then(function () {
+        // do init incase user not passing config parameter during construction
+        return Promise.all([
+          that.godwoker.assembleRawL2Transaction(tx),
+          that.godwoker.generateMessageFromEthTransaction(tx),
+        ]).then(function (args) {
+          if (!args[0] || !args[1]) {
+            const error = new Error(
+              "assembleRawL2Transaction or generateMessageFromEthTransaction is failed."
+            );
+            callback(error);
+            return Promise.reject(error);
+          }
 
-        const polyjuice_tx = args[0];
-        const message = args[1];
-        const _signature = Account.sign(message, privateKey);
-        const signature = that.godwoker.packSignature(_signature);
-        const l2_tx = { raw: polyjuice_tx, signature: signature };
+          const polyjuice_tx = args[0];
+          const message = args[1];
+          const _signature = Account.sign(message, privateKey);
+          const signature = that.godwoker.packSignature(_signature);
+          const l2_tx = { raw: polyjuice_tx, signature: signature };
 
-        let result = {
-          messageHash: message,
-          v: "0x0", // todo: replace with real v
-          r: "0x0", // todo: replace with real r
-          s: signature,
-          rawTransaction: that.godwoker.serializeL2Transaction(l2_tx), // todo: replace with eth raw tx isntead of godwoken raw tx
-          transactionHash: calcPolyjuiceTxHash(polyjuice_tx),
-        };
-        callback(null, result);
-        return Promise.resolve(result);
+          let result = {
+            messageHash: message,
+            v: "0x0", // todo: replace with real v
+            r: "0x0", // todo: replace with real r
+            s: signature,
+            rawTransaction: that.godwoker.serializeL2Transaction(l2_tx), // todo: replace with eth raw tx isntead of godwoken raw tx
+            transactionHash: calcPolyjuiceTxHash(polyjuice_tx),
+          };
+          callback(null, result);
+          return Promise.resolve(result);
+        });
       });
     } catch (error) {
       callback(error);

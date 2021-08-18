@@ -55,9 +55,10 @@ const TEST_ABI_ITEMS = [
     anonymous: false,
   },
 ];
+var godwoker;
 var abi;
 
-test.before((t) => {
+test.before(async (t) => {
   // init abi and godwoker
   const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
   const provider_config = {
@@ -71,6 +72,7 @@ test.before((t) => {
   };
   abi = new Abi(TEST_ABI_ITEMS);
   godwoker = new Godwoker(godwoken_rpc_url, provider_config);
+  await godwoker.init();
 });
 
 test.serial("get_interested_methods", (t) => {

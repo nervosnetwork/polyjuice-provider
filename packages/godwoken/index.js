@@ -126,6 +126,10 @@ class GodwokenUtils {
     this.rollup_type_hash = rollup_type_hash;
   }
 
+  get rollupTypeHash(){
+    return this.rollup_type_hash;
+  }
+
   generateTransactionMessageToSign(
     raw_l2tx,
     _sender_scirpt_hash,

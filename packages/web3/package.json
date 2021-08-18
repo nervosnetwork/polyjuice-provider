@@ -60,6 +60,7 @@
     "buffer": "^6.0.3",
     "encoding": "^0.1.13",
     "web3": "^1.4.0",
+    "web3-providers-ws": "^1.5.2",
     "xhr2-cookies": "^1.1.0"
   }
 }

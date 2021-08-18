@@ -1,6 +1,5 @@
 import test from "ava";
-import { AbiItems } from "@polyjuice-provider/base";
-import { PolyjuiceConfig } from "@polyjuice-provider/web3";
+import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
 import { PolyjuiceHDWalletProvider } from "../src/index";
 import { PolyjuiceHttpProvider } from "@polyjuice-provider/web3";
 import Web3 from "web3";
@@ -82,8 +81,6 @@ test.before(() => {
   // init provider and web3
   const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
   const polyjuice_config: PolyjuiceConfig = {
-    rollupTypeHash: process.env.ROLLUP_TYPE_HASH,
-    ethAccountLockCodeHash: process.env.ETH_ACCOUNT_LOCK_CODE_HASH,
     abiItems: SimpleStorageV2_Abi as AbiItems,
     web3Url: godwoken_rpc_url,
   };
