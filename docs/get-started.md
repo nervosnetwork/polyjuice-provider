@@ -29,16 +29,18 @@ npm install --save @polyjuice-provider/ethers
 
 ### Usage
 
-once you install this module, then you got two main tools to run with `ethers` for compatibility:
+once you install this module, then you got 3 main tools to run with `ethers` for compatibility:
 
 - PolyjuiceJsonRpcProvider (compatible version of [JsonRpcProvider](https://github.com/ethers-io/ethers.js/blob/master/packages/providers/src.ts/json-rpc-provider.ts))
 - PolyjuiceWallet (compatible version of [Wallet](https://github.com/ethers-io/ethers.js/tree/master/packages/wallet))
+- PolyjuiceWebsocketProvider (compatible version of [WebSocketProvider](https://github.com/ethers-io/ethers.js/blob/master/packages/providers/src.ts/websocket-provider.ts))
 
 replacement:
 
 ```ts
 new providers.JsonRpcProvider(..) ---> new PolyjuiceJsonRpcProvider(...)
 new Wallet(..) --> new PolyjuiceWallet(...)
+new providers.WebSocketProvider(..) ---> new PolyjuiceWebsocketProvider(...) 
 ```
 
 init library:
@@ -58,7 +60,7 @@ const rpc = new PolyjuiceJsonRpcProvider(polyjuiceConfig, polyjuiceConfig.web3Ur
 const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceConfig, rpc);
 ```
 
-you can let provider find the polyjuiceConfig info by themself as well:
+you can let provider find the polyjuiceConfig info by itself as well:
 
 ```ts
 const polyjuiceConfig: PolyjuiceConfig = {
@@ -70,7 +72,7 @@ const rpc = new PolyjuiceJsonRpcProvider(polyjuiceConfig, polyjuiceConfig.web3Ur
 const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceConfig, rpc);
 ```
 
-that way provider will fetch polyjucieConfig from web3 rpc server when those information are empty.
+that way provider will fetch polyjuiceConfig from web3 rpc server when those information are empty.
 
 sometimes `abiItem` can be omitted from constructor too: when you are not interacting with smart contracts, therefore there is no AbiItems needed to pass.
 
@@ -80,6 +82,21 @@ const polyjuiceConfig: PolyjuiceConfig = {
 };
 
 const rpc = new PolyjuiceJsonRpcProvider(polyjuiceConfig, polyjuiceConfig.web3Url); 
+const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceConfig, rpc);
+```
+
+when init websocket provider, one thing to pay attention is that you still need to feed PolyjuiceConfig with web3-http-rpc-url:
+
+```ts
+const wsRpcUrl = "ws://localhost:8024/ws";
+const httpRpcUrl = "http://localhost:8024";
+
+const polyjuiceConfig: PolyjuiceConfig = {
+  abiItems: ['your abi items array'],
+  web3Url: httpRpcUrl, // this must be http/https url, ws url will not work here!
+};
+
+const rpc = new PolyjuiceWebsocketProvider(polyjuiceConfig, wsRpcUrl); 
 const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceConfig, rpc);
 ```
 
@@ -207,17 +224,19 @@ npm install --save @polyjuice-provider/web3
 
 ### Usage
 
-once you install this module, then you got three main tools to run with `web3.js` for compatibility:
+once you install this module, then you got 4 main tools to run with `web3.js` for compatibility:
 
 - PolyjuiceHttpProvider (compatible version of [web3-providers-http](https://github.com/ChainSafe/web3.js/tree/1.x/packages/web3-providers-http))
 - PolyjuiceAccounts (compatible version of [web3.eth.accounts](https://github.com/ChainSafe/web3.js/tree/1.x/packages/web3-eth-accounts))
 - PolyjuiceHttpProviderCli (old version solution for signing tx with web3.js in nodejs environment, now recommend use PolyjuiceAccounts instead of this module)
+- PolyjuiceWebsocketProvider (compatible version of [web3-providers-ws](https://github.com/ChainSafe/web3.js/tree/1.x/packages/web3-providers-ws))
 
 replacement:
 
 ```sh
 new Web3HttpProvider(..) --> new PolyjuiceHttpProvider(...)
 new Web3EthAccounts(..) ---> new PolyjuiceAccounts(...)
+new Web3WsProvider(..) --> new PolyjuiceWebsocketProvider(...)
 ```
 
 init library:
@@ -239,7 +258,7 @@ provider = new PolyjuiceHttpProvider(
 polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig);
 ```
 
-you can let provider find the polyjuiceConfig info by themself as well:
+you can let provider find the polyjuiceConfig info by itself as well:
 
 ```ts
 const polyjuiceConfig: PolyjuiceConfig = {
@@ -254,7 +273,7 @@ provider = new PolyjuiceHttpProvider(
 polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig);
 ```
 
-that way provider will fetch polyjucieConfig from web3 rpc server when those information are empty.
+that way provider will fetch polyjuiceConfig from web3 rpc server when those information are empty.
 
 sometimes `abiItem` can be omitted from constructor too: when you are not interacting with smart contracts, therefore there is no AbiItems needed to pass.
 
@@ -268,6 +287,20 @@ provider = new PolyjuiceHttpProvider(
   polyjuiceConfig,
 );
 polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig);
+```
+
+when init websocket provider, one thing to pay attention is that you still need to feed PolyjuiceConfig with web3-http-rpc-url:
+
+```ts
+const wsRpcUrl = "ws://localhost:8024/ws";
+const httpRpcUrl = "http://localhost:8024";
+
+const polyjuiceConfig: PolyjuiceConfig = {
+  abiItems: ['your abi items array'],
+  web3Url: httpRpcUrl, // this must be http/https url, ws url will not work here!
+};
+
+const rpc = new PolyjuiceWebsocketProvider(polyjuiceConfig, wsRpcUrl); 
 ```
 
 #### Example: Deploy contract

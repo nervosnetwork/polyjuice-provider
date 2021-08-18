@@ -30,7 +30,8 @@ before you can run test and an minimal example, you should run [godwoken-kicker]
 
 ```sh
 cat > ./.test.env <<EOF
-WEB3_JSON_RPC=<godwoken web3 rpc>
+WEB3_JSON_RPC=<godwoken-web3 rpc>
+WEB3_WS_JSON_RPC=<godwoken-web3 websocket rpc>
 ROLLUP_TYPE_HASH=<godwoken rollup type hash>
 ETH_ACCOUNT_LOCK_CODE_HASH=<eth account lock code hash>
 EXAMPLE_CONTRACT_ADDRESS=<an example test contract deployed address>

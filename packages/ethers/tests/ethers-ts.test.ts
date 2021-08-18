@@ -1,7 +1,11 @@
 import test from "ava";
 import { Contract, ContractFactory } from "ethers";
 import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
-import { PolyjuiceWallet, PolyjuiceJsonRpcProvider } from "../lib/index";
+import {
+  PolyjuiceWallet,
+  PolyjuiceJsonRpcProvider,
+  PolyjuiceWebsocketProvider,
+} from "../lib/index";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
@@ -71,7 +75,9 @@ const SimpleStorageV2_Abi = [
   },
 ];
 var provider: PolyjuiceJsonRpcProvider;
+var wsProvider: PolyjuiceWebsocketProvider;
 var deployer: PolyjuiceWallet;
+var wsDeployer: PolyjuiceWallet;
 var SimpleStorageV2_Address;
 
 var test_address_array = [
@@ -81,16 +87,23 @@ var test_address_array = [
 
 test.before((t) => {
   // init provider and web3
-  const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
-  const polyjuice_config: PolyjuiceConfig = {
+  const web3Rpc = process.env.WEB3_JSON_RPC;
+  const web3WsRpc = process.env.WEB3_WS_JSON_RPC;
+  const polyjuiceConfig: PolyjuiceConfig = {
     abiItems: SimpleStorageV2_Abi as AbiItems,
-    web3Url: godwoken_rpc_url,
+    web3Url: web3Rpc,
   };
-  provider = new PolyjuiceJsonRpcProvider(polyjuice_config, godwoken_rpc_url);
+  provider = new PolyjuiceJsonRpcProvider(polyjuiceConfig, web3Rpc);
   deployer = new PolyjuiceWallet(
     process.env.PRIVATE_KEY,
-    polyjuice_config,
+    polyjuiceConfig,
     provider
+  );
+  wsProvider = new PolyjuiceWebsocketProvider(polyjuiceConfig, web3WsRpc);
+  wsDeployer = new PolyjuiceWallet(
+    process.env.PRIVATE_KEY,
+    polyjuiceConfig,
+    wsProvider
   );
 });
 
@@ -161,6 +174,29 @@ test.serial("call contract get array address", async (t) => {
 
   const address_array = await simpleStorageV2.callStatic.getArray();
   t.deepEqual(address_array, test_address_array);
+});
+
+test.serial("ws-provider: call set address on contract", async (t) => {
+  const simpleStorageV2 = new Contract(
+    SimpleStorageV2_Address,
+    SimpleStorageV2_Abi,
+    wsDeployer
+  );
+  const res = await simpleStorageV2.set(process.env.ETH_ADDRESS);
+  t.is(typeof res.wait, "function");
+  const txReceipt = await res.wait();
+  t.not(txReceipt, undefined);
+});
+
+test.serial("ws-provider: call contract get_address", async (t) => {
+  const simpleStorageV2 = new Contract(
+    SimpleStorageV2_Address,
+    SimpleStorageV2_Abi,
+    wsDeployer
+  );
+
+  const address = await simpleStorageV2.callStatic.get();
+  t.is(address, process.env.ETH_ADDRESS);
 });
 
 // test.serial("make a lot of send at serial", async (t) => {
