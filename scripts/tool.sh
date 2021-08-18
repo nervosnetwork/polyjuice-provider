@@ -1,4 +1,5 @@
 DEFAULT_WEB3_RPC=http://localhost:8024
+DEFAULT_WS_WEB3_RPC=ws://localhost:8024/ws
 
 prepare_env_files(){
   filePath=./.test.env
@@ -29,12 +30,17 @@ generate_test_env(){
     read;
     [ -z "$REPLY" ] && web3RpcUrl=${DEFAULT_WEB3_RPC} || web3RpcUrl=${REPLY}
 
+    printf "Web3 websocket rpc url: ";
+    read;
+    [ -z "$REPLY" ] && web3WsRpcUrl=${DEFAULT_WS_WEB3_RPC} || web3WsRpcUrl=${REPLY}
+
     printf "SimpleStorageV2 contract address: ";
     read;
     exampleContractAddress=${REPLY}
     
     cat > $1 <<EOF
 WEB3_JSON_RPC=${web3RpcUrl}
+WEB3_WS_JSON_RPC=${web3WsRpcUrl}
 ROLLUP_TYPE_HASH=${rollupTypeHash}
 ETH_ACCOUNT_LOCK_CODE_HASH=${ethAccountLockCodeHash}
 EXAMPLE_CONTRACT_ADDRESS=${exampleContractAddress}

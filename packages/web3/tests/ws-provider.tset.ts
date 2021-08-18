@@ -3,9 +3,6 @@ import Web3 from "web3";
 import { PolyjuiceWebsocketProvider } from "../lib/ws-providers";
 import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
 import { PolyjuiceAccounts } from "../lib/accounts";
-const WebsocketProvider = require("web3-providers-ws");
-
-const Contract = require("web3-eth-contract");
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
@@ -85,18 +82,18 @@ var polyjuiceAccounts: PolyjuiceAccounts;
 
 test.before((t) => {
   // init provider and web3
-  const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
-  const polyjuice_config: PolyjuiceConfig = {
+  const web3Rpc = process.env.WEB3_JSON_RPC;
+  const web3WsRpc = process.env.WEB3_WS_JSON_RPC;
+  const polyjuiceConfig: PolyjuiceConfig = {
     abiItems: EXAMPLE_CONTRACT.abi as AbiItems,
-    web3Url: godwoken_rpc_url,
+    web3Url: web3Rpc,
   };
   provider = new PolyjuiceWebsocketProvider(
-    process.env.WEB3_WS_JSON_RPC,
-    polyjuice_config
+    web3WsRpc,
+    polyjuiceConfig
   );
-  //provider = new WebsocketProvider(process.env.WEB3_WS_JSON_RPC);
   web3 = new Web3(provider);
-  polyjuiceAccounts = new PolyjuiceAccounts(polyjuice_config, provider);
+  polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig, provider);
 });
 
 test.serial("test-ws-provider-with-account", async (t) => {
