@@ -10,6 +10,7 @@ import {
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
   Signer,
+  AbiItems,
 } from "@polyjuice-provider/base";
 import {
   errors,
@@ -70,6 +71,10 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
 
     this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwoker_option); // must use http url here
     this.abi = new Abi(polyjuiceConfig.abiItems || []);
+  }
+
+  setAbi(abiItems: AbiItems) {
+    this.abi = new Abi(abiItems);
   }
 
   async send(

@@ -225,6 +225,10 @@ export class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
     this.abi = new Abi(abi_items);
   }
 
+  setAbi(abiItems: AbiItems) {
+    this.abi = new Abi(abiItems);
+  }
+
   async sendTransaction(
     signedTransaction: string | Promise<string>
   ): Promise<TransactionResponse> {
