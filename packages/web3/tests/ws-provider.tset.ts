@@ -88,10 +88,7 @@ test.before((t) => {
     abiItems: EXAMPLE_CONTRACT.abi as AbiItems,
     web3Url: web3Rpc,
   };
-  provider = new PolyjuiceWebsocketProvider(
-    web3WsRpc,
-    polyjuiceConfig
-  );
+  provider = new PolyjuiceWebsocketProvider(web3WsRpc, polyjuiceConfig);
   web3 = new Web3(provider);
   polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig, provider);
 });

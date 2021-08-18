@@ -1,7 +1,11 @@
 import test from "ava";
 import { Contract, ContractFactory } from "ethers";
 import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
-import { PolyjuiceWallet, PolyjuiceJsonRpcProvider, PolyjuiceWebsocketProvider } from "../lib/index";
+import {
+  PolyjuiceWallet,
+  PolyjuiceJsonRpcProvider,
+  PolyjuiceWebsocketProvider,
+} from "../lib/index";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
@@ -84,7 +88,7 @@ var test_address_array = [
 test.before((t) => {
   // init provider and web3
   const web3Rpc = process.env.WEB3_JSON_RPC;
-  const web3WsRpc = process.env.WEB3_WS_JSON_RPC; 
+  const web3WsRpc = process.env.WEB3_WS_JSON_RPC;
   const polyjuiceConfig: PolyjuiceConfig = {
     abiItems: SimpleStorageV2_Abi as AbiItems,
     web3Url: web3Rpc,
@@ -100,7 +104,7 @@ test.before((t) => {
     process.env.PRIVATE_KEY,
     polyjuiceConfig,
     wsProvider
-  ); 
+  );
 });
 
 test.serial("import class", (t) => {
@@ -176,7 +180,7 @@ test.serial("ws-provider: call set address on contract", async (t) => {
   const simpleStorageV2 = new Contract(
     SimpleStorageV2_Address,
     SimpleStorageV2_Abi,
-    wsDeployer 
+    wsDeployer
   );
   const res = await simpleStorageV2.set(process.env.ETH_ADDRESS);
   t.is(typeof res.wait, "function");
