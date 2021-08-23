@@ -8,7 +8,6 @@ export type Uint256 = bigint;
 import { HexNumber, HexString, Hash, Script } from "@ckb-lumos/base";
 import * as core from "./schemas";
 import * as normalizer from "./src/normalizer";
-// import { L2Block } from "./schemas/godwoken";
 export { core, normalizer };
 
 export function numberToUInt32LE(value: number): HexString;

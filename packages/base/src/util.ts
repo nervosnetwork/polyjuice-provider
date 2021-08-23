@@ -10,9 +10,12 @@ import {
   SerializeL2Transaction,
   SerializeRawL2Transaction,
 } from "@polyjuice-provider/godwoken/schemas";
+import { RawL2TransactionWithAddressMapping } from "@polyjuice-provider/godwoken/src/addressTypes";
+import { SerializeRawL2TransactionWithAddressMapping, RawL2TransactionWithAddressMapping as DeRawL2TransactionWithAddressMapping } from "../../godwoken/schemas/addressMapping/addressMapping.js";
 import {
   NormalizeL2Transaction,
   NormalizeRawL2Transaction,
+  NormalizeRawL2TransactionWithAddressMapping
 } from "@polyjuice-provider/godwoken/lib/normalizer";
 import { U128_MIN, U128_MAX, DEFAULT_EMPTY_ETH_ADDRESS } from "./constant";
 import { Reader } from "ckb-js-toolkit";
@@ -149,6 +152,37 @@ export function verifyHttpUrl(_url: string) {
   }
 
   return false;
+}
+
+export function serializeRawL2TransactionWithAddressMapping(rawL2TransactionWithAddressMapping: RawL2TransactionWithAddressMapping): HexString {
+  const _tx = NormalizeRawL2TransactionWithAddressMapping(rawL2TransactionWithAddressMapping);
+  return new Reader(SerializeRawL2TransactionWithAddressMapping(_tx)).serializeJson();
+}
+
+export function deserializeRawL2TransactionWithAddressMapping(value: HexString): RawL2TransactionWithAddressMapping{
+  const data = new DeRawL2TransactionWithAddressMapping(new Reader(value));
+  const address_length = "0x" + data.getAddresses().getLength().toLittleEndianUint32().toString();
+  const address_length_in_int = parseInt(address_length);
+  const raw_tx = {
+    from_id: "0x" + data.getRawTx().getFromId().toLittleEndianUint32().toString(),
+    to_id: "0x" + data.getRawTx().getToId().toLittleEndianUint32().toString(),
+    args: new Reader(data.getRawTx().getArgs().raw()).serializeJson(),
+    nonce: "0x" + data.getRawTx().getNonce().toLittleEndianUint32().toString(),
+  };
+  const rawL2TransactionWithAddressMapping: RawL2TransactionWithAddressMapping = {
+    raw_tx: raw_tx,
+    addresses: {
+      length: address_length,
+      data: [...Array(address_length_in_int).keys()].map(index => {
+        return {
+          eth_address: new Reader(data.getAddresses().getData().indexAt(index).getEthAddress().raw()).serializeJson(),
+          gw_short_address: new Reader(data.getAddresses().getData().indexAt(index).getGwShortAddress().raw()).serializeJson()
+        }
+      }),
+    },
+    extra: new Reader(data.getExtra().raw()).serializeJson(),
+  }
+  return rawL2TransactionWithAddressMapping;
 }
 
 export class Godwoker {
@@ -330,17 +364,11 @@ export class Godwoker {
 
   computeShortAddressByEoaEthAddress(
     _address: string,
-    write_callback?: (eth_address: string, short_address: string) => void
   ): HexString {
     const short_address = this.computeScriptHashByEoaEthAddress(_address).slice(
       0,
       42
     );
-
-    if (write_callback) {
-      write_callback(_address, short_address);
-    }
-
     return short_address;
   }
 
@@ -354,11 +382,12 @@ export class Godwoker {
       return _address;
     } catch (error) {
       // script hash not exist with short address, assume it is EOA address..
-      // remember to save the script and eoa address mapping with default or user-specific callback
-      const write_callback = this.saveEthAddressShortAddressMapping
-        ? this.saveEthAddressShortAddressMapping
-        : this.defaultSaveEthAddressShortAddressMapping.bind(this);
-      return this.computeShortAddressByEoaEthAddress(_address, write_callback);
+      const short_addr = this.computeShortAddressByEoaEthAddress(_address);
+      // remember to save the script and eoa address mapping with user-specific callback function
+      if(this.saveEthAddressShortAddressMapping){
+        this.saveEthAddressShortAddressMapping(_address, short_addr); 
+      }
+      return short_addr;
     }
   }
 
@@ -416,19 +445,6 @@ export class Godwoker {
     return this.jsonRPC(
       "poly_getEthAddressByGodwokenShortAddress",
       [_short_address],
-      errorWhenNoResult
-    );
-  }
-
-  // default method
-  async defaultSaveEthAddressShortAddressMapping(
-    _eth_address: string,
-    _short_address: string
-  ): Promise<string> {
-    const errorWhenNoResult = `unable to save eth address and short address in web3 server.`;
-    return this.jsonRPC(
-      "poly_saveEthAddressGodwokenShortAddressMapping",
-      [_eth_address, _short_address],
       errorWhenNoResult
     );
   }

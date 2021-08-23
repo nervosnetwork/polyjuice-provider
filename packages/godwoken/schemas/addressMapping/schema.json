@@ -1,0 +1,155 @@
+{
+  "namespace": "addressMapping",
+  "imports": [],
+  "declarations": [
+    {
+      "type": "array",
+      "name": "Uint16",
+      "item": "byte",
+      "item_count": 2
+    },
+    {
+      "type": "array",
+      "name": "Uint32",
+      "item": "byte",
+      "item_count": 4
+    },
+    {
+      "type": "array",
+      "name": "Uint64",
+      "item": "byte",
+      "item_count": 8
+    },
+    {
+      "type": "array",
+      "name": "Uint128",
+      "item": "byte",
+      "item_count": 16
+    },
+    {
+      "type": "array",
+      "name": "Byte20",
+      "item": "byte",
+      "item_count": 20
+    },
+    {
+      "type": "array",
+      "name": "Byte32",
+      "item": "byte",
+      "item_count": 32
+    },
+    {
+      "type": "array",
+      "name": "Uint256",
+      "item": "byte",
+      "item_count": 32
+    },
+    {
+      "type": "fixvec",
+      "name": "Bytes",
+      "item": "byte"
+    },
+    {
+      "type": "option",
+      "name": "BytesOpt",
+      "item": "Bytes"
+    },
+    {
+      "type": "dynvec",
+      "name": "BytesVec",
+      "item": "Bytes"
+    },
+    {
+      "type": "fixvec",
+      "name": "Byte32Vec",
+      "item": "Byte32"
+    },
+    {
+      "type": "table",
+      "name": "RawL2Transaction",
+      "fields": [
+        {
+          "name": "from_id",
+          "type": "Uint32"
+        },
+        {
+          "name": "to_id",
+          "type": "Uint32"
+        },
+        {
+          "name": "nonce",
+          "type": "Uint32"
+        },
+        {
+          "name": "args",
+          "type": "Bytes"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "name": "L2Transaction",
+      "fields": [
+        {
+          "name": "raw",
+          "type": "RawL2Transaction"
+        },
+        {
+          "name": "signature",
+          "type": "Bytes"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "name": "AddressMappingItem",
+      "fields": [
+        {
+          "name": "eth_address",
+          "type": "Byte20"
+        },
+        {
+          "name": "gw_short_address",
+          "type": "Byte20"
+        }
+      ]
+    },
+    {
+      "type": "dynvec",
+      "name": "AddressMappingItemVec",
+      "item": "AddressMappingItem"
+    },
+    {
+      "type": "table",
+      "name": "AddressMapping",
+      "fields": [
+        {
+          "name": "length",
+          "type": "Uint32"
+        },
+        {
+          "name": "data",
+          "type": "AddressMappingItemVec"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "name": "RawL2TransactionWithAddressMapping",
+      "fields": [
+        {
+          "name": "raw_tx",
+          "type": "RawL2Transaction"
+        },
+        {
+          "name": "addresses",
+          "type": "AddressMapping"
+        },
+        {
+          "name": "extra",
+          "type": "Bytes"
+        }
+      ]
+    }
+  ]
+}

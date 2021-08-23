@@ -1,6 +1,7 @@
 import { Hash, HexNumber, Script } from "@ckb-lumos/base";
 import { normalizers, Reader } from "ckb-js-toolkit";
 import { L2Transaction, WithdrawalRequest } from "../index";
+import { AddressMapping, AddressMappingItem, L2TransactionWithAddressMapping, RawL2TransactionWithAddressMapping} from "./addressTypes";
 
 // Taken for now from https://github.com/xxuejie/ckb-js-toolkit/blob/68f5ff709f78eb188ee116b2887a362123b016cc/src/normalizers.js#L17-L69,
 // later we can think about exposing those functions directly.
@@ -63,6 +64,14 @@ function toNormalize(normalize: Function) {
   return function (debugPath: string, value: any) {
     return normalize(value, {
       debugPath,
+    });
+  };
+}
+
+function toNormalizeArray(normalizeFunction: Function) {
+  return function(debugPath: string, array: any[]) {
+    return array.map((item, i) => {
+      return normalizeFunction(`${debugPath}[${i}]`, item);
     });
   };
 }
@@ -148,6 +157,48 @@ export function NormalizeL2Transaction(
   return normalizeObject(debugPath, l2Transaction, {
     raw: toNormalize(NormalizeRawL2Transaction),
     signature: normalizeRawData(65),
+  });
+}
+
+export function NormalizeAddressMappingItem(
+  addressMappingItem: AddressMappingItem,
+  { debugPath = "address_mapping_item" } = {}
+){
+  return normalizeObject(debugPath, addressMappingItem, {
+    eth_address: normalizeRawData(20),
+    gw_short_address: normalizeRawData(20)
+  });
+}
+
+export function NormalizeAddressMapping(
+  addressMapping: AddressMapping,
+  { debugPath = "address_mapping" } = {}
+){
+  return normalizeObject(debugPath, addressMapping, {
+    length: normalizeHexNumber(4),
+    data: toNormalizeArray(toNormalize(NormalizeAddressMappingItem)), 
+  });
+}
+
+export function NormalizeL2TransactionWithAddressMapping(
+  l2TransactionWithAddressMapping: L2TransactionWithAddressMapping,
+  { debugPath = "l2_transaction_with_address_mapping" } = {}
+) {
+  return normalizeObject(debugPath, l2TransactionWithAddressMapping, {
+    tx: toNormalize(NormalizeL2Transaction),
+    addresses: toNormalize(NormalizeAddressMapping), 
+    extra: normalizeRawData(-1)
+  });
+}
+
+export function NormalizeRawL2TransactionWithAddressMapping(
+  rawL2TransactionWithAddressMapping: RawL2TransactionWithAddressMapping,
+  { debugPath = "raw_l2_transaction_with_address_mapping" } = {}
+) {
+  return normalizeObject(debugPath, rawL2TransactionWithAddressMapping, {
+    raw_tx: toNormalize(NormalizeRawL2Transaction),
+    addresses: toNormalize(NormalizeAddressMapping), 
+    extra: normalizeRawData(-1)
   });
 }
 

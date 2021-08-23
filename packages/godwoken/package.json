@@ -10,6 +10,8 @@
     "lint": "eslint -c ../../.eslintrc.js \"src/**/*.ts\"",
     "clean": "rm -rf lib",
     "build": "tsc",
+    "moleculec:addressMapping": "moleculec --language - --schema-file schemas/addressMapping/addressMapping.mol --format json > schemas/addressMapping/schema.json",
+    "build:addressMapping": "yarn moleculec:addressMapping && moleculec-es -generateTypeScriptDefinition -hasBigInt -inputFile schemas/addressMapping/schema.json -outputFile schemas/addressMapping/addressMapping.esm.js && rollup -f umd -i schemas/addressMapping/addressMapping.esm.js -o schemas/addressMapping/addressMapping.js --name AddressCore && mv schemas/addressMapping/addressMapping.esm.d.ts schemas/addressMapping/addressMapping.d.ts",
     "publish": "npm publish",
     "test-publish": "npm publish --dry-run",
     "pack": "npm pack"
