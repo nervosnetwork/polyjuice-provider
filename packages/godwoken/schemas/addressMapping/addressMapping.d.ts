@@ -166,3 +166,12 @@ export class RawL2TransactionWithAddressMapping {
   getExtra(): Bytes;
 }
 
+export function SerializeL2TransactionWithAddressMapping(value: object): ArrayBuffer;
+export class L2TransactionWithAddressMapping {
+  constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
+  validate(compatible?: boolean): void;
+  getTx(): L2Transaction;
+  getAddresses(): AddressMapping;
+  getExtra(): Bytes;
+}
+

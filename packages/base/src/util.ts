@@ -10,12 +10,25 @@ import {
   SerializeL2Transaction,
   SerializeRawL2Transaction,
 } from "@polyjuice-provider/godwoken/schemas";
-import { RawL2TransactionWithAddressMapping } from "@polyjuice-provider/godwoken/src/addressTypes";
-import { SerializeRawL2TransactionWithAddressMapping, RawL2TransactionWithAddressMapping as DeRawL2TransactionWithAddressMapping } from "../../godwoken/schemas/addressMapping/addressMapping.js";
+import {
+  AddressMapping,
+  RawL2TransactionWithAddressMapping,
+  L2TransactionWithAddressMapping,
+} from "@polyjuice-provider/godwoken/lib/addressTypes";
+import {
+  SerializeAddressMapping,
+  SerializeL2TransactionWithAddressMapping,
+  SerializeRawL2TransactionWithAddressMapping,
+  L2TransactionWithAddressMapping as L2TransactionWithAddressMappingClass,
+  RawL2TransactionWithAddressMapping as RawL2TransactionWithAddressMappingClass,
+  AddressMapping as AddressMappingClass,
+} from "@polyjuice-provider/godwoken/schemas/addressMapping/addressMapping";
 import {
   NormalizeL2Transaction,
+  NormalizeAddressMapping,
+  NormalizeL2TransactionWithAddressMapping,
   NormalizeRawL2Transaction,
-  NormalizeRawL2TransactionWithAddressMapping
+  NormalizeRawL2TransactionWithAddressMapping,
 } from "@polyjuice-provider/godwoken/lib/normalizer";
 import { U128_MIN, U128_MAX, DEFAULT_EMPTY_ETH_ADDRESS } from "./constant";
 import { Reader } from "ckb-js-toolkit";
@@ -154,34 +167,131 @@ export function verifyHttpUrl(_url: string) {
   return false;
 }
 
-export function serializeRawL2TransactionWithAddressMapping(rawL2TransactionWithAddressMapping: RawL2TransactionWithAddressMapping): HexString {
-  const _tx = NormalizeRawL2TransactionWithAddressMapping(rawL2TransactionWithAddressMapping);
-  return new Reader(SerializeRawL2TransactionWithAddressMapping(_tx)).serializeJson();
+export function serializeAddressMapping(
+  addressMapping: AddressMapping
+): HexString {
+  const _tx = NormalizeAddressMapping(addressMapping);
+  return new Reader(SerializeAddressMapping(_tx)).serializeJson();
 }
 
-export function deserializeRawL2TransactionWithAddressMapping(value: HexString): RawL2TransactionWithAddressMapping{
-  const data = new DeRawL2TransactionWithAddressMapping(new Reader(value));
-  const address_length = "0x" + data.getAddresses().getLength().toLittleEndianUint32().toString();
+export function deserializeAddressMapping(value: HexString): AddressMapping {
+  const data = new AddressMappingClass(new Reader(value));
+  const addresses_len =
+    "0x" + data.getLength().toLittleEndianUint32().toString();
+  const addresses_len_in_int = parseInt(addresses_len);
+  return {
+    length: addresses_len,
+    data: [...Array(addresses_len_in_int).keys()].map((index) => {
+      return {
+        eth_address: new Reader(
+          data.getData().indexAt(index).getEthAddress().raw()
+        ).serializeJson(),
+        gw_short_address: new Reader(
+          data.getData().indexAt(index).getGwShortAddress().raw()
+        ).serializeJson(),
+      };
+    }),
+  };
+}
+
+export function serializeRawL2TransactionWithAddressMapping(
+  rawL2TransactionWithAddressMapping: RawL2TransactionWithAddressMapping
+): HexString {
+  const _tx = NormalizeRawL2TransactionWithAddressMapping(
+    rawL2TransactionWithAddressMapping
+  );
+  return new Reader(
+    SerializeRawL2TransactionWithAddressMapping(_tx)
+  ).serializeJson();
+}
+
+export function deserializeRawL2TransactionWithAddressMapping(
+  value: HexString
+): RawL2TransactionWithAddressMapping {
+  const data = new RawL2TransactionWithAddressMappingClass(new Reader(value));
+  const address_length =
+    "0x" + data.getAddresses().getLength().toLittleEndianUint32().toString();
   const address_length_in_int = parseInt(address_length);
   const raw_tx = {
-    from_id: "0x" + data.getRawTx().getFromId().toLittleEndianUint32().toString(),
+    from_id:
+      "0x" + data.getRawTx().getFromId().toLittleEndianUint32().toString(),
     to_id: "0x" + data.getRawTx().getToId().toLittleEndianUint32().toString(),
     args: new Reader(data.getRawTx().getArgs().raw()).serializeJson(),
     nonce: "0x" + data.getRawTx().getNonce().toLittleEndianUint32().toString(),
   };
-  const rawL2TransactionWithAddressMapping: RawL2TransactionWithAddressMapping = {
-    raw_tx: raw_tx,
-    addresses: {
-      length: address_length,
-      data: [...Array(address_length_in_int).keys()].map(index => {
-        return {
-          eth_address: new Reader(data.getAddresses().getData().indexAt(index).getEthAddress().raw()).serializeJson(),
-          gw_short_address: new Reader(data.getAddresses().getData().indexAt(index).getGwShortAddress().raw()).serializeJson()
-        }
-      }),
+  const addressMapping = {
+    length: address_length,
+    data: [...Array(address_length_in_int).keys()].map((index) => {
+      return {
+        eth_address: new Reader(
+          data.getAddresses().getData().indexAt(index).getEthAddress().raw()
+        ).serializeJson(),
+        gw_short_address: new Reader(
+          data.getAddresses().getData().indexAt(index).getGwShortAddress().raw()
+        ).serializeJson(),
+      };
+    }),
+  };
+  const rawL2TransactionWithAddressMapping: RawL2TransactionWithAddressMapping =
+    {
+      raw_tx: raw_tx,
+      addresses: addressMapping,
+      extra: new Reader(data.getExtra().raw()).serializeJson(),
+    };
+  return rawL2TransactionWithAddressMapping;
+}
+
+export function serializeL2TransactionWithAddressMapping(
+  l2TransactionWithAddressMapping: L2TransactionWithAddressMapping
+): HexString {
+  const _tx = NormalizeL2TransactionWithAddressMapping(
+    l2TransactionWithAddressMapping
+  );
+  return new Reader(
+    SerializeL2TransactionWithAddressMapping(_tx)
+  ).serializeJson();
+}
+
+export function deserializeL2TransactionWithAddressMapping(
+  value: HexString
+): L2TransactionWithAddressMapping {
+  const data = new L2TransactionWithAddressMappingClass(new Reader(value));
+  const address_length =
+    "0x" + data.getAddresses().getLength().toLittleEndianUint32().toString();
+  const address_length_in_int = parseInt(address_length);
+  const tx: L2Transaction = {
+    raw: {
+      from_id:
+        "0x" +
+        data.getTx().getRaw().getFromId().toLittleEndianUint32().toString(),
+      to_id:
+        "0x" +
+        data.getTx().getRaw().getToId().toLittleEndianUint32().toString(),
+      args: new Reader(data.getTx().getRaw().getArgs().raw()).serializeJson(),
+      nonce:
+        "0x" +
+        data.getTx().getRaw().getNonce().toLittleEndianUint32().toString(),
     },
+    signature: new Reader(data.getTx().getSignature().raw()).serializeJson(),
+  };
+  const addressMapping = {
+    length: address_length,
+    data: [...Array(address_length_in_int).keys()].map((index) => {
+      return {
+        eth_address: new Reader(
+          data.getAddresses().getData().indexAt(index).getEthAddress().raw()
+        ).serializeJson(),
+        gw_short_address: new Reader(
+          data.getAddresses().getData().indexAt(index).getGwShortAddress().raw()
+        ).serializeJson(),
+      };
+    }),
+  };
+  const rawL2TransactionWithAddressMapping: L2TransactionWithAddressMapping = {
+    tx: tx,
+    addresses: addressMapping,
     extra: new Reader(data.getExtra().raw()).serializeJson(),
-  }
+  };
   return rawL2TransactionWithAddressMapping;
 }
 
@@ -362,9 +472,7 @@ export class Godwoker {
     );
   }
 
-  computeShortAddressByEoaEthAddress(
-    _address: string,
-  ): HexString {
+  computeShortAddressByEoaEthAddress(_address: string): HexString {
     const short_address = this.computeScriptHashByEoaEthAddress(_address).slice(
       0,
       42
@@ -384,8 +492,8 @@ export class Godwoker {
       // script hash not exist with short address, assume it is EOA address..
       const short_addr = this.computeShortAddressByEoaEthAddress(_address);
       // remember to save the script and eoa address mapping with user-specific callback function
-      if(this.saveEthAddressShortAddressMapping){
-        this.saveEthAddressShortAddressMapping(_address, short_addr); 
+      if (this.saveEthAddressShortAddressMapping) {
+        this.saveEthAddressShortAddressMapping(_address, short_addr);
       }
       return short_addr;
     }

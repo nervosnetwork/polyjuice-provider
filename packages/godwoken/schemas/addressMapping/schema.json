@@ -150,6 +150,24 @@
           "type": "Bytes"
         }
       ]
+    },
+    {
+      "type": "table",
+      "name": "L2TransactionWithAddressMapping",
+      "fields": [
+        {
+          "name": "tx",
+          "type": "L2Transaction"
+        },
+        {
+          "name": "addresses",
+          "type": "AddressMapping"
+        },
+        {
+          "name": "extra",
+          "type": "Bytes"
+        }
+      ]
     }
   ]
 }

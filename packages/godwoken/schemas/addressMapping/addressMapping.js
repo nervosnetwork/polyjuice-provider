@@ -716,6 +716,51 @@
     return serializeTable(buffers);
   }
 
+  class L2TransactionWithAddressMapping {
+    constructor(reader, { validate = true } = {}) {
+      this.view = new DataView(assertArrayBuffer(reader));
+      if (validate) {
+        this.validate();
+      }
+    }
+
+    validate(compatible = false) {
+      const offsets = verifyAndExtractOffsets(this.view, 0, true);
+      new L2Transaction(this.view.buffer.slice(offsets[0], offsets[1]), { validate: false }).validate();
+      new AddressMapping(this.view.buffer.slice(offsets[1], offsets[2]), { validate: false }).validate();
+      new Bytes(this.view.buffer.slice(offsets[2], offsets[3]), { validate: false }).validate();
+    }
+
+    getTx() {
+      const start = 4;
+      const offset = this.view.getUint32(start, true);
+      const offset_end = this.view.getUint32(start + 4, true);
+      return new L2Transaction(this.view.buffer.slice(offset, offset_end), { validate: false });
+    }
+
+    getAddresses() {
+      const start = 8;
+      const offset = this.view.getUint32(start, true);
+      const offset_end = this.view.getUint32(start + 4, true);
+      return new AddressMapping(this.view.buffer.slice(offset, offset_end), { validate: false });
+    }
+
+    getExtra() {
+      const start = 12;
+      const offset = this.view.getUint32(start, true);
+      const offset_end = this.view.byteLength;
+      return new Bytes(this.view.buffer.slice(offset, offset_end), { validate: false });
+    }
+  }
+
+  function SerializeL2TransactionWithAddressMapping(value) {
+    const buffers = [];
+    buffers.push(SerializeL2Transaction(value.tx));
+    buffers.push(SerializeAddressMapping(value.addresses));
+    buffers.push(SerializeBytes(value.extra));
+    return serializeTable(buffers);
+  }
+
   exports.AddressMapping = AddressMapping;
   exports.AddressMappingItem = AddressMappingItem;
   exports.AddressMappingItemVec = AddressMappingItemVec;
@@ -726,6 +771,7 @@
   exports.BytesOpt = BytesOpt;
   exports.BytesVec = BytesVec;
   exports.L2Transaction = L2Transaction;
+  exports.L2TransactionWithAddressMapping = L2TransactionWithAddressMapping;
   exports.RawL2Transaction = RawL2Transaction;
   exports.RawL2TransactionWithAddressMapping = RawL2TransactionWithAddressMapping;
   exports.SerializeAddressMapping = SerializeAddressMapping;
@@ -738,6 +784,7 @@
   exports.SerializeBytesOpt = SerializeBytesOpt;
   exports.SerializeBytesVec = SerializeBytesVec;
   exports.SerializeL2Transaction = SerializeL2Transaction;
+  exports.SerializeL2TransactionWithAddressMapping = SerializeL2TransactionWithAddressMapping;
   exports.SerializeRawL2Transaction = SerializeRawL2Transaction;
   exports.SerializeRawL2TransactionWithAddressMapping = SerializeRawL2TransactionWithAddressMapping;
   exports.SerializeUint128 = SerializeUint128;

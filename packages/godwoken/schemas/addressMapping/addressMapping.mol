@@ -41,3 +41,9 @@ table RawL2TransactionWithAddressMapping {
 	addresses: AddressMapping,
 	extra: Bytes,
 }
+
+table L2TransactionWithAddressMapping {
+	tx: L2Transaction,
+	addresses: AddressMapping,
+	extra: Bytes,
+}

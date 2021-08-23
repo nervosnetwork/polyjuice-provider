@@ -9,7 +9,7 @@ const {
   NormalizeRawWithdrawalRequest,
 } = require("./lib/normalizer");
 const normalizer = require("./lib/normalizer");
-const addressMapping = require("./lib/addressMapping");
+const addressMappingTypes = require("./lib/addressTypes");
 const core = require("./schemas");
 
 function numberToUInt32LE(value) {
@@ -246,5 +246,5 @@ module.exports = {
   toBuffer,
   core,
   normalizer,
-  addressMapping
+  addressMappingTypes
 };
