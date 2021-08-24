@@ -1,5 +1,6 @@
 import { AbiOutput, AbiInput, AbiItem } from "web3-utils";
 import { DEFAULT_EMPTY_ETH_ADDRESS } from "./constant";
+import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
 const Web3EthAbi = require("web3-eth-abi");
 
 export interface MethodIDs {
@@ -137,12 +138,19 @@ export class Abi {
   // replace the address params with godwoken_short_address
   async refactor_data_with_short_address(
     data: string,
-    calculate_short_address: (addr: string) => Promise<string>
-  ) {
+    calculate_short_address: (addr: string) => Promise<string>,
+    _mapping_callback?: (data: AddressMappingItem[]) => any
+  ): Promise<string> {
+    const mapping_callback = _mapping_callback || function () {};
+
     const method_id = data.slice(2, 10);
     const abi_item = this.interested_method_ids[method_id];
-    if (!abi_item) return data;
+    if (!abi_item) {
+      mapping_callback([]);
+      return data;
+    }
 
+    let addressMappingItemVec: AddressMappingItem[] = [];
     const decode_data = this.decode_method(data);
     const new_decode_data = decode_data.params.map(async (p) => {
       if (p.type === "address" || p.type === "address[]") {
@@ -151,21 +159,45 @@ export class Abi {
           // todo: right now we keep the 0x00000.., later maybe should convert to polyjuice creator short address?
           return p;
         }
+        if (Array.isArray(p.value)) {
+          p.value = await Promise.all(
+            p.value.map(async (v) => {
+              const short_address = await calculate_short_address(v);
+              if (short_address !== v) {
+                // not contract address
+                addressMappingItemVec.push({
+                  eth_address: v,
+                  gw_short_address: short_address,
+                });
+              }
 
-        p.value = Array.isArray(p.value)
-          ? await Promise.all(
-              p.value.map(async (v) => await calculate_short_address(v))
-            )
-          : await calculate_short_address(p.value);
-        return p;
-      } else {
+              return short_address;
+            })
+          );
+          return p;
+        }
+
+        // not array type, just single value
+        const short_address = await calculate_short_address(p.value);
+        if (p.value !== short_address) {
+          // not contract address
+          addressMappingItemVec.push({
+            eth_address: p.value,
+            gw_short_address: short_address,
+          });
+        }
+
+        p.value = short_address;
         return p;
       }
+
+      return p;
     });
     const new_data = Web3EthAbi.encodeFunctionCall(
       abi_item,
       await Promise.all(new_decode_data.map(async (p) => (await p).value))
     );
+    mapping_callback(addressMappingItemVec);
     return new_data;
   }
 

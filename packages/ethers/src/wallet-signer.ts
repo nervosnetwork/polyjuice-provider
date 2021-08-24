@@ -13,7 +13,9 @@ import {
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
   formalizeEthToAddress,
+  buildL2TransactionWithAddressMapping,
 } from "@polyjuice-provider/base";
+import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
 
 import { Logger } from "@ethersproject/logger";
 import { joinSignature, BytesLike, hexlify } from "@ethersproject/bytes";
@@ -71,18 +73,27 @@ export class PolyjuiceWallet extends Wallet {
             `transaction from address mismatch, wallet address: ${this.address}, transaction address: ${transaction.from}`
           );
         }
-        // delete tx.from;
       }
 
-      // use godwoken-polyjuice's transaction signing method
-      // (which is deifferent tx type and use a message signing)
+      // use godwoken-polyjuice transaction signing method
+      // (which is different tx type and use a message signing)
       // to sign transaction.
+      let addressMappingItemVec: AddressMappingItem[];
+      function setAddressMappingItemVec(
+        _addressMappingItemVec: AddressMappingItem[]
+      ) {
+        addressMappingItemVec = _addressMappingItemVec;
+      }
+
       let data_with_short_address;
       try {
         data_with_short_address =
           await this.abi.refactor_data_with_short_address(
             hexlify(tx.data || "0x00"),
-            this.godwoker.getShortAddressByAllTypeEthAddress.bind(this.godwoker)
+            this.godwoker.getShortAddressByAllTypeEthAddress.bind(
+              this.godwoker
+            ),
+            setAddressMappingItemVec
           );
       } catch (error) {
         logger.throwArgumentError(
@@ -110,7 +121,11 @@ export class PolyjuiceWallet extends Wallet {
       );
       const signature = this.godwoker.packSignature(_signature);
       const l2_tx = { raw: polyjuice_tx, signature: signature };
-      return this.godwoker.serializeL2Transaction(l2_tx);
+      const poly_l2_tx = buildL2TransactionWithAddressMapping(
+        l2_tx,
+        addressMappingItemVec
+      );
+      return this.godwoker.serializeL2TransactionWithAddressMapping(poly_l2_tx);
     });
   }
 }

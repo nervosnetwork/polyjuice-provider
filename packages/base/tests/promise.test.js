@@ -4,11 +4,9 @@ require("dotenv").config({ path: root(".test.env") });
 
 const { Godwoker } = require("../lib/index");
 
-var godwoker;
-
 test.cb("initSync without any config", (t) => {
   const godwoken_rpc_url = process.env.WEB3_JSON_RPC;
-  godwoker = new Godwoker(godwoken_rpc_url);
+  let godwoker = new Godwoker(godwoken_rpc_url);
   godwoker.initSync().then(function () {
     t.is(godwoker.eth_account_lock.code_hash.slice(0, 2), "0x");
     t.is(godwoker.rollup_type_hash.slice(0, 2), "0x");
@@ -30,7 +28,7 @@ test.cb("initSync with one config", (t) => {
       },
     },
   };
-  godwoker = new Godwoker(godwoken_rpc_url, provider_config);
+  let godwoker = new Godwoker(godwoken_rpc_url, provider_config);
   godwoker.initSync().then(function () {
     t.is(godwoker.rollup_type_hash, fake_rollup_type_hash);
     t.is(godwoker.eth_account_lock.code_hash.slice(0, 2), "0x");

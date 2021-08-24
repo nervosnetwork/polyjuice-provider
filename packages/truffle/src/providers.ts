@@ -18,6 +18,7 @@ import {
   POLY_MIN_GAS_PRICE,
   formalizeEthToAddress,
   PolyjuiceConfig,
+  buildL2TransactionWithAddressMapping,
 } from "@polyjuice-provider/base";
 import { NonceTrackerSubprovider as NonceSubProvider } from "./nonce-tracker";
 
@@ -122,8 +123,11 @@ export class PolyjuiceHDWalletProvider extends HDWalletProvider {
             raw: polyjuice_tx,
             signature: packedSignature,
           };
-          const rawTx = self.godwoker.serializeL2Transaction(l2_tx);
-
+          const l2_tx_with_address_mapping =
+            buildL2TransactionWithAddressMapping(l2_tx, []); // todo: maybe truffle needs to replace address too?
+          const rawTx = self.godwoker.serializeL2TransactionWithAddressMapping(
+            l2_tx_with_address_mapping
+          );
           cb(null, rawTx);
         },
         signMessage({ data, from }: any, cb: any) {

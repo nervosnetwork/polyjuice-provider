@@ -11,9 +11,11 @@ import { JsonRpcResponse } from "web3-core-helpers";
 import Signer from "@polyjuice-provider/base/lib/signer";
 import { PolyjuiceHttpProvider } from "./providers";
 import {
+  buildL2TransactionWithAddressMapping,
   formalizeEthToAddress,
   PolyjuiceConfig,
 } from "@polyjuice-provider/base";
+import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
 
 export interface HttpHeader {
   name: string;
@@ -60,12 +62,20 @@ export class PolyjuiceHttpProviderCli extends PolyjuiceHttpProvider {
         try {
           const { from, gas, gasPrice, value, data } = params[0];
           const to = formalizeEthToAddress(params[0].to);
+
+          let addressMappingItemVec: AddressMappingItem[];
+          function setAddressMappingItemVec(
+            _addressMappingItemVec: AddressMappingItem[]
+          ) {
+            addressMappingItemVec = _addressMappingItemVec;
+          }
           const data_with_short_address =
             await this.abi.refactor_data_with_short_address(
               data,
               this.godwoker.getShortAddressByAllTypeEthAddress.bind(
                 this.godwoker
-              )
+              ),
+              setAddressMappingItemVec
             );
 
           const t = {
@@ -99,10 +109,21 @@ export class PolyjuiceHttpProviderCli extends PolyjuiceHttpProvider {
             from
           );
           const signature = this.godwoker.packSignature(_signature);
-          const tx_hash = await this.godwoker.gw_submitL2Transaction(
-            polyjuice_tx,
-            signature
-          );
+
+          const l2_tx = {
+            raw: polyjuice_tx,
+            signature: signature,
+          };
+          const l2_tx_with_address_mapping =
+            buildL2TransactionWithAddressMapping(l2_tx, addressMappingItemVec);
+          const l2_tx_with_address_mapping_in_serialize =
+            this.godwoker.serializeL2TransactionWithAddressMapping(
+              l2_tx_with_address_mapping
+            );
+          const tx_hash =
+            await this.godwoker.poly_submitSerializedL2Transaction(
+              l2_tx_with_address_mapping_in_serialize
+            );
 
           await this.godwoker.waitForTransactionReceipt(tx_hash);
           const res = {

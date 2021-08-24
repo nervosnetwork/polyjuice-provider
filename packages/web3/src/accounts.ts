@@ -7,6 +7,7 @@ import {
 import {
   Abi,
   AbiItems,
+  buildL2TransactionWithAddressMapping,
   EthTransaction,
   formalizeEthToAddress,
   Godwoker,
@@ -20,6 +21,7 @@ import Account from "eth-lib/lib/account";
 import { utils as lumosUtils } from "@ckb-lumos/base";
 import { normalizer, RawL2Transaction } from "@polyjuice-provider/godwoken";
 import { SerializeRawL2Transaction } from "@polyjuice-provider/godwoken/schemas";
+import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
 // do not change the following require to import, otherwise it will cause error.
 // the original web3-eth-accounts Account class is exported by module.exports.
 const Accounts = require("web3-eth-accounts");
@@ -78,14 +80,29 @@ export class PolyjuiceAccounts extends Accounts {
     if (!_tx.from) {
       _tx.from = this.privateKeyToAccount(privateKey).address;
     }
+
     // use godwoken-polyjuice's transaction signing method
     // (which is deifferent tx structure and use a message signing)
     // to sign transaction.
     let tx = transactionConfigToPolyjuiceEthTransaction(_tx);
     try {
-      // Otherwise, get the missing info from the Ethereum Node
-      return this.godwoker.initSync().then(function () {
-        // do init incase user not passing config parameter during construction
+      // do init incase user not passing config parameter during construction
+      return this.godwoker.initSync().then(async function () {
+        let addressMappingItemVec: AddressMappingItem[];
+        function setAddressMappingItemVec(
+          _addressMappingItemVec: AddressMappingItem[]
+        ) {
+          addressMappingItemVec = _addressMappingItemVec;
+        }
+        let data_with_short_address =
+          await that.abi.refactor_data_with_short_address(
+            tx.data,
+            that.godwoker.getShortAddressByAllTypeEthAddress.bind(
+              that.godwoker
+            ),
+            setAddressMappingItemVec
+          );
+        tx.data = data_with_short_address;
         return Promise.all([
           that.godwoker.assembleRawL2Transaction(tx),
           that.godwoker.generateMessageFromEthTransaction(tx),
@@ -103,13 +120,20 @@ export class PolyjuiceAccounts extends Accounts {
           const _signature = Account.sign(message, privateKey);
           const signature = that.godwoker.packSignature(_signature);
           const l2_tx = { raw: polyjuice_tx, signature: signature };
+          const poly_l2_tx = buildL2TransactionWithAddressMapping(
+            l2_tx,
+            addressMappingItemVec
+          );
 
           let result = {
             messageHash: message,
             v: "0x0", // todo: replace with real v
             r: "0x0", // todo: replace with real r
             s: signature,
-            rawTransaction: that.godwoker.serializeL2Transaction(l2_tx), // todo: replace with eth raw tx isntead of godwoken raw tx
+            rawTransaction:
+              that.godwoker.serializeL2TransactionWithAddressMapping(
+                poly_l2_tx
+              ),
             transactionHash: calcPolyjuiceTxHash(polyjuice_tx),
           };
           callback(null, result);

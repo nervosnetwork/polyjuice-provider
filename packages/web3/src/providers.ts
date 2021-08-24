@@ -19,7 +19,10 @@ import {
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
   formalizeEthToAddress,
+  buildL2TransactionWithAddressMapping,
+  buildRawL2TransactionWithAddressMapping,
 } from "@polyjuice-provider/base";
+import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
 
 export interface HttpHeader {
   name: string;
@@ -116,9 +119,8 @@ export class PolyjuiceHttpProvider {
       case "eth_sendRawTransaction":
         // todo: forbidden normal eth raw tx pass.
         try {
-          const tx_hash = await this.godwoker.gw_submitSerializedL2Transaction(
-            params[0]
-          );
+          const tx_hash =
+            await this.godwoker.poly_submitSerializedL2Transaction(params[0]);
           callback(null, {
             jsonrpc: payload.jsonrpc,
             id: payload.id,
@@ -137,12 +139,19 @@ export class PolyjuiceHttpProvider {
           const { from, gas, gasPrice, value, data } = params[0];
           const to = formalizeEthToAddress(params[0].to);
 
+          let addressMappingItemVec: AddressMappingItem[];
+          function setAddressMappingItemVec(
+            _addressMappingItemVec: AddressMappingItem[]
+          ) {
+            addressMappingItemVec = _addressMappingItemVec;
+          }
           const data_with_short_address =
             await this.abi.refactor_data_with_short_address(
               data,
               this.godwoker.getShortAddressByAllTypeEthAddress.bind(
                 this.godwoker
-              )
+              ),
+              setAddressMappingItemVec
             );
 
           const t = {
@@ -171,10 +180,21 @@ export class PolyjuiceHttpProvider {
             from
           );
           const signature = this.godwoker.packSignature(_signature);
-          const tx_hash = await this.godwoker.gw_submitL2Transaction(
-            polyjuice_tx,
-            signature
-          );
+
+          const l2_tx = {
+            raw: polyjuice_tx,
+            signature: signature,
+          };
+          const l2_tx_with_address_mapping =
+            buildL2TransactionWithAddressMapping(l2_tx, addressMappingItemVec);
+          const l2_tx_with_address_mapping_in_serialize =
+            this.godwoker.serializeL2TransactionWithAddressMapping(
+              l2_tx_with_address_mapping
+            );
+          const tx_hash =
+            await this.godwoker.poly_submitSerializedL2Transaction(
+              l2_tx_with_address_mapping_in_serialize
+            );
           await this.godwoker.waitForTransactionReceipt(tx_hash);
           const res = {
             jsonrpc: payload.jsonrpc,
@@ -195,12 +215,19 @@ export class PolyjuiceHttpProvider {
         try {
           const { from, gas, gasPrice, value, data, to } = params[0];
 
+          let addressMappingItemVec: AddressMappingItem[];
+          function setAddressMappingItemVec(
+            _addressMappingItemVec: AddressMappingItem[]
+          ) {
+            addressMappingItemVec = _addressMappingItemVec;
+          }
           const data_with_short_address =
             await this.abi.refactor_data_with_short_address(
               data,
               this.godwoker.getShortAddressByAllTypeEthAddress.bind(
                 this.godwoker
-              )
+              ),
+              setAddressMappingItemVec
             );
 
           const t = {
@@ -214,9 +241,13 @@ export class PolyjuiceHttpProvider {
           };
 
           const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
-
-          const run_result = await this.godwoker.gw_executeRawL2Transaction(
-            polyjuice_tx
+          const polyjuice_tx_with_address_mapping =
+            buildRawL2TransactionWithAddressMapping(
+              polyjuice_tx,
+              addressMappingItemVec
+            );
+          const run_result = await this.godwoker.poly_executeRawL2Transaction(
+            polyjuice_tx_with_address_mapping
           );
 
           const abi_item =
@@ -271,7 +302,7 @@ export class PolyjuiceHttpProvider {
           new_payload.params[0].from =
             new_payload.params[0].from ||
             (await this.godwoker.getPolyjuiceDefaultFromAddress());
-          this._send(new_payload, callback);
+          this._send(new_payload, callback); // this should be handle by provider
         } catch (error) {
           callback(null, {
             jsonrpc: payload.jsonrpc,

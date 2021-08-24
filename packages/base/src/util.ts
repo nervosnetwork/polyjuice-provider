@@ -14,6 +14,7 @@ import {
   AddressMapping,
   RawL2TransactionWithAddressMapping,
   L2TransactionWithAddressMapping,
+  AddressMappingItem,
 } from "@polyjuice-provider/godwoken/lib/addressTypes";
 import {
   SerializeAddressMapping,
@@ -177,7 +178,7 @@ export function serializeAddressMapping(
 export function deserializeAddressMapping(value: HexString): AddressMapping {
   const data = new AddressMappingClass(new Reader(value));
   const addresses_len =
-    "0x" + data.getLength().toLittleEndianUint32().toString();
+    "0x" + data.getLength().toLittleEndianUint32().toString(16);
   const addresses_len_in_int = parseInt(addresses_len);
   return {
     length: addresses_len,
@@ -210,14 +211,15 @@ export function deserializeRawL2TransactionWithAddressMapping(
 ): RawL2TransactionWithAddressMapping {
   const data = new RawL2TransactionWithAddressMappingClass(new Reader(value));
   const address_length =
-    "0x" + data.getAddresses().getLength().toLittleEndianUint32().toString();
+    "0x" + data.getAddresses().getLength().toLittleEndianUint32().toString(16);
   const address_length_in_int = parseInt(address_length);
   const raw_tx = {
     from_id:
-      "0x" + data.getRawTx().getFromId().toLittleEndianUint32().toString(),
-    to_id: "0x" + data.getRawTx().getToId().toLittleEndianUint32().toString(),
+      "0x" + data.getRawTx().getFromId().toLittleEndianUint32().toString(16),
+    to_id: "0x" + data.getRawTx().getToId().toLittleEndianUint32().toString(16),
     args: new Reader(data.getRawTx().getArgs().raw()).serializeJson(),
-    nonce: "0x" + data.getRawTx().getNonce().toLittleEndianUint32().toString(),
+    nonce:
+      "0x" + data.getRawTx().getNonce().toLittleEndianUint32().toString(16),
   };
   const addressMapping = {
     length: address_length,
@@ -257,20 +259,20 @@ export function deserializeL2TransactionWithAddressMapping(
 ): L2TransactionWithAddressMapping {
   const data = new L2TransactionWithAddressMappingClass(new Reader(value));
   const address_length =
-    "0x" + data.getAddresses().getLength().toLittleEndianUint32().toString();
+    "0x" + data.getAddresses().getLength().toLittleEndianUint32().toString(16);
   const address_length_in_int = parseInt(address_length);
   const tx: L2Transaction = {
     raw: {
       from_id:
         "0x" +
-        data.getTx().getRaw().getFromId().toLittleEndianUint32().toString(),
+        data.getTx().getRaw().getFromId().toLittleEndianUint32().toString(16),
       to_id:
         "0x" +
-        data.getTx().getRaw().getToId().toLittleEndianUint32().toString(),
+        data.getTx().getRaw().getToId().toLittleEndianUint32().toString(16),
       args: new Reader(data.getTx().getRaw().getArgs().raw()).serializeJson(),
       nonce:
         "0x" +
-        data.getTx().getRaw().getNonce().toLittleEndianUint32().toString(),
+        data.getTx().getRaw().getNonce().toLittleEndianUint32().toString(16),
     },
     signature: new Reader(data.getTx().getSignature().raw()).serializeJson(),
   };
@@ -293,6 +295,46 @@ export function deserializeL2TransactionWithAddressMapping(
     extra: new Reader(data.getExtra().raw()).serializeJson(),
   };
   return rawL2TransactionWithAddressMapping;
+}
+
+export function buildL2TransactionWithAddressMapping(
+  tx: L2Transaction,
+  addressMappingItemVec: AddressMappingItem[]
+): L2TransactionWithAddressMapping {
+  const addressMapping: AddressMapping = {
+    length: "0x" + addressMappingItemVec.length.toString(16),
+    data: addressMappingItemVec,
+  };
+  return {
+    tx: tx,
+    addresses: addressMapping,
+    extra: "0x",
+  };
+}
+
+export function buildRawL2TransactionWithAddressMapping(
+  tx: RawL2Transaction,
+  addressMappingItemVec: AddressMappingItem[]
+): RawL2TransactionWithAddressMapping {
+  const addressMapping: AddressMapping = {
+    length: "0x" + addressMappingItemVec.length.toString(16),
+    data: addressMappingItemVec,
+  };
+  return {
+    raw_tx: tx,
+    addresses: addressMapping,
+    extra: "0x",
+  };
+}
+
+export function serializeL2Transaction(tx: L2Transaction): HexString {
+  const _tx = NormalizeL2Transaction(tx);
+  return new Reader(SerializeL2Transaction(_tx)).serializeJson();
+}
+
+export function serializeRawL2Transaction(tx: RawL2Transaction): HexString {
+  const _tx = NormalizeRawL2Transaction(tx);
+  return new Reader(SerializeRawL2Transaction(_tx)).serializeJson();
 }
 
 export class Godwoker {
@@ -625,6 +667,24 @@ export class Godwoker {
     return new Reader(SerializeRawL2Transaction(_tx)).serializeJson();
   }
 
+  serializeL2TransactionWithAddressMapping(
+    tx: L2TransactionWithAddressMapping
+  ): HexString {
+    const _tx = NormalizeL2TransactionWithAddressMapping(tx);
+    return new Reader(
+      SerializeL2TransactionWithAddressMapping(_tx)
+    ).serializeJson();
+  }
+
+  serializeRawL2TransactionWithAddressMapping(
+    tx: RawL2TransactionWithAddressMapping
+  ): HexString {
+    const _tx = NormalizeRawL2TransactionWithAddressMapping(tx);
+    return new Reader(
+      SerializeRawL2TransactionWithAddressMapping(_tx)
+    ).serializeJson();
+  }
+
   async gw_executeL2Tranaction(
     raw_tx: RawL2Transaction,
     signature: HexString
@@ -643,9 +703,23 @@ export class Godwoker {
     raw_tx: RawL2Transaction
   ): Promise<RunResult> {
     const serialize_tx = this.serializeRawL2Transaction(raw_tx);
-    const errorWhenNoResult = `failed to get gw_execute_l2transaction runResult`;
+    const errorWhenNoResult = `failed to get gw_executeRawL2Transaction runResult`;
     return this.jsonRPC(
       "gw_execute_raw_l2transaction",
+      [serialize_tx],
+      errorWhenNoResult
+    );
+  }
+
+  // poly_executeRawL2Transaction diff from gw_executeRawL2Transaction for it carry extra addressMapping data
+  async poly_executeRawL2Transaction(
+    raw_tx: RawL2TransactionWithAddressMapping
+  ): Promise<RunResult> {
+    const serialize_tx =
+      this.serializeRawL2TransactionWithAddressMapping(raw_tx);
+    const errorWhenNoResult = `failed to get poly_execute_raw_l2transaction runResult`;
+    return this.jsonRPC(
+      "poly_executeRawL2Transaction",
       [serialize_tx],
       errorWhenNoResult
     );
@@ -675,6 +749,34 @@ export class Godwoker {
     const errorWhenNoResult = `failed to get gw_submit_l2transaction txHash, serialize_tx: serialize_tx`;
     return this.jsonRPC(
       "gw_submit_l2transaction",
+      [serialize_tx],
+      errorWhenNoResult
+    );
+  }
+
+  // poly_submitL2Transaction diff from gw_submitL2Transaction for it carry extra addressMapping data
+  async poly_submitL2Transaction(
+    l2_tx: L2TransactionWithAddressMapping
+  ): Promise<Hash> {
+    const serialize_tx = this.serializeL2TransactionWithAddressMapping(l2_tx);
+    const errorWhenNoResult = `failed to get poly_submitL2Transaction txHash, l2_tx: ${JSON.stringify(
+      l2_tx,
+      null,
+      2
+    )}`;
+    return this.jsonRPC(
+      "poly_submitL2Transaction",
+      [serialize_tx],
+      errorWhenNoResult
+    );
+  }
+
+  async poly_submitSerializedL2Transaction(
+    serialize_tx: HexString
+  ): Promise<Hash> {
+    const errorWhenNoResult = `failed to get gw_submit_l2transaction txHash, serialize_tx: serialize_tx`;
+    return this.jsonRPC(
+      "poly_submitL2Transaction",
       [serialize_tx],
       errorWhenNoResult
     );
