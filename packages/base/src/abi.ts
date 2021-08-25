@@ -1,6 +1,8 @@
 import { AbiOutput, AbiInput, AbiItem } from "web3-utils";
 import { DEFAULT_EMPTY_ETH_ADDRESS } from "./constant";
 import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
+import { ShortAddress, ShortAddressType } from "./types";
+import { HexString } from "@ckb-lumos/base";
 const Web3EthAbi = require("web3-eth-abi");
 
 export interface MethodIDs {
@@ -138,7 +140,7 @@ export class Abi {
   // replace the address params with godwoken_short_address
   async refactor_data_with_short_address(
     data: string,
-    calculate_short_address: (addr: string) => Promise<string>,
+    calculate_short_address: (addr: string) => Promise<ShortAddress>,
     _mapping_callback?: (data: AddressMappingItem[]) => any
   ): Promise<string> {
     const mapping_callback = _mapping_callback || function () {};
@@ -163,15 +165,14 @@ export class Abi {
           p.value = await Promise.all(
             p.value.map(async (v) => {
               const short_address = await calculate_short_address(v);
-              if (short_address !== v) {
-                // not contract address
+              if (short_address.type === ShortAddressType.notExistEoaAddress) {
                 addressMappingItemVec.push({
                   eth_address: v,
-                  gw_short_address: short_address,
+                  gw_short_address: short_address.value,
                 });
               }
 
-              return short_address;
+              return short_address.value;
             })
           );
           return p;
@@ -179,15 +180,14 @@ export class Abi {
 
         // not array type, just single value
         const short_address = await calculate_short_address(p.value);
-        if (p.value !== short_address) {
-          // not contract address
+        if (short_address.type === ShortAddressType.notExistEoaAddress) {
           addressMappingItemVec.push({
             eth_address: p.value,
-            gw_short_address: short_address,
+            gw_short_address: short_address.value,
           });
         }
 
-        p.value = short_address;
+        p.value = short_address.value;
         return p;
       }
 
@@ -211,7 +211,7 @@ export class Abi {
   async refactor_return_value_with_short_address(
     return_value: string,
     abi_item: AbiItem,
-    calculate_short_address: (addr: string) => Promise<string>
+    calculate_origin_eth_address: (_short_addr: string) => Promise<HexString>
   ) {
     if (!abi_item.outputs) return return_value;
 
@@ -220,7 +220,7 @@ export class Abi {
       output_value_types,
       return_value
     );
-    const interested_value_indexs: number[] = output_value_types.reduce(
+    const interested_value_indexes: number[] = output_value_types.reduce(
       (result: number[], t, index) => {
         if (t === "address" || t === "address[]") {
           result.push(index);
@@ -230,7 +230,7 @@ export class Abi {
       },
       []
     );
-    for await (const index of interested_value_indexs) {
+    for await (const index of interested_value_indexes) {
       if (decoded_values[index] === DEFAULT_EMPTY_ETH_ADDRESS) {
         // special case: 0x0000.. normally when calling an parameter which is un-init.
         continue;
@@ -239,10 +239,10 @@ export class Abi {
       decoded_values[index] = Array.isArray(decoded_values[index])
         ? await Promise.all(
             decoded_values[index].map(
-              async (v: any) => await calculate_short_address(v)
+              async (v: any) => await calculate_origin_eth_address(v)
             )
           )
-        : await calculate_short_address(decoded_values[index]);
+        : await calculate_origin_eth_address(decoded_values[index]);
     }
     let decode_values_with_refactor = Object.values(decoded_values);
     decode_values_with_refactor = decode_values_with_refactor.slice(

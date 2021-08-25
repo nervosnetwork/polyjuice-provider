@@ -70,7 +70,7 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
       const hash = await this.perform("sendTransaction", {
         signedTransaction: hexTx,
       });
-      // TODO replace with real eth tx unserialize from godwoken signed tx serialized hex string
+      // TODO replace with real eth tx deserialize from godwoken signed tx serialized hex string
       const fake_tx: Transaction = {
         hash: hash,
         from: "0x",
@@ -259,7 +259,7 @@ export class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
       const hash = await this.perform("sendTransaction", {
         signedTransaction: hexTx,
       });
-      // TODO replace with real eth tx unserialize from godwoken signed tx serialized hex string
+      // TODO replace with real eth tx deserialize from godwoken signed tx serialized hex string
       const fake_tx: Transaction = {
         hash: hash,
         from: "0x",

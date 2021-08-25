@@ -117,10 +117,11 @@ test.serial("refactor eth-address in outputs", async (t) => {
     type: "function",
   };
 
-  const test_values = Web3EthAbi.encodeParameters(
-    ["address"],
-    ["0xFb2C72d3ffe10Ef7c9960272859a23D24db9e04A"]
-  );
+  const eth_address = await godwoker.getPolyjuiceDefaultFromAddress();
+  const short_address = godwoker
+    .computeScriptHashByEoaEthAddress(eth_address)
+    .slice(0, 42);
+  const test_values = Web3EthAbi.encodeParameters(["address"], [short_address]);
   const output_value_types = abi_item.outputs.map((item) => item.type);
   const decoded_values = Web3EthAbi.decodeParameters(
     output_value_types,
@@ -129,7 +130,7 @@ test.serial("refactor eth-address in outputs", async (t) => {
   const new_test_values = await abi.refactor_return_value_with_short_address(
     test_values,
     abi_item,
-    godwoker.getShortAddressByAllTypeEthAddress.bind(godwoker)
+    godwoker.getEthAddressByAllTypeShortAddress.bind(godwoker)
   );
   const new_decoded_values = Web3EthAbi.decodeParameters(
     output_value_types,
@@ -138,7 +139,7 @@ test.serial("refactor eth-address in outputs", async (t) => {
   t.not(decoded_values[0], new_decoded_values[0]);
 });
 
-test.serial("refator default 0x00 address in inputs", async (t) => {
+test.serial("refactor default 0x00 address in inputs", async (t) => {
   const testData =
     "0x53d9d91000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a6d9c5f7d4de3cef51ad3b7235d79ccc95114daa";
   const decodedData = abi.decode_method(testData);
@@ -185,7 +186,7 @@ test.serial("refactor default 0x00 in outputs", async (t) => {
   const new_test_values = await abi.refactor_return_value_with_short_address(
     test_values,
     abi_item,
-    godwoker.getShortAddressByAllTypeEthAddress.bind(godwoker)
+    godwoker.getEthAddressByAllTypeShortAddress.bind(godwoker)
   );
   const new_decoded_value = Web3EthAbi.decodeParameters(
     output_value_types,

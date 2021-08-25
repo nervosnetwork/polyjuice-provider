@@ -35,6 +35,7 @@ import { U128_MIN, U128_MAX, DEFAULT_EMPTY_ETH_ADDRESS } from "./constant";
 import { Reader } from "ckb-js-toolkit";
 import crossFetch from "cross-fetch"; // for nodejs compatibility polyfill
 import { Buffer } from "buffer"; // for browser compatibility polyfill
+import { ShortAddress, ShortAddressType } from "./types";
 
 // replace for buffer polyfill under 0.6 version.
 // eg: for react project using webpack 4 (this is the most common case when created by running `npx create-react-app`),
@@ -447,7 +448,7 @@ export class Godwoker {
         if (!res) return reject(new Error("Rpc Response not found!"));
         if (res.error) return reject(res.error);
         if (requireResult === RequireResult.canBeEmpty)
-          return resolve(res.result); // here result might be non-exsit
+          return resolve(res.result); // here result might be non-exist
         if (res.result === undefined || res.result === null)
           return reject(errWhenNoResult);
         return resolve(res.result);
@@ -505,12 +506,16 @@ export class Godwoker {
     );
   }
 
-  async getScriptHashByShortAddress(_address: string): Promise<HexString> {
+  async getScriptHashByShortAddress(
+    _address: string,
+    requireResult = RequireResult.canNotBeEmpty
+  ): Promise<HexString> {
     const errorWhenNoResult = `unable to fetch script from ${_address}`;
     return this.jsonRPC(
       "gw_get_script_hash_by_short_address",
       [_address],
-      errorWhenNoResult
+      errorWhenNoResult,
+      requireResult
     );
   }
 
@@ -524,20 +529,39 @@ export class Godwoker {
 
   async getShortAddressByAllTypeEthAddress(
     _address: string
-  ): Promise<HexString> {
+  ): Promise<ShortAddress> {
     // todo: support create2 address in such case that it haven't create real contract yet.
     try {
       // assume it is an contract address (thus already an short address)
-      await this.getScriptHashByShortAddress(_address);
-      return _address;
-    } catch (error) {
+      const isContractAddress = await this.isShortAddressOnChain(_address);
+      if (isContractAddress) {
+        return {
+          value: _address,
+          type: ShortAddressType.contractAddress,
+        };
+      }
+
       // script hash not exist with short address, assume it is EOA address..
       const short_addr = this.computeShortAddressByEoaEthAddress(_address);
+      const is_eoa_exist = await this.isShortAddressOnChain(short_addr);
+      if (is_eoa_exist) {
+        return {
+          value: short_addr,
+          type: ShortAddressType.eoaAddress,
+        };
+      }
+
+      // not exist eoa address:
       // remember to save the script and eoa address mapping with user-specific callback function
       if (this.saveEthAddressShortAddressMapping) {
         this.saveEthAddressShortAddressMapping(_address, short_addr);
       }
-      return short_addr;
+      return {
+        value: short_addr,
+        type: ShortAddressType.notExistEoaAddress,
+      };
+    } catch (error) {
+      throw new Error(error.message);
     }
   }
 
@@ -545,32 +569,52 @@ export class Godwoker {
     _short_address: HexString
   ): Promise<HexString> {
     // todo: support create2 address in such case which it haven't create real contract yet.
-    try {
-      // first, query on-chain
+
+    // first, query on-chain
+    const is_address_on_chain = await this.isShortAddressOnChain(
+      _short_address
+    );
+    if (is_address_on_chain) {
       const script_hash = await this.getScriptHashByShortAddress(
         _short_address
       );
       const script = await this.getScriptByScriptHash(script_hash);
+
       if (script.code_hash === this.eth_account_lock?.code_hash) {
+        // eoa address
         return "0x" + script.args.slice(66, 106);
       }
-      // assume it is normal contract address.
+      // assume it is contract address
       return _short_address;
-    } catch (error) {
-      // not on-chain, assume it is  eoa address
-      // which haven't create account on godwoken yet
-      const query_callback = this.queryEthAddressByShortAddress
-        ? this.queryEthAddressByShortAddress
-        : this.defaultQueryEthAddressByShortAddress.bind(this);
-      const eth_address = await query_callback(_short_address);
-      // check address and short_address indeed matched.
-      if (this.checkEthAddressIsEoa(eth_address, _short_address)) {
-        return eth_address;
-      } else {
-        throw Error(
-          `query result of eoa address ${_short_address} with ${_short_address} is not match!`
-        );
+    }
+
+    // not on-chain, assume it is eoa address which haven't create account on godwoken yet
+    const query_callback = this.queryEthAddressByShortAddress
+      ? this.queryEthAddressByShortAddress
+      : this.defaultQueryEthAddressByShortAddress.bind(this);
+    const eth_address = await query_callback(_short_address);
+    // check address and short_address indeed matched.
+    if (this.checkEthAddressIsEoa(eth_address, _short_address)) {
+      return eth_address;
+    }
+    throw Error(
+      `query result of eoa address ${_short_address} with ${_short_address} is not match!`
+    );
+  }
+
+  async isShortAddressOnChain(short_address: HexString): Promise<boolean> {
+    try {
+      const script_hash = await this.getScriptHashByShortAddress(
+        short_address,
+        RequireResult.canBeEmpty
+      );
+      if (script_hash) {
+        return true;
       }
+      // not exist on chain
+      return false;
+    } catch (error) {
+      throw new Error(error.message);
     }
   }
 
@@ -863,30 +907,24 @@ export class Godwoker {
   async allTypeEthAddressToAccountId(_address: HexString): Promise<HexNumber> {
     // todo: support create2 address in such case that it haven't create real contract yet.
     const address = Buffer.from(_address.slice(2), "hex");
+
     if (address.byteLength !== 20)
       throw new Error(`Invalid eth address length: ${address.byteLength}`);
-
     if (address.equals(Buffer.from(Array(20).fill(0))))
       // special-case: meta-contract address should return creator id
       return await this.getPolyjuiceCreatorAccountId();
 
-    try {
-      // assume it is normal contract address, thus an godwoken-short-address
+    // assume it is normal contract address, thus an godwoken-short-address
+    const is_contract_address = await this.isShortAddressOnChain(_address);
+    if (is_contract_address) {
       const script_hash = await this.getScriptHashByShortAddress(_address);
       return await this.getAccountIdByScriptHash(script_hash);
-    } catch (error) {
-      if (
-        !JSON.stringify(error).includes(
-          "unable to fetch script hash from short address"
-        )
-      )
-        throw error;
-
-      // otherwise, assume it is EOA address
-      const script_hash = this.computeScriptHashByEoaEthAddress(_address);
-      const accountId = await this.getAccountIdByScriptHash(script_hash);
-      return accountId;
     }
+
+    // otherwise, assume it is EOA address
+    const script_hash = this.computeScriptHashByEoaEthAddress(_address);
+    const accountId = await this.getAccountIdByScriptHash(script_hash);
+    return accountId;
   }
 
   encodeArgs(_tx: EthTransaction) {
