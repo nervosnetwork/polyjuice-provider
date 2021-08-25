@@ -1034,6 +1034,5 @@ export function LeBytesToUInt64(hex: HexString): bigint {
 
 export function LeBytesToUInt128(hex: HexString): bigint {
   const buf = Buffer.from(hex.slice(2), "hex");
-  buf.slice(0, 8).readBigUInt64LE();
   return buf.slice(8, 16).readBigUInt64LE();
 }
