@@ -338,6 +338,73 @@ export function serializeRawL2Transaction(tx: RawL2Transaction): HexString {
   return new Reader(SerializeRawL2Transaction(_tx)).serializeJson();
 }
 
+export function decodeArgs(_args: HexString) {
+  const args = _args.slice(2);
+  const args_0_7 = "0x" + args.slice(0, 14);
+  const args_7 = "0x" + args.slice(14, 16);
+  const args_8_16 = "0x" + args.slice(16, 32);
+  const args_16_32 = "0x" + args.slice(32, 64);
+  const args_32_48 = "0x" + args.slice(64, 96);
+  const args_48_52 = "0x" + args.slice(96, 104);
+  const args_data = "0x" + args.slice(104);
+
+  const header = Buffer.from(args_0_7.slice(8), "hex").toString("utf-8");
+  const type = args_7;
+  const gas_limit = "0x" + LeBytesToUInt64(args_8_16).toString(16);
+  const gas_price = "0x" + LeBytesToUInt128(args_16_32).toString(16);
+  const value = "0x" + LeBytesToUInt128(args_32_48).toString(16);
+  const data_length = "0x" + LeBytesToUInt32(args_48_52).toString(16);
+  const data = args_data;
+
+  return { header, type, gas_limit, gas_price, value, data_length, data };
+}
+
+export function encodeArgs(_tx: EthTransaction) {
+  const { to, gasPrice, gas: gasLimit, value, data } = _tx;
+
+  // header
+  const args_0_7 =
+    "0x" +
+    Buffer.from("FFFFFF", "hex").toString("hex") +
+    Buffer.from("POLY", "utf8").toString("hex");
+
+  // gas limit
+  const args_8_16 = UInt64ToLeBytes(BigInt(gasLimit!));
+  // gas price
+  const args_16_32 = UInt128ToLeBytes(
+    gasPrice === "0x" ? BigInt(0) : BigInt(gasPrice!)
+  );
+  // value
+  const args_32_48 = UInt128ToLeBytes(
+    value === "0x" ? BigInt(0) : BigInt(value)
+  );
+
+  const dataByteLength = Buffer.from(data.slice(2), "hex").length;
+  // data length
+  const args_48_52 = UInt32ToLeBytes(dataByteLength);
+  // data
+  const args_data = data;
+
+  let args_7 = "";
+  if (to === DEFAULT_EMPTY_ETH_ADDRESS || to === "0x" || to === "0x0") {
+    args_7 = "0x03";
+  } else {
+    args_7 = "0x00";
+  }
+
+  const args =
+    "0x" +
+    args_0_7.slice(2) +
+    args_7.slice(2) +
+    args_8_16.slice(2) +
+    args_16_32.slice(2) +
+    args_32_48.slice(2) +
+    args_48_52.slice(2) +
+    args_data.slice(2);
+
+  return args;
+}
+
 export class Godwoker {
   private eth_account_lock: Omit<Script, "args"> | undefined;
   private rollup_type_hash: string | undefined;
@@ -658,7 +725,7 @@ export class Godwoker {
     const from = await this.getAccountIdByEoaEthAddress(eth_tx.from);
     const to = await this.allTypeEthAddressToAccountId(eth_tx.to);
     const nonce = await this.getNonce(parseInt(from));
-    const encodedArgs = this.encodeArgs(eth_tx);
+    const encodedArgs = encodeArgs(eth_tx);
     const tx: RawL2Transaction = {
       from_id: "0x" + BigInt(from).toString(16),
       to_id: "0x" + BigInt(to).toString(16),
@@ -729,7 +796,7 @@ export class Godwoker {
     ).serializeJson();
   }
 
-  async gw_executeL2Tranaction(
+  async gw_executeL2Transaction(
     raw_tx: RawL2Transaction,
     signature: HexString
   ): Promise<RunResult> {
@@ -926,82 +993,47 @@ export class Godwoker {
     const accountId = await this.getAccountIdByScriptHash(script_hash);
     return accountId;
   }
+}
 
-  encodeArgs(_tx: EthTransaction) {
-    const { to, gasPrice, gas: gasLimit, value, data } = _tx;
+// todo: move to another file
+export function UInt32ToLeBytes(num: number): HexString {
+  const buf = Buffer.allocUnsafe(4);
+  buf.writeUInt32LE(+num, 0);
+  return "0x" + buf.toString("hex");
+}
 
-    // header
-    const args_0_7 =
-      "0x" +
-      Buffer.from("FFFFFF", "hex").toString("hex") +
-      Buffer.from("POLY", "utf8").toString("hex");
+export function UInt64ToLeBytes(num: bigint): HexString {
+  num = BigInt(num);
+  const buf = Buffer.alloc(8);
+  buf.writeBigUInt64LE(num);
+  return `0x${buf.toString("hex")}`;
+}
 
-    // gas limit
-    const args_8_16 = this.UInt64ToLeBytes(BigInt(gasLimit!));
-    // gas price
-    const args_16_32 = this.UInt128ToLeBytes(
-      gasPrice === "0x" ? BigInt(0) : BigInt(gasPrice!)
-    );
-    // value
-    const args_32_48 = this.UInt128ToLeBytes(
-      value === "0x" ? BigInt(0) : BigInt(value)
-    );
-
-    const dataByteLength = Buffer.from(data.slice(2), "hex").length;
-    // data length
-    const args_48_52 = this.UInt32ToLeBytes(dataByteLength);
-    // data
-    const args_data = data;
-
-    let args_7 = "";
-    if (to === DEFAULT_EMPTY_ETH_ADDRESS || to === "0x" || to === "0x0") {
-      args_7 = "0x03";
-    } else {
-      args_7 = "0x00";
-    }
-
-    const args =
-      "0x" +
-      args_0_7.slice(2) +
-      args_7.slice(2) +
-      args_8_16.slice(2) +
-      args_16_32.slice(2) +
-      args_32_48.slice(2) +
-      args_48_52.slice(2) +
-      args_data.slice(2);
-
-    return args;
+export function UInt128ToLeBytes(u128: bigint): HexString {
+  if (u128 < U128_MIN) {
+    throw new Error(`u128 ${u128} too small`);
   }
-
-  // todo: move to another file
-  UInt32ToLeBytes(num: number): HexString {
-    const buf = Buffer.allocUnsafe(4);
-    buf.writeUInt32LE(+num, 0);
-    return "0x" + buf.toString("hex");
+  if (u128 > U128_MAX) {
+    throw new Error(`u128 ${u128} too large`);
   }
+  const buf = Buffer.alloc(16);
+  buf.writeBigUInt64LE(u128 & BigInt("0xFFFFFFFFFFFFFFFF"), 0);
+  buf.writeBigUInt64LE(u128 >> BigInt(64), 8);
+  return "0x" + buf.toString("hex");
+}
 
-  UInt64ToLeBytes(num: bigint): HexString {
-    num = BigInt(num);
-    const buf = Buffer.alloc(8);
-    buf.writeBigUInt64LE(num);
-    return `0x${buf.toString("hex")}`;
-  }
+export function LeBytesToUInt32(hex: HexString): number {
+  const buf = Buffer.from(hex.slice(2), "hex");
+  return buf.readUInt32LE();
+}
 
-  UInt128ToLeBytes(u128: bigint): HexString {
-    if (u128 < U128_MIN) {
-      throw new Error(`u128 ${u128} too small`);
-    }
-    if (u128 > U128_MAX) {
-      throw new Error(`u128 ${u128} too large`);
-    }
-    const buf = Buffer.alloc(16);
-    buf.writeBigUInt64LE(u128 & BigInt("0xFFFFFFFFFFFFFFFF"), 0);
-    buf.writeBigUInt64LE(u128 >> BigInt(64), 8);
-    return "0x" + buf.toString("hex");
-  }
+export function LeBytesToUInt64(hex: HexString): bigint {
+  const buf = Buffer.from(hex.slice(2), "hex");
+  return buf.readBigUInt64LE();
+}
 
-  LeBytesToUInt32(hex: HexString): number {
-    const buf = Buffer.from(hex.slice(2), "hex");
-    return buf.readUInt32LE();
-  }
+export function LeBytesToUInt128(hex: HexString): bigint {
+  const buf = Buffer.from(hex.slice(2), "hex");
+  buf.slice(0, 8).readBigUInt64LE();
+  return buf.slice(8, 16).readBigUInt64LE();
 }
