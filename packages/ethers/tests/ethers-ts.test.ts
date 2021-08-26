@@ -88,8 +88,8 @@ var test_address_array = [
   process.env.ETH_ADDRESS,
 ];
 
-function genNewEthAddress(){
-  return Web3.utils.toChecksumAddress(crypto.randomBytes(20).toString('hex'));
+function genNewEthAddress() {
+  return Web3.utils.toChecksumAddress(crypto.randomBytes(20).toString("hex"));
 }
 
 test.before((t) => {
