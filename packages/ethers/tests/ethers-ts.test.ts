@@ -6,6 +6,8 @@ import {
   PolyjuiceJsonRpcProvider,
   PolyjuiceWebsocketProvider,
 } from "../lib/index";
+import crypto from "crypto";
+import Web3 from "web3";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
@@ -81,9 +83,14 @@ var wsDeployer: PolyjuiceWallet;
 var SimpleStorageV2_Address;
 
 var test_address_array = [
-  "0x768249aC5ED64517C96c16e26B7A5Aa3E9334217",
-  "0xFb2C72d3ffe10Ef7c9960272859a23D24db9e04A",
+  genNewEthAddress(),
+  "0x0000000000000000000000000000000000000000",
+  process.env.ETH_ADDRESS,
 ];
+
+function genNewEthAddress(){
+  return Web3.utils.toChecksumAddress(crypto.randomBytes(20).toString('hex'));
+}
 
 test.before((t) => {
   // init provider and web3
@@ -129,19 +136,19 @@ test.serial("deploy_example_contract", async (t) => {
   test_address_array.push(SimpleStorageV2_Address);
 });
 
-test.serial("call set address on contract", async (t) => {
+test.serial("call set not-exist address on contract", async (t) => {
   const simpleStorageV2 = new Contract(
     SimpleStorageV2_Address,
     SimpleStorageV2_Abi,
     deployer
   );
-  const res = await simpleStorageV2.set(process.env.ETH_ADDRESS);
+  const res = await simpleStorageV2.set(test_address_array[0]);
   t.is(typeof res.wait, "function");
   const txReceipt = await res.wait();
   t.not(txReceipt, undefined);
 });
 
-test.serial("call contract get_address", async (t) => {
+test.serial("call contract get for not-exist address", async (t) => {
   const simpleStorageV2 = new Contract(
     SimpleStorageV2_Address,
     SimpleStorageV2_Abi,
@@ -149,7 +156,7 @@ test.serial("call contract get_address", async (t) => {
   );
 
   const address = await simpleStorageV2.callStatic.get();
-  t.is(address, process.env.ETH_ADDRESS);
+  t.is(address, test_address_array[0]);
 });
 
 test.serial("call set array address on contract", async (t) => {
