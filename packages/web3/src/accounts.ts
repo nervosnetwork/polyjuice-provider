@@ -7,7 +7,6 @@ import {
 import {
   Abi,
   AbiItems,
-  buildL2TransactionWithAddressMapping,
   EthTransaction,
   formalizeEthToAddress,
   Godwoker,
@@ -15,13 +14,14 @@ import {
   PolyjuiceConfig,
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
+  buildSendTransaction,
+  deserializeL2TransactionWithAddressMapping,
 } from "@polyjuice-provider/base";
 import BN from "bn.js";
 import Account from "eth-lib/lib/account";
 import { utils as lumosUtils } from "@ckb-lumos/base";
 import { normalizer, RawL2Transaction } from "@polyjuice-provider/godwoken";
 import { SerializeRawL2Transaction } from "@polyjuice-provider/godwoken/schemas";
-import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
 // do not change the following require to import, otherwise it will cause error.
 // the original web3-eth-accounts Account class is exported by module.exports.
 const Accounts = require("web3-eth-accounts");
@@ -81,64 +81,35 @@ export class PolyjuiceAccounts extends Accounts {
       _tx.from = this.privateKeyToAccount(privateKey).address;
     }
 
-    // use godwoken-polyjuice's transaction signing method
-    // (which is deifferent tx structure and use a message signing)
+    // use godwoken-polyjuice transaction signing method
+    // (which is different tx structure and use a message signing)
     // to sign transaction.
     let tx = transactionConfigToPolyjuiceEthTransaction(_tx);
     try {
       // do init incase user not passing config parameter during construction
       return this.godwoker.initSync().then(async function () {
-        let addressMappingItemVec: AddressMappingItem[];
-        function setAddressMappingItemVec(
-          _addressMappingItemVec: AddressMappingItem[]
-        ) {
-          addressMappingItemVec = _addressMappingItemVec;
-        }
-        let data_with_short_address =
-          await that.abi.refactor_data_with_short_address(
-            tx.data,
-            that.godwoker.getShortAddressByAllTypeEthAddress.bind(
-              that.godwoker
-            ),
-            setAddressMappingItemVec
-          );
-        tx.data = data_with_short_address;
-        return Promise.all([
-          that.godwoker.assembleRawL2Transaction(tx),
-          that.godwoker.generateMessageFromEthTransaction(tx),
-        ]).then(function (args) {
-          if (!args[0] || !args[1]) {
-            const error = new Error(
-              "assembleRawL2Transaction or generateMessageFromEthTransaction is failed."
-            );
-            callback(error);
-            return Promise.reject(error);
-          }
-
-          const polyjuice_tx = args[0];
-          const message = args[1];
-          const _signature = Account.sign(message, privateKey);
-          const signature = that.godwoker.packSignature(_signature);
-          const l2_tx = { raw: polyjuice_tx, signature: signature };
-          const poly_l2_tx = buildL2TransactionWithAddressMapping(
-            l2_tx,
-            addressMappingItemVec
-          );
-
-          let result = {
-            messageHash: message,
-            v: "0x0", // todo: replace with real v
-            r: "0x0", // todo: replace with real r
-            s: signature,
-            rawTransaction:
-              that.godwoker.serializeL2TransactionWithAddressMapping(
-                poly_l2_tx
-              ),
-            transactionHash: calcPolyjuiceTxHash(polyjuice_tx),
-          };
-          callback(null, result);
-          return Promise.resolve(result);
-        });
+        let message: string = null;
+        const signingMethod = (_message: string) => {
+          message = _message;
+          return Account.sign(message, privateKey);
+        };
+        const rawTx = await buildSendTransaction(
+          that.abi,
+          that.godwoker,
+          tx,
+          signingMethod
+        );
+        const deRawTx = deserializeL2TransactionWithAddressMapping(rawTx);
+        let result = {
+          messageHash: message,
+          v: "0x0", // todo: replace with real v
+          r: "0x0", // todo: replace with real r
+          s: deRawTx.tx.signature,
+          rawTransaction: rawTx,
+          transactionHash: calcPolyjuiceTxHash(deRawTx.tx.raw),
+        };
+        callback(null, result);
+        return Promise.resolve(result);
       });
     } catch (error) {
       callback(error);

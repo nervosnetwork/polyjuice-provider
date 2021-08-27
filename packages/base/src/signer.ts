@@ -31,10 +31,7 @@ export default class Signer {
   }
 
   // message without prefix "\x19Ethereum Signed Message:\n"
-  sign_with_private_key(
-    message_without_prefix: string,
-    _address: string
-  ): string {
+  sign_with_private_key(message_without_prefix: string): string {
     if (!this.private_key) {
       throw new Error("private key not found! cannot use this method!");
     }

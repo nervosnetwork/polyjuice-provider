@@ -21,3 +21,8 @@ export interface ShortAddress {
   value: HexString;
   type: ShortAddressType;
 }
+
+export enum SigningMessageType {
+  withPrefix,
+  noPrefix,
+}
