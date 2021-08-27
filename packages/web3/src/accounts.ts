@@ -86,15 +86,15 @@ export class PolyjuiceAccounts extends Accounts {
       // do init incase user not passing config parameter during construction
       return this.godwoker.initSync().then(async function () {
         const data_with_short_address =
-            await that.abi.refactor_data_with_short_address(
-              tx.data,
-              that.godwoker.getShortAddressByAllTypeEthAddress.bind(
-                that.godwoker
-              )
-            );
+          await that.abi.refactor_data_with_short_address(
+            tx.data,
+            that.godwoker.getShortAddressByAllTypeEthAddress.bind(that.godwoker)
+          );
         tx.data = data_with_short_address;
         const polyjuice_tx = await that.godwoker.assembleRawL2Transaction(tx);
-        const message = await that.godwoker.generateMessageFromEthTransaction(tx);
+        const message = await that.godwoker.generateMessageFromEthTransaction(
+          tx
+        );
         const _signature = Account.sign(message, privateKey);
         const signature = that.godwoker.packSignature(_signature);
         const l2_tx = { raw: polyjuice_tx, signature: signature };

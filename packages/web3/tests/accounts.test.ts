@@ -121,44 +121,47 @@ test.serial("replace-web3-eth-account", async (t) => {
 test.serial("account-sign-tx", async (t) => {
   const abiItems = [
     {
-      "inputs": [
-          {
-              "internalType": "address",
-              "name": "spender",
-              "type": "address"
-          },
-          {
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-          }
+      inputs: [
+        {
+          internalType: "address",
+          name: "spender",
+          type: "address",
+        },
+        {
+          internalType: "uint256",
+          name: "amount",
+          type: "uint256",
+        },
       ],
-      "name": "approve",
-      "outputs": [
-          {
-              "internalType": "bool",
-              "name": "",
-              "type": "bool"
-          }
+      name: "approve",
+      outputs: [
+        {
+          internalType: "bool",
+          name: "",
+          type: "bool",
+        },
       ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-  },
-  ]; 
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+  ];
   polyjuiceAccounts.wallet.add(PRIVATE_KEY);
   polyjuiceAccounts.setAbi(abiItems as AbiItems);
   Contract.setProvider(provider, polyjuiceAccounts);
   const address_params = ETH_ADDRESS.slice(2).toLocaleLowerCase();
   const eth_tx = {
     from: ETH_ADDRESS,
-    to: "0x"+Array(40).fill('0').join(''),
-    value: '0x00',
-    gas: '0x5b8d80',
-    gasPrice: '0x0',
+    to: "0x" + Array(40).fill("0").join(""),
+    value: "0x00",
+    gas: "0x5b8d80",
+    gasPrice: "0x0",
     data: `0x095ea7b3000000000000000000000000${address_params}0000000000000000000000000000000000000000000000000000000000000000`,
   };
-  const signed_tx = await polyjuiceAccounts.signTransaction(eth_tx, PRIVATE_KEY);
-  t.is(signed_tx.rawTransaction.slice(0,2), "0x");
+  const signed_tx = await polyjuiceAccounts.signTransaction(
+    eth_tx,
+    PRIVATE_KEY
+  );
+  t.is(signed_tx.rawTransaction.slice(0, 2), "0x");
   t.is(signed_tx.rawTransaction.includes(address_params), false);
 });
 
