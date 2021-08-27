@@ -19,10 +19,10 @@ import {
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
   formalizeEthToAddress,
-  buildL2TransactionWithAddressMapping,
-  buildRawL2TransactionWithAddressMapping,
+  buildSendTransaction,
+  executeCallTransaction,
+  SigningMessageType,
 } from "@polyjuice-provider/base";
-import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
 
 export interface HttpHeader {
   name: string;
@@ -139,62 +139,28 @@ export class PolyjuiceHttpProvider {
           const { from, gas, gasPrice, value, data } = params[0];
           const to = formalizeEthToAddress(params[0].to);
 
-          let addressMappingItemVec: AddressMappingItem[];
-          function setAddressMappingItemVec(
-            _addressMappingItemVec: AddressMappingItem[]
-          ) {
-            addressMappingItemVec = _addressMappingItemVec;
-          }
-          const data_with_short_address =
-            await this.abi.refactor_data_with_short_address(
-              data,
-              this.godwoker.getShortAddressByAllTypeEthAddress.bind(
-                this.godwoker
-              ),
-              setAddressMappingItemVec
-            );
-
           const t = {
             from: from,
             to: to,
             value: value || 0,
-            data: data_with_short_address || "",
+            data: data || "",
             gas: gas,
             gasPrice: gasPrice,
           };
 
-          const to_id = await this.godwoker.allTypeEthAddressToAccountId(to);
-          const sender_script_hash =
-            this.godwoker.computeScriptHashByEoaEthAddress(from);
-          const receiver_script_hash =
-            await this.godwoker.getScriptHashByAccountId(parseInt(to_id));
-
-          const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
-          const message = this.godwoker.generateTransactionMessageToSign(
-            polyjuice_tx,
-            sender_script_hash,
-            receiver_script_hash
-          );
-          const _signature = await this.signer.sign_with_metamask(
-            message,
-            from
-          );
-          const signature = this.godwoker.packSignature(_signature);
-
-          const l2_tx = {
-            raw: polyjuice_tx,
-            signature: signature,
+          const signingMethod = async (message: string) => {
+            await this.signer.sign_with_metamask(message, from);
           };
-          const l2_tx_with_address_mapping =
-            buildL2TransactionWithAddressMapping(l2_tx, addressMappingItemVec);
-          const l2_tx_with_address_mapping_in_serialize =
-            this.godwoker.serializeL2TransactionWithAddressMapping(
-              l2_tx_with_address_mapping
-            );
+
+          const rawTxString = await buildSendTransaction(
+            this.abi,
+            this.godwoker,
+            t,
+            signingMethod.bind(this),
+            SigningMessageType.noPrefix
+          );
           const tx_hash =
-            await this.godwoker.poly_submitSerializedL2Transaction(
-              l2_tx_with_address_mapping_in_serialize
-            );
+            await this.godwoker.poly_submitSerializedL2Transaction(rawTxString);
           await this.godwoker.waitForTransactionReceipt(tx_hash);
           const res = {
             jsonrpc: payload.jsonrpc,
@@ -215,66 +181,27 @@ export class PolyjuiceHttpProvider {
         try {
           const { from, gas, gasPrice, value, data, to } = params[0];
 
-          let addressMappingItemVec: AddressMappingItem[];
-          function setAddressMappingItemVec(
-            _addressMappingItemVec: AddressMappingItem[]
-          ) {
-            addressMappingItemVec = _addressMappingItemVec;
-          }
-          const data_with_short_address =
-            await this.abi.refactor_data_with_short_address(
-              data,
-              this.godwoker.getShortAddressByAllTypeEthAddress.bind(
-                this.godwoker
-              ),
-              setAddressMappingItemVec
-            );
-
           const t = {
             from:
               from || (await this.godwoker.getPolyjuiceDefaultFromAddress()),
             to: to,
             value: value || 0,
-            data: data_with_short_address || "",
+            data: data || "",
             gas: gas || POLY_MAX_TRANSACTION_GAS_LIMIT,
             gasPrice: gasPrice || POLY_MIN_GAS_PRICE,
           };
 
-          const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
-          const polyjuice_tx_with_address_mapping =
-            buildRawL2TransactionWithAddressMapping(
-              polyjuice_tx,
-              addressMappingItemVec
-            );
-          const run_result = await this.godwoker.poly_executeRawL2Transaction(
-            polyjuice_tx_with_address_mapping
+          const return_data = await executeCallTransaction(
+            this.abi,
+            this.godwoker,
+            t
           );
-
-          const abi_item =
-            this.abi.get_intereted_abi_item_by_encoded_data(data);
-          if (!abi_item) {
-            const res = {
-              jsonrpc: payload.jsonrpc,
-              id: payload.id,
-              result: run_result.return_data,
-            };
-            callback(null, res);
-          } else {
-            const return_value_with_short_address =
-              await this.abi.refactor_return_value_with_short_address(
-                run_result.return_data,
-                abi_item,
-                this.godwoker.getEthAddressByAllTypeShortAddress.bind(
-                  this.godwoker
-                )
-              );
-            const res = {
-              jsonrpc: payload.jsonrpc,
-              id: payload.id,
-              result: return_value_with_short_address,
-            };
-            callback(null, res);
-          }
+          const res = {
+            jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            result: return_data,
+          };
+          callback(null, res);
         } catch (error) {
           callback(null, {
             jsonrpc: payload.jsonrpc,

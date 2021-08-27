@@ -31,11 +31,19 @@ import {
   NormalizeRawL2Transaction,
   NormalizeRawL2TransactionWithAddressMapping,
 } from "@polyjuice-provider/godwoken/lib/normalizer";
-import { U128_MIN, U128_MAX, DEFAULT_EMPTY_ETH_ADDRESS } from "./constant";
+import {
+  U128_MIN,
+  U128_MAX,
+  DEFAULT_EMPTY_ETH_ADDRESS,
+  HEX_CHARACTERS,
+  POLY_MAX_TRANSACTION_GAS_LIMIT,
+  POLY_MIN_GAS_PRICE,
+} from "./constant";
 import { Reader } from "ckb-js-toolkit";
 import crossFetch from "cross-fetch"; // for nodejs compatibility polyfill
 import { Buffer } from "buffer"; // for browser compatibility polyfill
-import { ShortAddress, ShortAddressType } from "./types";
+import { ShortAddress, ShortAddressType, SigningMessageType } from "./types";
+import { AbiItem } from "web3-utils";
 
 // replace for buffer polyfill under 0.6 version.
 // eg: for react project using webpack 4 (this is the most common case when created by running `npx create-react-app`),
@@ -117,6 +125,17 @@ export type EthTransaction = {
   nonce?: HexNumber;
 };
 
+export type InformalEthTransaction = {
+  from?: HexString;
+  to?: HexString;
+  gas?: HexNumber | bigint | number;
+  gasLimit?: HexNumber | bigint | number;
+  gasPrice?: HexNumber | bigint | number;
+  value?: HexNumber | bigint | number;
+  data?: HexString;
+  nonce?: HexNumber | bigint | number;
+};
+
 export type L2TransactionArgs = {
   to_id: number;
   value: bigint;
@@ -167,6 +186,77 @@ export function verifyHttpUrl(_url: string) {
   }
 
   return false;
+}
+
+export function isHexString(value: any, length?: number): boolean {
+  if (typeof value !== "string" || !value.match(/^0x[0-9A-Fa-f]*$/)) {
+    return false;
+  }
+  if (length && value.length !== 2 + 2 * length) {
+    return false;
+  }
+  return true;
+}
+
+export function normalizeHexValue(
+  value: HexNumber | bigint | number
+): HexString {
+  if (typeof value === "number") {
+    let hex = "";
+    while (value) {
+      hex = HEX_CHARACTERS[value & 0xf] + hex;
+      value = Math.floor(value / 16);
+    }
+
+    if (hex.length) {
+      if (hex.length % 2) {
+        hex = "0" + hex;
+      }
+      return "0x" + hex;
+    }
+
+    return "0x00";
+  }
+
+  if (typeof value === "bigint") {
+    value = value.toString(16);
+    if (value.length % 2) {
+      return "0x0" + value;
+    }
+    return "0x" + value;
+  }
+
+  if (isHexString(value)) {
+    if ((<string>value).length % 2) {
+      value = "0x0" + (<string>value).substring(2);
+    }
+    return (<string>value).toLowerCase();
+  }
+
+  throw new Error(`invalid hexlify value type ${value}`);
+}
+
+export function normalizeEthTransaction(tx: InformalEthTransaction) {
+  if (!tx.from || typeof tx.from !== "string") {
+    throw new Error("missing From in Transaction!");
+  }
+
+  return {
+    from: tx.from,
+    to: formalizeEthToAddress(tx.to),
+    gas: normalizeHexValue(
+      tx.gas || tx.gasLimit || POLY_MAX_TRANSACTION_GAS_LIMIT
+    ),
+    gasPrice: normalizeHexValue(tx.gasPrice || POLY_MIN_GAS_PRICE),
+    value: normalizeHexValue(tx.value || "0x00"),
+    data: normalizeHexValue(tx.data || "0x00"),
+  };
+}
+
+export function serializeAddressMappingAbiItem(abiItem: AbiItem): HexString {
+  // TODO: complete this method
+  console.log("ready to serialize abiItem =>", abiItem);
+  return "0x";
 }
 
 export function serializeAddressMapping(
@@ -300,7 +390,8 @@ export function deserializeL2TransactionWithAddressMapping(
 
 export function buildL2TransactionWithAddressMapping(
   tx: L2Transaction,
-  addressMappingItemVec: AddressMappingItem[]
+  addressMappingItemVec: AddressMappingItem[],
+  abiItem?: HexString
 ): L2TransactionWithAddressMapping {
   const addressMapping: AddressMapping = {
     length: "0x" + addressMappingItemVec.length.toString(16),
@@ -309,13 +400,14 @@ export function buildL2TransactionWithAddressMapping(
   return {
     tx: tx,
     addresses: addressMapping,
-    extra: "0x",
+    extra: abiItem || "0x",
   };
 }
 
 export function buildRawL2TransactionWithAddressMapping(
   tx: RawL2Transaction,
-  addressMappingItemVec: AddressMappingItem[]
+  addressMappingItemVec: AddressMappingItem[],
+  abiItem?: HexString
 ): RawL2TransactionWithAddressMapping {
   const addressMapping: AddressMapping = {
     length: "0x" + addressMappingItemVec.length.toString(16),
@@ -324,7 +416,7 @@ export function buildRawL2TransactionWithAddressMapping(
   return {
     raw_tx: tx,
     addresses: addressMapping,
-    extra: "0x",
+    extra: abiItem || "0x",
   };
 }
 
@@ -749,7 +841,10 @@ export class Godwoker {
     );
   }
 
-  async generateMessageFromEthTransaction(tx: EthTransaction): Promise<string> {
+  async generateMessageFromEthTransaction(
+    tx: EthTransaction,
+    msg_type: SigningMessageType = SigningMessageType.withPrefix
+  ): Promise<string> {
     const { from, to } = tx;
 
     const to_id = await this.allTypeEthAddressToAccountId(to);
@@ -763,7 +858,7 @@ export class Godwoker {
       polyjuice_tx,
       sender_script_hash,
       receiver_script_hash,
-      true // with personal sign prefixed
+      msg_type === SigningMessageType.withPrefix // with personal sign prefix in message, default is true.
     );
     return message;
   }

@@ -13,9 +13,8 @@ import {
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
   formalizeEthToAddress,
-  buildL2TransactionWithAddressMapping,
+  buildSendTransaction,
 } from "@polyjuice-provider/base";
-import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
 
 import { Logger } from "@ethersproject/logger";
 import { joinSignature, BytesLike, hexlify } from "@ethersproject/bytes";
@@ -78,54 +77,29 @@ export class PolyjuiceWallet extends Wallet {
       // use godwoken-polyjuice transaction signing method
       // (which is different tx type and use a message signing)
       // to sign transaction.
-      let addressMappingItemVec: AddressMappingItem[];
-      function setAddressMappingItemVec(
-        _addressMappingItemVec: AddressMappingItem[]
-      ) {
-        addressMappingItemVec = _addressMappingItemVec;
-      }
-
-      let data_with_short_address;
-      try {
-        data_with_short_address =
-          await this.abi.refactor_data_with_short_address(
-            hexlify(tx.data || "0x00"),
-            this.godwoker.getShortAddressByAllTypeEthAddress.bind(
-              this.godwoker
-            ),
-            setAddressMappingItemVec
-          );
-      } catch (error) {
-        logger.throwArgumentError(
-          "can not replace data with short_address",
-          "data",
-          transaction.data
-        );
-        throw new Error(
-          `can not replace data with short_address ${transaction.data}`
-        );
-      }
-
       const t = {
         from: tx.from,
         to: formalizeEthToAddress(tx.to),
         value: hexlify(tx.value || 0),
-        data: data_with_short_address,
+        data: hexlify(tx.data),
         gas: hexlify(tx.gasLimit || POLY_MAX_TRANSACTION_GAS_LIMIT),
         gasPrice: hexlify(tx.gasPrice || POLY_MIN_GAS_PRICE),
       };
-      const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
-      const message = await this.godwoker.generateMessageFromEthTransaction(t);
-      const _signature = await joinSignature(
-        this._signingKey().signDigest(message)
-      );
-      const signature = this.godwoker.packSignature(_signature);
-      const l2_tx = { raw: polyjuice_tx, signature: signature };
-      const poly_l2_tx = buildL2TransactionWithAddressMapping(
-        l2_tx,
-        addressMappingItemVec
-      );
-      return this.godwoker.serializeL2TransactionWithAddressMapping(poly_l2_tx);
+      const that = this;
+      const signingMethod = function (message: string) {
+        return joinSignature(that._signingKey().signDigest(message));
+      };
+      try {
+        return await buildSendTransaction(
+          this.abi,
+          this.godwoker,
+          t,
+          signingMethod.bind(that)
+        );
+      } catch (error) {
+        logger.throwError(error.message);
+        throw new Error(error.message);
+      }
     });
   }
 }

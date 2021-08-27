@@ -130,7 +130,7 @@ export class Abi {
 
   // todo: use this func to remove all repeated code.
   // params: <data: eth tx's encode input data>
-  get_intereted_abi_item_by_encoded_data(data: string) {
+  get_interested_abi_item_by_encoded_data(data: string): AbiItem | undefined {
     const method_id = data.slice(2, 10);
     const abi_item = this.interested_method_ids[method_id];
     return abi_item;

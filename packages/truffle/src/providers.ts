@@ -18,13 +18,15 @@ import {
   POLY_MIN_GAS_PRICE,
   formalizeEthToAddress,
   PolyjuiceConfig,
-  buildL2TransactionWithAddressMapping,
+  buildSendTransaction,
+  Abi,
 } from "@polyjuice-provider/base";
 import { NonceTrackerSubprovider as NonceSubProvider } from "./nonce-tracker";
 
 const singletonNonceSubProvider = new NonceSubProvider();
 
 export class PolyjuiceHDWalletProvider extends HDWalletProvider {
+  abi: Abi;
   godwoker: Godwoker;
 
   constructor(args: ConstructorArguments, polyjuiceConfig: PolyjuiceConfig) {
@@ -61,6 +63,7 @@ export class PolyjuiceHDWalletProvider extends HDWalletProvider {
     };
 
     this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwokerOption);
+    this.abi = new Abi(polyjuiceConfig.abiItems || []);
 
     this.engine = new ProviderEngine({
       pollingInterval,
@@ -110,25 +113,20 @@ export class PolyjuiceHDWalletProvider extends HDWalletProvider {
               EthUtil.bufferToHex(txParams.gasPrice) ||
               "0x" + POLY_MIN_GAS_PRICE.toString(16),
           };
-          const polyjuice_tx = await self.godwoker.assembleRawL2Transaction(t);
-          const message = await self.godwoker.generateMessageFromEthTransaction(
-            t
-          );
-          const msgHashBuff = EthUtil.toBuffer(message);
-          const sig = EthUtil.ecsign(msgHashBuff, pkey);
-          const signature = EthUtil.toRpcSig(sig.v, sig.r, sig.s);
-          const packedSignature = self.godwoker.packSignature(signature);
 
-          const l2_tx = {
-            raw: polyjuice_tx,
-            signature: packedSignature,
+          const signingMethod = (message: string) => {
+            const msgHashBuff = EthUtil.toBuffer(message);
+            const sig = EthUtil.ecsign(msgHashBuff, pkey);
+            const signature = EthUtil.toRpcSig(sig.v, sig.r, sig.s);
+            return signature;
           };
-          const l2_tx_with_address_mapping =
-            buildL2TransactionWithAddressMapping(l2_tx, []); // todo: maybe truffle needs to replace address too?
-          const rawTx = self.godwoker.serializeL2TransactionWithAddressMapping(
-            l2_tx_with_address_mapping
+          const rawTxString = await buildSendTransaction(
+            self.abi,
+            self.godwoker,
+            t,
+            signingMethod
           );
-          cb(null, rawTx);
+          cb(null, rawTxString);
         },
         signMessage({ data, from }: any, cb: any) {
           const dataIfExists = data;

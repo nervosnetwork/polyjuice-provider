@@ -14,9 +14,8 @@ import {
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
   verifyHttpUrl,
-  buildRawL2TransactionWithAddressMapping,
+  executeCallTransaction,
 } from "@polyjuice-provider/base";
-import { AddressMappingItem } from "../../godwoken/lib/addressTypes";
 
 export interface PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   constructor(
@@ -94,28 +93,9 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
     switch (method) {
       case "eth_call":
         try {
-          const { data } = params[0];
-
-          let addressMappingItemVec: AddressMappingItem[];
-          function setAddressMappingItemVec(
-            _addressMappingItemVec: AddressMappingItem[]
-          ) {
-            addressMappingItemVec = _addressMappingItemVec;
-          }
-          const data_with_short_address =
-            await this.abi.refactor_data_with_short_address(
-              data,
-              this.godwoker.getShortAddressByAllTypeEthAddress.bind(
-                this.godwoker
-              ),
-              setAddressMappingItemVec
-            );
-
-          // todo: use an common method to format params
           params[0].from =
             params[0].from ||
             (await this.godwoker.getPolyjuiceDefaultFromAddress());
-          params[0].data = data_with_short_address;
           params[0].gas =
             params[0].gas ||
             `0x${BigInt(POLY_MAX_TRANSACTION_GAS_LIMIT).toString(16)}`;
@@ -125,30 +105,7 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
           params[0].value = params[0].value || "0x00";
 
           const t = params[0];
-          const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
-          const polyjuice_tx_with_address_mapping =
-            buildRawL2TransactionWithAddressMapping(
-              polyjuice_tx,
-              addressMappingItemVec
-            );
-          const run_result = await this.godwoker.poly_executeRawL2Transaction(
-            polyjuice_tx_with_address_mapping
-          );
-
-          const abi_item =
-            this.abi.get_intereted_abi_item_by_encoded_data(data);
-
-          if (!abi_item) return run_result.return_data;
-
-          const return_value_with_short_address =
-            await this.abi.refactor_return_value_with_short_address(
-              run_result.return_data,
-              abi_item,
-              this.godwoker.getEthAddressByAllTypeShortAddress.bind(
-                this.godwoker
-              )
-            );
-          return return_value_with_short_address;
+          return await executeCallTransaction(this.abi, this.godwoker, t);
         } catch (error) {
           this.emit("debug", {
             action: "response",
@@ -320,28 +277,9 @@ export class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
         switch (method) {
           case "eth_call":
             try {
-              const { data } = params[0];
-
-              let addressMappingItemVec: AddressMappingItem[];
-              function setAddressMappingItemVec(
-                _addressMappingItemVec: AddressMappingItem[]
-              ) {
-                addressMappingItemVec = _addressMappingItemVec;
-              }
-              const data_with_short_address =
-                await this.abi.refactor_data_with_short_address(
-                  data,
-                  this.godwoker.getShortAddressByAllTypeEthAddress.bind(
-                    this.godwoker
-                  ),
-                  setAddressMappingItemVec
-                );
-
-              // todo: use an common method to format params
               params[0].from =
                 params[0].from ||
                 (await this.godwoker.getPolyjuiceDefaultFromAddress());
-              params[0].data = data_with_short_address;
               params[0].gas =
                 params[0].gas ||
                 `0x${BigInt(POLY_MAX_TRANSACTION_GAS_LIMIT).toString(16)}`;
@@ -351,34 +289,12 @@ export class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
               params[0].value = params[0].value || "0x00";
 
               const t = params[0];
-              const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(
+              const return_value = await executeCallTransaction(
+                this.abi,
+                this.godwoker,
                 t
               );
-              const polyjuice_tx_with_address_mapping =
-                buildRawL2TransactionWithAddressMapping(
-                  polyjuice_tx,
-                  addressMappingItemVec
-                );
-              const run_result =
-                await this.godwoker.poly_executeRawL2Transaction(
-                  polyjuice_tx_with_address_mapping
-                );
-
-              const abi_item =
-                this.abi.get_intereted_abi_item_by_encoded_data(data);
-
-              if (!abi_item) return callback(null, run_result.return_data);
-
-              const return_value_with_short_address =
-                await this.abi.refactor_return_value_with_short_address(
-                  run_result.return_data,
-                  abi_item,
-                  this.godwoker.getEthAddressByAllTypeShortAddress.bind(
-                    this.godwoker
-                  )
-                );
-
-              return callback(null, return_value_with_short_address);
+              return callback(null, return_value);
             } catch (error) {
               this.emit("debug", {
                 action: "response",

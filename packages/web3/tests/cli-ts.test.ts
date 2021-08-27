@@ -93,7 +93,7 @@ test.before((t) => {
 test.serial("sign message method", (t) => {
   const message =
     "0x61c0994ff56d3cc888e41ee4a45080a431ffa84979ccf936b3ecc4887d7e9324";
-  const sig = provider.signer.sign_with_private_key(message, ETH_ADDRESS);
+  const sig = provider.signer.sign_with_private_key(message);
   t.is(
     sig,
     "0x7de886aaeb6c6df85a6c5a7603bdfe1dab36da558f9460f8f2fe201b1053ed111aaec1cf024eada7393f0dec80587398ec5d83f8976eaa0662c3b8b4ad9ee9601c"
