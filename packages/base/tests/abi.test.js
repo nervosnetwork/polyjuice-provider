@@ -3,7 +3,12 @@ const Web3EthAbi = require("web3-eth-abi");
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
 
-const { Abi, Godwoker } = require("../lib/index");
+const {
+  Abi,
+  Godwoker,
+  serializeAbiItem,
+  deserializeAbiItem,
+} = require("../lib/index");
 
 const TEST_ABI_ITEMS = [
   {
@@ -73,6 +78,26 @@ test.before(async (t) => {
   abi = new Abi(TEST_ABI_ITEMS);
   godwoker = new Godwoker(godwoken_rpc_url, provider_config);
   await godwoker.init();
+});
+
+test.serial("serialize abi item", (t) => {
+  const abi_item = {
+    inputs: [
+      { type: "address[]", name: "_owners" },
+      { type: "uint256", name: "_required" },
+      { type: "uint256", name: "_dailyLimit" },
+    ],
+    constant: false,
+    name: "create",
+    payable: false,
+    outputs: [{ type: "address", name: "wallet" }],
+    type: "function",
+  };
+  const serialize_abi = serializeAbiItem(abi_item);
+  t.is(serialize_abi.slice(0, 2), "0x");
+  const deserialize_abi = deserializeAbiItem(serialize_abi);
+  //t.deepEqual(deserialize_abi, abi_item);
+  t.is(deserialize_abi.name, abi_item.name);
 });
 
 test.serial("get_interested_methods", (t) => {

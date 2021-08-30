@@ -15,6 +15,7 @@ export enum ShortAddressType {
   contractAddress,
   notExistEoaAddress,
   notExistContractAddress, // create2 contract which haven't really created, currently provider can't distinguish this type of address.
+  creatorAddress, // special case: 0x00000...
 }
 
 export interface ShortAddress {

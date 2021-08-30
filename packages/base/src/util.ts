@@ -38,12 +38,12 @@ import {
   HEX_CHARACTERS,
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
+  EMPTY_ABI_ITEM_SERIALIZE_STR,
 } from "./constant";
 import { Reader } from "ckb-js-toolkit";
 import crossFetch from "cross-fetch"; // for nodejs compatibility polyfill
 import { Buffer } from "buffer"; // for browser compatibility polyfill
 import { ShortAddress, ShortAddressType, SigningMessageType } from "./types";
-import { AbiItem } from "web3-utils";
 
 // replace for buffer polyfill under 0.6 version.
 // eg: for react project using webpack 4 (this is the most common case when created by running `npx create-react-app`),
@@ -253,12 +253,6 @@ export function normalizeEthTransaction(tx: InformalEthTransaction) {
   };
 }
 
-export function serializeAddressMappingAbiItem(abiItem: AbiItem): HexString {
-  // TODO: complete this method
-  console.log("ready to serialize abiItem =>", abiItem);
-  return "0x";
-}
-
 export function serializeAddressMapping(
   addressMapping: AddressMapping
 ): HexString {
@@ -400,7 +394,7 @@ export function buildL2TransactionWithAddressMapping(
   return {
     tx: tx,
     addresses: addressMapping,
-    extra: abiItem || "0x",
+    extra: abiItem || EMPTY_ABI_ITEM_SERIALIZE_STR,
   };
 }
 
@@ -416,7 +410,7 @@ export function buildRawL2TransactionWithAddressMapping(
   return {
     raw_tx: tx,
     addresses: addressMapping,
-    extra: abiItem || "0x",
+    extra: abiItem || EMPTY_ABI_ITEM_SERIALIZE_STR,
   };
 }
 
@@ -690,6 +684,16 @@ export class Godwoker {
     _address: string
   ): Promise<ShortAddress> {
     // todo: support create2 address in such case that it haven't create real contract yet.
+
+    if (_address === DEFAULT_EMPTY_ETH_ADDRESS) {
+      // special case: 0x0000...
+      // todo: right now we keep the 0x00000.., later maybe should convert to polyjuice creator short address?
+      return {
+        value: _address,
+        type: ShortAddressType.creatorAddress,
+      };
+    }
+
     try {
       // assume it is an contract address (thus already an short address)
       const isContractAddress = await this.isShortAddressOnChain(_address);
@@ -728,6 +732,12 @@ export class Godwoker {
     _short_address: HexString
   ): Promise<HexString> {
     // todo: support create2 address in such case which it haven't create real contract yet.
+
+    if (_short_address === DEFAULT_EMPTY_ETH_ADDRESS) {
+      // special case: 0x0000...
+      // todo: right now we keep the 0x00000.., later maybe should convert to polyjuice creator short address?
+      return _short_address;
+    }
 
     // first, query on-chain
     const is_address_on_chain = await this.isShortAddressOnChain(

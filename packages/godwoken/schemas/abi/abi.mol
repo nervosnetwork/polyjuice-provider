@@ -1,0 +1,49 @@
+array Uint16 [byte; 2];
+array Uint32 [byte; 4];
+array Uint64 [byte; 8];
+array Uint128 [byte; 16];
+array Byte20 [byte; 20];
+array Byte32 [byte; 32];
+array Uint256 [byte; 32];
+
+option ByteOpt (byte);
+vector Bytes <byte>;
+option BytesOpt (Bytes);
+
+vector BytesVec <Bytes>;
+vector Byte32Vec <Byte32>;
+
+table AbiInput {
+	name: Bytes,
+    type: Bytes,
+    indexed: ByteOpt,
+	components: BytesOpt, // should be AbiInputsOpt, however we are not detecting address type under custom type now, so that's fine
+    internalType: BytesOpt,
+}
+
+table AbiOutput {
+	name: Bytes,
+    type: Bytes,
+	components: BytesOpt, // should be AbiOutputsOpt, however we are not detecting address type under custom type now, so that's fine
+    internalType: BytesOpt,
+}
+
+vector AbiInputs <AbiInput>;
+vector AbiOutputs <AbiOutput>;
+
+option AbiInputsOpt (AbiInputs);
+option AbiOutputsOpt (AbiOutputs);
+
+option Uint32Opt (Uint32);
+
+table AbiItem {
+	anonymous: ByteOpt,
+    constant: ByteOpt,
+    inputs: AbiInputsOpt,
+    name: BytesOpt,
+    outputs: AbiOutputsOpt,
+    payable: ByteOpt,
+    stateMutability: ByteOpt,
+    type: byte,
+    gas: Uint32Opt,
+}

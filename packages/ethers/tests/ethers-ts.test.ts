@@ -80,8 +80,10 @@ var provider: PolyjuiceJsonRpcProvider;
 var wsProvider: PolyjuiceWebsocketProvider;
 var deployer: PolyjuiceWallet;
 var wsDeployer: PolyjuiceWallet;
-var SimpleStorageV2_Address;
+var SimpleStorageV2_Address = process.env.EXAMPLE_CONTRACT_ADDRESS;
 
+var not_exist_address = genNewEthAddress();
+var not_exist_address_for_ws = genNewEthAddress();
 var test_address_array = [
   genNewEthAddress(),
   "0x0000000000000000000000000000000000000000",
@@ -142,7 +144,7 @@ test.serial("call set not-exist address on contract", async (t) => {
     SimpleStorageV2_Abi,
     deployer
   );
-  const res = await simpleStorageV2.set(test_address_array[0]);
+  const res = await simpleStorageV2.set(not_exist_address);
   t.is(typeof res.wait, "function");
   const txReceipt = await res.wait();
   t.not(txReceipt, undefined);
@@ -156,7 +158,7 @@ test.serial("call contract get for not-exist address", async (t) => {
   );
 
   const address = await simpleStorageV2.callStatic.get();
-  t.is(address, test_address_array[0]);
+  t.is(address, not_exist_address);
 });
 
 test.serial("call set array address on contract", async (t) => {
@@ -189,7 +191,7 @@ test.serial("ws-provider: call set address on contract", async (t) => {
     SimpleStorageV2_Abi,
     wsDeployer
   );
-  const res = await simpleStorageV2.set(process.env.ETH_ADDRESS);
+  const res = await simpleStorageV2.set(not_exist_address_for_ws);
   t.is(typeof res.wait, "function");
   const txReceipt = await res.wait();
   t.not(txReceipt, undefined);
@@ -203,7 +205,7 @@ test.serial("ws-provider: call contract get_address", async (t) => {
   );
 
   const address = await simpleStorageV2.callStatic.get();
-  t.is(address, process.env.ETH_ADDRESS);
+  t.is(address, not_exist_address_for_ws);
 });
 
 // test.serial("make a lot of send at serial", async (t) => {
