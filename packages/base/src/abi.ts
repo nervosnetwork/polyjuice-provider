@@ -1,8 +1,25 @@
-import { AbiOutput, AbiInput, AbiItem } from "web3-utils";
+import {
+  AbiOutput,
+  AbiInput,
+  AbiItem,
+  AbiType,
+  StateMutabilityType,
+} from "web3-utils";
 import { DEFAULT_EMPTY_ETH_ADDRESS } from "./constant";
 import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
+import {
+  SerializeAbiItem,
+  AbiItem as AbiItemClass,
+  ByteOpt,
+  Bytes,
+} from "@polyjuice-provider/godwoken/schemas/abi/abi";
 import { ShortAddress, ShortAddressType } from "./types";
 import { HexString } from "@ckb-lumos/base";
+import {
+  NormalizeAbiItem,
+  hexStringToUtfString,
+} from "@polyjuice-provider/godwoken/lib/normalizer";
+import { Reader } from "ckb-js-toolkit";
 const Web3EthAbi = require("web3-eth-abi");
 
 export interface MethodIDs {
@@ -16,6 +33,259 @@ export interface DecodedMethodParam extends AbiInput {
 export interface DecodedMethod {
   name: string;
   params: DecodedMethodParam[];
+}
+
+export function serializeAbiItem(_abiItem: AbiItem): HexString {
+  let abiItem = Object.assign({}, _abiItem);
+  return new Reader(
+    SerializeAbiItem(NormalizeAbiItem(abiItem))
+  ).serializeJson();
+}
+
+export function deserializeBoolFromByteOpt(
+  value: ByteOpt
+): boolean | undefined {
+  if (value.hasValue()) {
+    switch (value.value()) {
+      case 1:
+        return true;
+
+      case 2:
+        return false;
+
+      default:
+        throw new Error("invalid bool ByteOpt");
+    }
+  }
+
+  return undefined;
+}
+
+export function deserializeUtf8Bytes(value: Bytes): string {
+  return hexStringToUtfString(new Reader(value.raw()).serializeJson());
+}
+
+export function deserializeAbiType(value: number): AbiType {
+  switch (value) {
+    case 1:
+      return "constructor";
+
+    case 2:
+      return "constructor";
+
+    case 3:
+      return "fallback";
+
+    case 4:
+      return "function";
+
+    default:
+      throw new Error(`deserialize AbiType has invalid value: ${value}`);
+  }
+}
+
+export function deserializeStateMutabilityType(
+  value: number
+): StateMutabilityType {
+  switch (value) {
+    case 1:
+      return "view";
+
+    case 2:
+      return "nonpayable";
+
+    case 3:
+      return "payable";
+
+    case 4:
+      return "pure";
+
+    default:
+      throw new Error(
+        `deserialize StateMutabilityType has invalid value: ${value}`
+      );
+  }
+}
+
+export function deserializeAbiItem(value: HexString): AbiItem {
+  const data = new AbiItemClass(new Reader(value));
+
+  const type = deserializeAbiType(data.getType());
+
+  const anonymous = deserializeBoolFromByteOpt(data.getAnonymous());
+  const constant = deserializeBoolFromByteOpt(data.getConstant());
+  const payable = deserializeBoolFromByteOpt(data.getPayable());
+  const gas = data.getGas().hasValue()
+    ? data.getGas().value().toLittleEndianUint32()
+    : undefined;
+  const name = data.getName().hasValue()
+    ? deserializeUtf8Bytes(data.getName().value())
+    : undefined;
+  const inputs_len_in_int = data.getInputs().hasValue()
+    ? data.getInputs().value().length()
+    : 0;
+  const outputs_len_in_int = data.getOutputs().hasValue()
+    ? data.getOutputs().value().length()
+    : 0;
+
+  const inputs = [...Array(inputs_len_in_int).keys()].map((index) => {
+    const value = data.getInputs().value().indexAt(index);
+    const name_bytes = value.getName();
+    const type_bytes = value.getType();
+    const indexed = value.getIndexed().hasValue()
+      ? deserializeBoolFromByteOpt(value.getIndexed())
+      : undefined;
+    const internalType = value.getInternalType().hasValue()
+      ? deserializeUtf8Bytes(value.getInternalType().value())
+      : undefined;
+    let result: AbiInput = {
+      name: deserializeUtf8Bytes(name_bytes),
+      type: deserializeUtf8Bytes(type_bytes),
+    };
+    if (indexed !== undefined) {
+      result.indexed = indexed;
+    }
+    if (internalType !== undefined) {
+      result.internalType = internalType;
+    }
+    // we not able to deserialize the abiInputs, so just ignore for now
+    return result;
+  });
+
+  const outputs = [...Array(outputs_len_in_int).keys()].map((index) => {
+    const value = data.getOutputs().value().indexAt(index);
+    const internalType = value.getInternalType().hasValue()
+      ? deserializeUtf8Bytes(value.getInternalType().value())
+      : undefined;
+
+    let result: AbiOutput = {
+      name: deserializeUtf8Bytes(value.getName()),
+      type: deserializeUtf8Bytes(value.getType()),
+    };
+
+    if (internalType !== undefined) {
+      result.internalType = internalType;
+    }
+    // we not able to deserialize the abiOutputs, so just ignore for now
+
+    return result;
+  });
+
+  let result: AbiItem = {
+    type,
+  };
+
+  if (inputs_len_in_int !== 0) {
+    result.inputs = inputs;
+  }
+  if (outputs_len_in_int !== 0) {
+    result.outputs = outputs;
+  }
+  if (name !== undefined) {
+    result.name = name;
+  }
+  if (anonymous !== undefined) {
+    result.anonymous = anonymous;
+  }
+  if (constant !== undefined) {
+    result.constant = constant;
+  }
+  if (payable !== undefined) {
+    result.payable = payable;
+  }
+  if (gas !== undefined) {
+    result.gas = gas;
+  }
+
+  return result;
+}
+
+export function decodeInputDataByAbi(data: HexString, abiItem: AbiItem) {
+  if (!abiItem.inputs)
+    throw new Error(
+      `abiItem should have inputs! abiItem: ${JSON.stringify(abiItem, null, 2)}`
+    );
+
+  const expectedName = Web3EthAbi.encodeFunctionSignature(abiItem).slice(2);
+  const name = data.slice(2, 10);
+  if (name !== expectedName)
+    throw new Error(
+      `function signature unmatched! expect ${expectedName}, got ${name}. abiItem: ${JSON.stringify(
+        abiItem,
+        null,
+        2
+      )}, data: ${data}`
+    );
+
+  let decoded = Web3EthAbi.decodeParameters(
+    abiItem.inputs,
+    "0x" + data.slice(10)
+  );
+  let retData: DecodedMethod = {
+    name: abiItem.name || "",
+    params: [],
+  };
+
+  for (let i = 0; i < decoded.__length__; i++) {
+    let param = decoded[i];
+    let parsedParam = param;
+    const isUint = abiItem.inputs[i].type.indexOf("uint") === 0;
+    const isInt = abiItem.inputs[i].type.indexOf("int") === 0;
+    const isAddress = abiItem.inputs[i].type.indexOf("address") === 0;
+
+    if (isUint || isInt) {
+      const isArray = Array.isArray(param);
+
+      if (isArray) {
+        parsedParam = param.map((val: any) => BigInt(val).toString());
+      } else {
+        parsedParam = BigInt(param).toString();
+      }
+    }
+
+    // Addresses returned by web3 are randomly cased so we need to standardize and lowercase all
+    if (isAddress) {
+      const isArray = Array.isArray(param);
+
+      if (isArray) {
+        parsedParam = param.map((_: any) => _.toLowerCase());
+      } else {
+        parsedParam = param.toLowerCase();
+      }
+    }
+
+    retData.params.push({
+      name: abiItem.inputs[i].name,
+      value: parsedParam,
+      type: abiItem.inputs[i].type,
+    });
+  }
+
+  return retData;
+}
+
+export function filterInterestedInput(data: HexString, abiItem: AbiItem) {
+  const inputs = decodeInputDataByAbi(data, abiItem);
+  return inputs.params.filter(
+    (input) => input.type === "address" || input.type === "address[]"
+  );
+}
+
+export function getAddressesFromInputDataByAbi(
+  data: HexString,
+  abiItem: AbiItem
+) {
+  const params = filterInterestedInput(data, abiItem);
+  let addresses: string[] = [];
+  for (let i = 0; i < params.length; i++) {
+    const p = params[i];
+    if (Array.isArray(p.value)) {
+      addresses = addresses.concat(p.value);
+    } else {
+      addresses.push(p.value);
+    }
+  }
+  return addresses;
 }
 
 export class Abi {
@@ -156,11 +426,6 @@ export class Abi {
     const decode_data = this.decode_method(data);
     const new_decode_data = decode_data.params.map(async (p) => {
       if (p.type === "address" || p.type === "address[]") {
-        if (p.value === DEFAULT_EMPTY_ETH_ADDRESS) {
-          // special case: 0x0000...
-          // todo: right now we keep the 0x00000.., later maybe should convert to polyjuice creator short address?
-          return p;
-        }
         if (Array.isArray(p.value)) {
           p.value = await Promise.all(
             p.value.map(async (v) => {

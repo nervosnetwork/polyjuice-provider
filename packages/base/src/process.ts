@@ -8,9 +8,10 @@ import {
   EthTransaction,
   Godwoker,
   normalizeEthTransaction,
-  serializeAddressMappingAbiItem,
 } from "./util";
+import { serializeAbiItem } from "./abi";
 import { SigningMessageType } from "./types";
+import { EMPTY_ABI_ITEM_SERIALIZE_STR } from "./constant";
 
 export type SerializeSignedTransactionString = HexString;
 
@@ -41,7 +42,9 @@ export async function buildSendTransaction(
   };
   const serializeTx = await buildProcess(abi, godwoker, tx, process);
   if (typeof serializeTx !== "string")
-    throw new Error("build sendTransaction end up with non-string return!");
+    throw new Error(
+      "build sendTransaction end up with non-string type return!"
+    );
 
   return serializeTx;
 }
@@ -189,14 +192,20 @@ export async function buildProcess(
 
 export function buildSerializeAddressMappingAbiItem(abi: Abi, data: HexString) {
   const abiItem = abi.get_interested_abi_item_by_encoded_data(data);
-  return abiItem ? serializeAddressMappingAbiItem(abiItem) : "0x";
+  if (!abiItem) return EMPTY_ABI_ITEM_SERIALIZE_STR;
+
+  const abiInputs = abi.filter_interested_inputs(abiItem);
+  if (abiInputs.length === 0) return EMPTY_ABI_ITEM_SERIALIZE_STR; // we only want abiItem with interested inputs not outputs
+
+  const _abiItem = Object.assign({}, abiItem); // do not change the original abi object
+  return serializeAbiItem(_abiItem);
 }
 
 function isRawL2Transaction(value: any): value is RawL2Transaction {
   return (
-    (<RawL2Transaction>value).from_id !== undefined &&
-    (<RawL2Transaction>value).to_id !== undefined &&
-    (<RawL2Transaction>value).nonce !== undefined &&
-    (<RawL2Transaction>value).args !== undefined
+    (<RawL2Transaction>value).from_id != undefined &&
+    (<RawL2Transaction>value).to_id != undefined &&
+    (<RawL2Transaction>value).nonce != undefined &&
+    (<RawL2Transaction>value).args != undefined
   );
 }
