@@ -149,7 +149,7 @@ export class PolyjuiceHttpProvider {
           };
 
           const signingMethod = async (message: string) => {
-            await this.signer.sign_with_metamask(message, from);
+            return await this.signer.sign_with_metamask(message, from);
           };
 
           const rawTxString = await buildSendTransaction(

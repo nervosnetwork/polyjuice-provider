@@ -14,7 +14,10 @@ export default class Signer {
   }
 
   // message without prefix "\x19Ethereum Signed Message:\n"
-  async sign_with_metamask(message_without_prefix: string, address: string) {
+  async sign_with_metamask(
+    message_without_prefix: string,
+    address: string
+  ): Promise<string> {
     if (!window.ethereum) {
       alert("please install metamask!");
       throw new Error(
@@ -22,7 +25,7 @@ export default class Signer {
       );
     }
 
-    const _signature = await window.ethereum.request({
+    const _signature: string = await window.ethereum.request({
       method: "personal_sign",
       params: [message_without_prefix, address],
     });
