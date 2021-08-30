@@ -155,7 +155,7 @@ export function formatEthTransaction({
     gasPrice: gasPrice
       ? TxConfigValueTypeToString(gasPrice)
       : `0x${BigInt(POLY_MIN_GAS_PRICE).toString(16)}`,
-    data: data ? TxConfigValueTypeToString(data) : "0x00",
+    data: data || "0x00",
     nonce: nonce ? TxConfigValueTypeToString(nonce) : "0x1",
   };
   return ethTx;
