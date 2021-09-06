@@ -11,13 +11,39 @@ import {
   SerializeRawL2Transaction,
 } from "@polyjuice-provider/godwoken/schemas";
 import {
+  AddressMapping,
+  RawL2TransactionWithAddressMapping,
+  L2TransactionWithAddressMapping,
+  AddressMappingItem,
+} from "@polyjuice-provider/godwoken/lib/addressTypes";
+import {
+  SerializeAddressMapping,
+  SerializeL2TransactionWithAddressMapping,
+  SerializeRawL2TransactionWithAddressMapping,
+  L2TransactionWithAddressMapping as L2TransactionWithAddressMappingClass,
+  RawL2TransactionWithAddressMapping as RawL2TransactionWithAddressMappingClass,
+  AddressMapping as AddressMappingClass,
+} from "@polyjuice-provider/godwoken/schemas/addressMapping/addressMapping";
+import {
   NormalizeL2Transaction,
+  NormalizeAddressMapping,
+  NormalizeL2TransactionWithAddressMapping,
   NormalizeRawL2Transaction,
+  NormalizeRawL2TransactionWithAddressMapping,
 } from "@polyjuice-provider/godwoken/lib/normalizer";
-import { U128_MIN, U128_MAX, DEFAULT_EMPTY_ETH_ADDRESS } from "./constant";
+import {
+  U128_MIN,
+  U128_MAX,
+  DEFAULT_EMPTY_ETH_ADDRESS,
+  HEX_CHARACTERS,
+  POLY_MAX_TRANSACTION_GAS_LIMIT,
+  POLY_MIN_GAS_PRICE,
+  EMPTY_ABI_ITEM_SERIALIZE_STR,
+} from "./constant";
 import { Reader } from "ckb-js-toolkit";
 import crossFetch from "cross-fetch"; // for nodejs compatibility polyfill
 import { Buffer } from "buffer"; // for browser compatibility polyfill
+import { ShortAddress, ShortAddressType, SigningMessageType } from "./types";
 
 // replace for buffer polyfill under 0.6 version.
 // eg: for react project using webpack 4 (this is the most common case when created by running `npx create-react-app`),
@@ -99,6 +125,17 @@ export type EthTransaction = {
   nonce?: HexNumber;
 };
 
+export type InformalEthTransaction = {
+  from?: HexString;
+  to?: HexString;
+  gas?: HexNumber | bigint | number;
+  gasLimit?: HexNumber | bigint | number;
+  gasPrice?: HexNumber | bigint | number;
+  value?: HexNumber | bigint | number;
+  data?: HexString;
+  nonce?: HexNumber | bigint | number;
+};
+
 export type L2TransactionArgs = {
   to_id: number;
   value: bigint;
@@ -149,6 +186,309 @@ export function verifyHttpUrl(_url: string) {
   }
 
   return false;
+}
+
+export function isHexString(value: any, length?: number): boolean {
+  if (typeof value !== "string" || !value.match(/^0x[0-9A-Fa-f]*$/)) {
+    return false;
+  }
+  if (length && value.length !== 2 + 2 * length) {
+    return false;
+  }
+  return true;
+}
+
+export function normalizeHexValue(
+  value: HexNumber | bigint | number
+): HexString {
+  if (typeof value === "number") {
+    let hex = "";
+    while (value) {
+      hex = HEX_CHARACTERS[value & 0xf] + hex;
+      value = Math.floor(value / 16);
+    }
+
+    if (hex.length) {
+      if (hex.length % 2) {
+        hex = "0" + hex;
+      }
+      return "0x" + hex;
+    }
+
+    return "0x00";
+  }
+
+  if (typeof value === "bigint") {
+    value = value.toString(16);
+    if (value.length % 2) {
+      return "0x0" + value;
+    }
+    return "0x" + value;
+  }
+
+  if (isHexString(value)) {
+    if ((<string>value).length % 2) {
+      value = "0x0" + (<string>value).substring(2);
+    }
+    return (<string>value).toLowerCase();
+  }
+
+  throw new Error(`invalid hexlify value type ${value}`);
+}
+
+export function normalizeEthTransaction(tx: InformalEthTransaction) {
+  if (!tx.from || typeof tx.from !== "string") {
+    throw new Error("missing From in Transaction!");
+  }
+
+  return {
+    from: tx.from,
+    to: formalizeEthToAddress(tx.to),
+    gas: normalizeHexValue(
+      tx.gas || tx.gasLimit || POLY_MAX_TRANSACTION_GAS_LIMIT
+    ),
+    gasPrice: normalizeHexValue(tx.gasPrice || POLY_MIN_GAS_PRICE),
+    value: normalizeHexValue(tx.value || "0x00"),
+    data: normalizeHexValue(tx.data || "0x00"),
+  };
+}
+
+export function serializeAddressMapping(
+  addressMapping: AddressMapping
+): HexString {
+  const _tx = NormalizeAddressMapping(addressMapping);
+  return new Reader(SerializeAddressMapping(_tx)).serializeJson();
+}
+
+export function deserializeAddressMapping(value: HexString): AddressMapping {
+  const data = new AddressMappingClass(new Reader(value));
+  const addresses_len =
+    "0x" + data.getLength().toLittleEndianUint32().toString(16);
+  const addresses_len_in_int = parseInt(addresses_len);
+  return {
+    length: addresses_len,
+    data: [...Array(addresses_len_in_int).keys()].map((index) => {
+      return {
+        eth_address: new Reader(
+          data.getData().indexAt(index).getEthAddress().raw()
+        ).serializeJson(),
+        gw_short_address: new Reader(
+          data.getData().indexAt(index).getGwShortAddress().raw()
+        ).serializeJson(),
+      };
+    }),
+  };
+}
+
+export function serializeRawL2TransactionWithAddressMapping(
+  rawL2TransactionWithAddressMapping: RawL2TransactionWithAddressMapping
+): HexString {
+  const _tx = NormalizeRawL2TransactionWithAddressMapping(
+    rawL2TransactionWithAddressMapping
+  );
+  return new Reader(
+    SerializeRawL2TransactionWithAddressMapping(_tx)
+  ).serializeJson();
+}
+
+export function deserializeRawL2TransactionWithAddressMapping(
+  value: HexString
+): RawL2TransactionWithAddressMapping {
+  const data = new RawL2TransactionWithAddressMappingClass(new Reader(value));
+  const address_length =
+    "0x" + data.getAddresses().getLength().toLittleEndianUint32().toString(16);
+  const address_length_in_int = parseInt(address_length);
+  const raw_tx = {
+    from_id:
+      "0x" + data.getRawTx().getFromId().toLittleEndianUint32().toString(16),
+    to_id: "0x" + data.getRawTx().getToId().toLittleEndianUint32().toString(16),
+    args: new Reader(data.getRawTx().getArgs().raw()).serializeJson(),
+    nonce:
+      "0x" + data.getRawTx().getNonce().toLittleEndianUint32().toString(16),
+  };
+  const addressMapping = {
+    length: address_length,
+    data: [...Array(address_length_in_int).keys()].map((index) => {
+      return {
+        eth_address: new Reader(
+          data.getAddresses().getData().indexAt(index).getEthAddress().raw()
+        ).serializeJson(),
+        gw_short_address: new Reader(
+          data.getAddresses().getData().indexAt(index).getGwShortAddress().raw()
+        ).serializeJson(),
+      };
+    }),
+  };
+  const rawL2TransactionWithAddressMapping: RawL2TransactionWithAddressMapping =
+    {
+      raw_tx: raw_tx,
+      addresses: addressMapping,
+      extra: new Reader(data.getExtra().raw()).serializeJson(),
+    };
+  return rawL2TransactionWithAddressMapping;
+}
+
+export function serializeL2TransactionWithAddressMapping(
+  l2TransactionWithAddressMapping: L2TransactionWithAddressMapping
+): HexString {
+  const _tx = NormalizeL2TransactionWithAddressMapping(
+    l2TransactionWithAddressMapping
+  );
+  return new Reader(
+    SerializeL2TransactionWithAddressMapping(_tx)
+  ).serializeJson();
+}
+
+export function deserializeL2TransactionWithAddressMapping(
+  value: HexString
+): L2TransactionWithAddressMapping {
+  const data = new L2TransactionWithAddressMappingClass(new Reader(value));
+  const address_length =
+    "0x" + data.getAddresses().getLength().toLittleEndianUint32().toString(16);
+  const address_length_in_int = parseInt(address_length);
+  const tx: L2Transaction = {
+    raw: {
+      from_id:
+        "0x" +
+        data.getTx().getRaw().getFromId().toLittleEndianUint32().toString(16),
+      to_id:
+        "0x" +
+        data.getTx().getRaw().getToId().toLittleEndianUint32().toString(16),
+      args: new Reader(data.getTx().getRaw().getArgs().raw()).serializeJson(),
+      nonce:
+        "0x" +
+        data.getTx().getRaw().getNonce().toLittleEndianUint32().toString(16),
+    },
+    signature: new Reader(data.getTx().getSignature().raw()).serializeJson(),
+  };
+  const addressMapping = {
+    length: address_length,
+    data: [...Array(address_length_in_int).keys()].map((index) => {
+      return {
+        eth_address: new Reader(
+          data.getAddresses().getData().indexAt(index).getEthAddress().raw()
+        ).serializeJson(),
+        gw_short_address: new Reader(
+          data.getAddresses().getData().indexAt(index).getGwShortAddress().raw()
+        ).serializeJson(),
+      };
+    }),
+  };
+  const rawL2TransactionWithAddressMapping: L2TransactionWithAddressMapping = {
+    tx: tx,
+    addresses: addressMapping,
+    extra: new Reader(data.getExtra().raw()).serializeJson(),
+  };
+  return rawL2TransactionWithAddressMapping;
+}
+
+export function buildL2TransactionWithAddressMapping(
+  tx: L2Transaction,
+  addressMappingItemVec: AddressMappingItem[],
+  abiItem?: HexString
+): L2TransactionWithAddressMapping {
+  const addressMapping: AddressMapping = {
+    length: "0x" + addressMappingItemVec.length.toString(16),
+    data: addressMappingItemVec,
+  };
+  return {
+    tx: tx,
+    addresses: addressMapping,
+    extra: abiItem || EMPTY_ABI_ITEM_SERIALIZE_STR,
+  };
+}
+
+export function buildRawL2TransactionWithAddressMapping(
+  tx: RawL2Transaction,
+  addressMappingItemVec: AddressMappingItem[],
+  abiItem?: HexString
+): RawL2TransactionWithAddressMapping {
+  const addressMapping: AddressMapping = {
+    length: "0x" + addressMappingItemVec.length.toString(16),
+    data: addressMappingItemVec,
+  };
+  return {
+    raw_tx: tx,
+    addresses: addressMapping,
+    extra: abiItem || EMPTY_ABI_ITEM_SERIALIZE_STR,
+  };
+}
+
+export function serializeL2Transaction(tx: L2Transaction): HexString {
+  const _tx = NormalizeL2Transaction(tx);
+  return new Reader(SerializeL2Transaction(_tx)).serializeJson();
+}
+
+export function serializeRawL2Transaction(tx: RawL2Transaction): HexString {
+  const _tx = NormalizeRawL2Transaction(tx);
+  return new Reader(SerializeRawL2Transaction(_tx)).serializeJson();
+}
+
+export function decodeArgs(_args: HexString) {
+  const args = _args.slice(2);
+  const args_0_7 = "0x" + args.slice(0, 14);
+  const args_7 = "0x" + args.slice(14, 16);
+  const args_8_16 = "0x" + args.slice(16, 32);
+  const args_16_32 = "0x" + args.slice(32, 64);
+  const args_32_48 = "0x" + args.slice(64, 96);
+  const args_48_52 = "0x" + args.slice(96, 104);
+  const args_data = "0x" + args.slice(104);
+
+  const header = Buffer.from(args_0_7.slice(8), "hex").toString("utf-8");
+  const type = args_7;
+  const gas_limit = "0x" + LeBytesToUInt64(args_8_16).toString(16);
+  const gas_price = "0x" + LeBytesToUInt128(args_16_32).toString(16);
+  const value = "0x" + LeBytesToUInt128(args_32_48).toString(16);
+  const data_length = "0x" + LeBytesToUInt32(args_48_52).toString(16);
+  const data = args_data;
+
+  return { header, type, gas_limit, gas_price, value, data_length, data };
+}
+
+export function encodeArgs(_tx: EthTransaction) {
+  const { to, gasPrice, gas: gasLimit, value, data } = _tx;
+
+  // header
+  const args_0_7 =
+    "0x" +
+    Buffer.from("FFFFFF", "hex").toString("hex") +
+    Buffer.from("POLY", "utf8").toString("hex");
+
+  // gas limit
+  const args_8_16 = UInt64ToLeBytes(BigInt(gasLimit!));
+  // gas price
+  const args_16_32 = UInt128ToLeBytes(
+    gasPrice === "0x" ? BigInt(0) : BigInt(gasPrice!)
+  );
+  // value
+  const args_32_48 = UInt128ToLeBytes(
+    value === "0x" ? BigInt(0) : BigInt(value)
+  );
+
+  const dataByteLength = Buffer.from(data.slice(2), "hex").length;
+  // data length
+  const args_48_52 = UInt32ToLeBytes(dataByteLength);
+  // data
+  const args_data = data;
+
+  let args_7 = "";
+  if (to === DEFAULT_EMPTY_ETH_ADDRESS || to === "0x" || to === "0x0") {
+    args_7 = "0x03";
+  } else {
+    args_7 = "0x00";
+  }
+
+  const args =
+    "0x" +
+    args_0_7.slice(2) +
+    args_7.slice(2) +
+    args_8_16.slice(2) +
+    args_16_32.slice(2) +
+    args_32_48.slice(2) +
+    args_48_52.slice(2) +
+    args_data.slice(2);
+
+  return args;
 }
 
 export class Godwoker {
@@ -261,7 +601,7 @@ export class Godwoker {
         if (!res) return reject(new Error("Rpc Response not found!"));
         if (res.error) return reject(res.error);
         if (requireResult === RequireResult.canBeEmpty)
-          return resolve(res.result); // here result might be non-exsit
+          return resolve(res.result); // here result might be non-exist
         if (res.result === undefined || res.result === null)
           return reject(errWhenNoResult);
         return resolve(res.result);
@@ -319,46 +659,72 @@ export class Godwoker {
     );
   }
 
-  async getScriptHashByShortAddress(_address: string): Promise<HexString> {
+  async getScriptHashByShortAddress(
+    _address: string,
+    requireResult = RequireResult.canNotBeEmpty
+  ): Promise<HexString> {
     const errorWhenNoResult = `unable to fetch script from ${_address}`;
     return this.jsonRPC(
       "gw_get_script_hash_by_short_address",
       [_address],
-      errorWhenNoResult
+      errorWhenNoResult,
+      requireResult
     );
   }
 
-  computeShortAddressByEoaEthAddress(
-    _address: string,
-    write_callback?: (eth_address: string, short_address: string) => void
-  ): HexString {
+  computeShortAddressByEoaEthAddress(_address: string): HexString {
     const short_address = this.computeScriptHashByEoaEthAddress(_address).slice(
       0,
       42
     );
-
-    if (write_callback) {
-      write_callback(_address, short_address);
-    }
-
     return short_address;
   }
 
   async getShortAddressByAllTypeEthAddress(
     _address: string
-  ): Promise<HexString> {
+  ): Promise<ShortAddress> {
     // todo: support create2 address in such case that it haven't create real contract yet.
+
+    if (_address === DEFAULT_EMPTY_ETH_ADDRESS) {
+      // special case: 0x0000...
+      // todo: right now we keep the 0x00000.., later maybe should convert to polyjuice creator short address?
+      return {
+        value: _address,
+        type: ShortAddressType.creatorAddress,
+      };
+    }
+
     try {
       // assume it is an contract address (thus already an short address)
-      await this.getScriptHashByShortAddress(_address);
-      return _address;
-    } catch (error) {
+      const isContractAddress = await this.isShortAddressOnChain(_address);
+      if (isContractAddress) {
+        return {
+          value: _address,
+          type: ShortAddressType.contractAddress,
+        };
+      }
+
       // script hash not exist with short address, assume it is EOA address..
-      // remember to save the script and eoa address mapping with default or user-specific callback
-      const write_callback = this.saveEthAddressShortAddressMapping
-        ? this.saveEthAddressShortAddressMapping
-        : this.defaultSaveEthAddressShortAddressMapping.bind(this);
-      return this.computeShortAddressByEoaEthAddress(_address, write_callback);
+      const short_addr = this.computeShortAddressByEoaEthAddress(_address);
+      const is_eoa_exist = await this.isShortAddressOnChain(short_addr);
+      if (is_eoa_exist) {
+        return {
+          value: short_addr,
+          type: ShortAddressType.eoaAddress,
+        };
+      }
+
+      // not exist eoa address:
+      // remember to save the script and eoa address mapping with user-specific callback function
+      if (this.saveEthAddressShortAddressMapping) {
+        this.saveEthAddressShortAddressMapping(_address, short_addr);
+      }
+      return {
+        value: short_addr,
+        type: ShortAddressType.notExistEoaAddress,
+      };
+    } catch (error) {
+      throw new Error(error.message);
     }
   }
 
@@ -366,32 +732,58 @@ export class Godwoker {
     _short_address: HexString
   ): Promise<HexString> {
     // todo: support create2 address in such case which it haven't create real contract yet.
-    try {
-      // first, query on-chain
+
+    if (_short_address === DEFAULT_EMPTY_ETH_ADDRESS) {
+      // special case: 0x0000...
+      // todo: right now we keep the 0x00000.., later maybe should convert to polyjuice creator short address?
+      return _short_address;
+    }
+
+    // first, query on-chain
+    const is_address_on_chain = await this.isShortAddressOnChain(
+      _short_address
+    );
+    if (is_address_on_chain) {
       const script_hash = await this.getScriptHashByShortAddress(
         _short_address
       );
       const script = await this.getScriptByScriptHash(script_hash);
+
       if (script.code_hash === this.eth_account_lock?.code_hash) {
+        // eoa address
         return "0x" + script.args.slice(66, 106);
       }
-      // assume it is normal contract address.
+      // assume it is contract address
       return _short_address;
-    } catch (error) {
-      // not on-chain, assume it is  eoa address
-      // which haven't create account on godwoken yet
-      const query_callback = this.queryEthAddressByShortAddress
-        ? this.queryEthAddressByShortAddress
-        : this.defaultQueryEthAddressByShortAddress.bind(this);
-      const eth_address = await query_callback(_short_address);
-      // check address and short_address indeed matched.
-      if (this.checkEthAddressIsEoa(eth_address, _short_address)) {
-        return eth_address;
-      } else {
-        throw Error(
-          `query result of eoa address ${_short_address} with ${_short_address} is not match!`
-        );
+    }
+
+    // not on-chain, assume it is eoa address which haven't create account on godwoken yet
+    const query_callback = this.queryEthAddressByShortAddress
+      ? this.queryEthAddressByShortAddress
+      : this.defaultQueryEthAddressByShortAddress.bind(this);
+    const eth_address = await query_callback(_short_address);
+    // check address and short_address indeed matched.
+    if (this.checkEthAddressIsEoa(eth_address, _short_address)) {
+      return eth_address;
+    }
+    throw Error(
+      `query result of eoa address ${_short_address} with ${_short_address} is not match!`
+    );
+  }
+
+  async isShortAddressOnChain(short_address: HexString): Promise<boolean> {
+    try {
+      const script_hash = await this.getScriptHashByShortAddress(
+        short_address,
+        RequireResult.canBeEmpty
+      );
+      if (script_hash) {
+        return true;
       }
+      // not exist on chain
+      return false;
+    } catch (error) {
+      throw new Error(error.message);
     }
   }
 
@@ -420,19 +812,6 @@ export class Godwoker {
     );
   }
 
-  // default method
-  async defaultSaveEthAddressShortAddressMapping(
-    _eth_address: string,
-    _short_address: string
-  ): Promise<string> {
-    const errorWhenNoResult = `unable to save eth address and short address in web3 server.`;
-    return this.jsonRPC(
-      "poly_saveEthAddressGodwokenShortAddressMapping",
-      [_eth_address, _short_address],
-      errorWhenNoResult
-    );
-  }
-
   async getNonce(account_id: number): Promise<HexNumber> {
     const errorWhenNoResult = `unable to fetch nonce, account_id: ${account_id}}`;
     return this.jsonRPC(
@@ -448,7 +827,7 @@ export class Godwoker {
     const from = await this.getAccountIdByEoaEthAddress(eth_tx.from);
     const to = await this.allTypeEthAddressToAccountId(eth_tx.to);
     const nonce = await this.getNonce(parseInt(from));
-    const encodedArgs = this.encodeArgs(eth_tx);
+    const encodedArgs = encodeArgs(eth_tx);
     const tx: RawL2Transaction = {
       from_id: "0x" + BigInt(from).toString(16),
       to_id: "0x" + BigInt(to).toString(16),
@@ -472,7 +851,10 @@ export class Godwoker {
     );
   }
 
-  async generateMessageFromEthTransaction(tx: EthTransaction): Promise<string> {
+  async generateMessageFromEthTransaction(
+    tx: EthTransaction,
+    msg_type: SigningMessageType = SigningMessageType.withPrefix
+  ): Promise<string> {
     const { from, to } = tx;
 
     const to_id = await this.allTypeEthAddressToAccountId(to);
@@ -486,7 +868,7 @@ export class Godwoker {
       polyjuice_tx,
       sender_script_hash,
       receiver_script_hash,
-      true // with personal sign prefixed
+      msg_type === SigningMessageType.withPrefix // with personal sign prefix in message, default is true.
     );
     return message;
   }
@@ -501,7 +883,25 @@ export class Godwoker {
     return new Reader(SerializeRawL2Transaction(_tx)).serializeJson();
   }
 
-  async gw_executeL2Tranaction(
+  serializeL2TransactionWithAddressMapping(
+    tx: L2TransactionWithAddressMapping
+  ): HexString {
+    const _tx = NormalizeL2TransactionWithAddressMapping(tx);
+    return new Reader(
+      SerializeL2TransactionWithAddressMapping(_tx)
+    ).serializeJson();
+  }
+
+  serializeRawL2TransactionWithAddressMapping(
+    tx: RawL2TransactionWithAddressMapping
+  ): HexString {
+    const _tx = NormalizeRawL2TransactionWithAddressMapping(tx);
+    return new Reader(
+      SerializeRawL2TransactionWithAddressMapping(_tx)
+    ).serializeJson();
+  }
+
+  async gw_executeL2Transaction(
     raw_tx: RawL2Transaction,
     signature: HexString
   ): Promise<RunResult> {
@@ -519,9 +919,23 @@ export class Godwoker {
     raw_tx: RawL2Transaction
   ): Promise<RunResult> {
     const serialize_tx = this.serializeRawL2Transaction(raw_tx);
-    const errorWhenNoResult = `failed to get gw_execute_l2transaction runResult`;
+    const errorWhenNoResult = `failed to get gw_executeRawL2Transaction runResult`;
     return this.jsonRPC(
       "gw_execute_raw_l2transaction",
+      [serialize_tx],
+      errorWhenNoResult
+    );
+  }
+
+  // poly_executeRawL2Transaction diff from gw_executeRawL2Transaction for it carry extra addressMapping data
+  async poly_executeRawL2Transaction(
+    raw_tx: RawL2TransactionWithAddressMapping
+  ): Promise<RunResult> {
+    const serialize_tx =
+      this.serializeRawL2TransactionWithAddressMapping(raw_tx);
+    const errorWhenNoResult = `failed to get poly_execute_raw_l2transaction runResult`;
+    return this.jsonRPC(
+      "poly_executeRawL2Transaction",
       [serialize_tx],
       errorWhenNoResult
     );
@@ -551,6 +965,34 @@ export class Godwoker {
     const errorWhenNoResult = `failed to get gw_submit_l2transaction txHash, serialize_tx: serialize_tx`;
     return this.jsonRPC(
       "gw_submit_l2transaction",
+      [serialize_tx],
+      errorWhenNoResult
+    );
+  }
+
+  // poly_submitL2Transaction diff from gw_submitL2Transaction for it carry extra addressMapping data
+  async poly_submitL2Transaction(
+    l2_tx: L2TransactionWithAddressMapping
+  ): Promise<Hash> {
+    const serialize_tx = this.serializeL2TransactionWithAddressMapping(l2_tx);
+    const errorWhenNoResult = `failed to get poly_submitL2Transaction txHash, l2_tx: ${JSON.stringify(
+      l2_tx,
+      null,
+      2
+    )}`;
+    return this.jsonRPC(
+      "poly_submitL2Transaction",
+      [serialize_tx],
+      errorWhenNoResult
+    );
+  }
+
+  async poly_submitSerializedL2Transaction(
+    serialize_tx: HexString
+  ): Promise<Hash> {
+    const errorWhenNoResult = `failed to get gw_submit_l2transaction txHash, serialize_tx: serialize_tx`;
+    return this.jsonRPC(
+      "poly_submitL2Transaction",
       [serialize_tx],
       errorWhenNoResult
     );
@@ -637,107 +1079,65 @@ export class Godwoker {
   async allTypeEthAddressToAccountId(_address: HexString): Promise<HexNumber> {
     // todo: support create2 address in such case that it haven't create real contract yet.
     const address = Buffer.from(_address.slice(2), "hex");
+
     if (address.byteLength !== 20)
       throw new Error(`Invalid eth address length: ${address.byteLength}`);
-
     if (address.equals(Buffer.from(Array(20).fill(0))))
       // special-case: meta-contract address should return creator id
       return await this.getPolyjuiceCreatorAccountId();
 
-    try {
-      // assume it is normal contract address, thus an godwoken-short-address
+    // assume it is normal contract address, thus an godwoken-short-address
+    const is_contract_address = await this.isShortAddressOnChain(_address);
+    if (is_contract_address) {
       const script_hash = await this.getScriptHashByShortAddress(_address);
       return await this.getAccountIdByScriptHash(script_hash);
-    } catch (error) {
-      if (
-        !JSON.stringify(error).includes(
-          "unable to fetch script hash from short address"
-        )
-      )
-        throw error;
-
-      // otherwise, assume it is EOA address
-      const script_hash = this.computeScriptHashByEoaEthAddress(_address);
-      const accountId = await this.getAccountIdByScriptHash(script_hash);
-      return accountId;
-    }
-  }
-
-  encodeArgs(_tx: EthTransaction) {
-    const { to, gasPrice, gas: gasLimit, value, data } = _tx;
-
-    // header
-    const args_0_7 =
-      "0x" +
-      Buffer.from("FFFFFF", "hex").toString("hex") +
-      Buffer.from("POLY", "utf8").toString("hex");
-
-    // gas limit
-    const args_8_16 = this.UInt64ToLeBytes(BigInt(gasLimit!));
-    // gas price
-    const args_16_32 = this.UInt128ToLeBytes(
-      gasPrice === "0x" ? BigInt(0) : BigInt(gasPrice!)
-    );
-    // value
-    const args_32_48 = this.UInt128ToLeBytes(
-      value === "0x" ? BigInt(0) : BigInt(value)
-    );
-
-    const dataByteLength = Buffer.from(data.slice(2), "hex").length;
-    // data length
-    const args_48_52 = this.UInt32ToLeBytes(dataByteLength);
-    // data
-    const args_data = data;
-
-    let args_7 = "";
-    if (to === DEFAULT_EMPTY_ETH_ADDRESS || to === "0x" || to === "0x0") {
-      args_7 = "0x03";
-    } else {
-      args_7 = "0x00";
     }
 
-    const args =
-      "0x" +
-      args_0_7.slice(2) +
-      args_7.slice(2) +
-      args_8_16.slice(2) +
-      args_16_32.slice(2) +
-      args_32_48.slice(2) +
-      args_48_52.slice(2) +
-      args_data.slice(2);
-
-    return args;
+    // otherwise, assume it is EOA address
+    const script_hash = this.computeScriptHashByEoaEthAddress(_address);
+    const accountId = await this.getAccountIdByScriptHash(script_hash);
+    return accountId;
   }
+}
 
-  // todo: move to another file
-  UInt32ToLeBytes(num: number): HexString {
-    const buf = Buffer.allocUnsafe(4);
-    buf.writeUInt32LE(+num, 0);
-    return "0x" + buf.toString("hex");
-  }
+// todo: move to another file
+export function UInt32ToLeBytes(num: number): HexString {
+  const buf = Buffer.allocUnsafe(4);
+  buf.writeUInt32LE(+num, 0);
+  return "0x" + buf.toString("hex");
+}
 
-  UInt64ToLeBytes(num: bigint): HexString {
-    num = BigInt(num);
-    const buf = Buffer.alloc(8);
-    buf.writeBigUInt64LE(num);
-    return `0x${buf.toString("hex")}`;
-  }
+export function UInt64ToLeBytes(num: bigint): HexString {
+  num = BigInt(num);
+  const buf = Buffer.alloc(8);
+  buf.writeBigUInt64LE(num);
+  return `0x${buf.toString("hex")}`;
+}
 
-  UInt128ToLeBytes(u128: bigint): HexString {
-    if (u128 < U128_MIN) {
-      throw new Error(`u128 ${u128} too small`);
-    }
-    if (u128 > U128_MAX) {
-      throw new Error(`u128 ${u128} too large`);
-    }
-    const buf = Buffer.alloc(16);
-    buf.writeBigUInt64LE(u128 & BigInt("0xFFFFFFFFFFFFFFFF"), 0);
-    buf.writeBigUInt64LE(u128 >> BigInt(64), 8);
-    return "0x" + buf.toString("hex");
+export function UInt128ToLeBytes(u128: bigint): HexString {
+  if (u128 < U128_MIN) {
+    throw new Error(`u128 ${u128} too small`);
   }
+  if (u128 > U128_MAX) {
+    throw new Error(`u128 ${u128} too large`);
+  }
+  const buf = Buffer.alloc(16);
+  buf.writeBigUInt64LE(u128 & BigInt("0xFFFFFFFFFFFFFFFF"), 0);
+  buf.writeBigUInt64LE(u128 >> BigInt(64), 8);
+  return "0x" + buf.toString("hex");
+}
 
-  LeBytesToUInt32(hex: HexString): number {
-    const buf = Buffer.from(hex.slice(2), "hex");
-    return buf.readUInt32LE();
-  }
+export function LeBytesToUInt32(hex: HexString): number {
+  const buf = Buffer.from(hex.slice(2), "hex");
+  return buf.readUInt32LE();
+}
+
+export function LeBytesToUInt64(hex: HexString): bigint {
+  const buf = Buffer.from(hex.slice(2), "hex");
+  return buf.readBigUInt64LE();
+}
+
+export function LeBytesToUInt128(hex: HexString): bigint {
+  const buf = Buffer.from(hex.slice(2), "hex");
+  return buf.slice(8, 16).readBigUInt64LE();
 }

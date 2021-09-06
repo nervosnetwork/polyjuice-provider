@@ -19,9 +19,10 @@ A simple react example to use `@polyjuice-provider` module can [be found here](h
 
 `note: this project is still under development, some APIs might be changed in the future.`
 
-## Getting-Started
+## Docs
 
-read [the doc](docs/get-started.md).
+- [Getting-Started](docs/get-started.md)
+- [APIs](docs/api.md)
 
 ## How It Works?
 

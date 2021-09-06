@@ -1,3 +1,4 @@
+import { HexString } from "@ckb-lumos/base";
 import { AbiItem } from "web3-utils";
 
 export type AbiItems = AbiItem[];
@@ -8,3 +9,21 @@ export type PolyjuiceConfig = {
   abiItems?: AbiItems;
   web3Url?: string;
 };
+
+export enum ShortAddressType {
+  eoaAddress,
+  contractAddress,
+  notExistEoaAddress,
+  notExistContractAddress, // create2 contract which haven't really created, currently provider can't distinguish this type of address.
+  creatorAddress, // special case: 0x00000...
+}
+
+export interface ShortAddress {
+  value: HexString;
+  type: ShortAddressType;
+}
+
+export enum SigningMessageType {
+  withPrefix,
+  noPrefix,
+}

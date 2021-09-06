@@ -1,0 +1,188 @@
+{
+  "namespace": "abi",
+  "imports": [],
+  "declarations": [
+    {
+      "type": "array",
+      "name": "Uint16",
+      "item": "byte",
+      "item_count": 2
+    },
+    {
+      "type": "array",
+      "name": "Uint32",
+      "item": "byte",
+      "item_count": 4
+    },
+    {
+      "type": "array",
+      "name": "Uint64",
+      "item": "byte",
+      "item_count": 8
+    },
+    {
+      "type": "array",
+      "name": "Uint128",
+      "item": "byte",
+      "item_count": 16
+    },
+    {
+      "type": "array",
+      "name": "Byte20",
+      "item": "byte",
+      "item_count": 20
+    },
+    {
+      "type": "array",
+      "name": "Byte32",
+      "item": "byte",
+      "item_count": 32
+    },
+    {
+      "type": "array",
+      "name": "Uint256",
+      "item": "byte",
+      "item_count": 32
+    },
+    {
+      "type": "option",
+      "name": "ByteOpt",
+      "item": "byte"
+    },
+    {
+      "type": "fixvec",
+      "name": "Bytes",
+      "item": "byte"
+    },
+    {
+      "type": "option",
+      "name": "BytesOpt",
+      "item": "Bytes"
+    },
+    {
+      "type": "dynvec",
+      "name": "BytesVec",
+      "item": "Bytes"
+    },
+    {
+      "type": "fixvec",
+      "name": "Byte32Vec",
+      "item": "Byte32"
+    },
+    {
+      "type": "table",
+      "name": "AbiInput",
+      "fields": [
+        {
+          "name": "name",
+          "type": "Bytes"
+        },
+        {
+          "name": "type",
+          "type": "Bytes"
+        },
+        {
+          "name": "indexed",
+          "type": "ByteOpt"
+        },
+        {
+          "name": "components",
+          "type": "BytesOpt"
+        },
+        {
+          "name": "internalType",
+          "type": "BytesOpt"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "name": "AbiOutput",
+      "fields": [
+        {
+          "name": "name",
+          "type": "Bytes"
+        },
+        {
+          "name": "type",
+          "type": "Bytes"
+        },
+        {
+          "name": "components",
+          "type": "BytesOpt"
+        },
+        {
+          "name": "internalType",
+          "type": "BytesOpt"
+        }
+      ]
+    },
+    {
+      "type": "dynvec",
+      "name": "AbiInputs",
+      "item": "AbiInput"
+    },
+    {
+      "type": "dynvec",
+      "name": "AbiOutputs",
+      "item": "AbiOutput"
+    },
+    {
+      "type": "option",
+      "name": "AbiInputsOpt",
+      "item": "AbiInputs"
+    },
+    {
+      "type": "option",
+      "name": "AbiOutputsOpt",
+      "item": "AbiOutputs"
+    },
+    {
+      "type": "option",
+      "name": "Uint32Opt",
+      "item": "Uint32"
+    },
+    {
+      "type": "table",
+      "name": "AbiItem",
+      "fields": [
+        {
+          "name": "anonymous",
+          "type": "ByteOpt"
+        },
+        {
+          "name": "constant",
+          "type": "ByteOpt"
+        },
+        {
+          "name": "inputs",
+          "type": "AbiInputsOpt"
+        },
+        {
+          "name": "name",
+          "type": "BytesOpt"
+        },
+        {
+          "name": "outputs",
+          "type": "AbiOutputsOpt"
+        },
+        {
+          "name": "payable",
+          "type": "ByteOpt"
+        },
+        {
+          "name": "stateMutability",
+          "type": "ByteOpt"
+        },
+        {
+          "name": "type",
+          "type": "byte"
+        },
+        {
+          "name": "gas",
+          "type": "Uint32Opt"
+        }
+      ]
+    }
+  ]
+}

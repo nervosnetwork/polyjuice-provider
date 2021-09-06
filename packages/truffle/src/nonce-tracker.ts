@@ -1,8 +1,9 @@
 import NonceTrackerSubprovider from "@trufflesuite/web3-provider-engine/subproviders/nonce-tracker";
 import { blockTagForPayload } from "@trufflesuite/web3-provider-engine/util/rpc-cache-utils";
-import { L2Transaction } from "@polyjuice-provider/godwoken/schemas";
-import { Reader } from "ckb-js-toolkit";
-import { Godwoker } from "@polyjuice-provider/base/lib";
+import {
+  deserializeL2TransactionWithAddressMapping,
+  Godwoker,
+} from "@polyjuice-provider/base/lib";
 
 NonceTrackerSubprovider.prototype.setGodwoker = function (godwoker: Godwoker) {
   this.godwoker = godwoker;
@@ -15,7 +16,6 @@ NonceTrackerSubprovider.prototype.handleRequest = function (
   end: any
 ) {
   const self = this;
-
   switch (payload.method) {
     case "eth_getTransactionCount":
       let blockTag = blockTagForPayload(payload);
@@ -49,13 +49,14 @@ NonceTrackerSubprovider.prototype.handleRequest = function (
         if (err) return cb();
 
         const godwoker: Godwoker = self.godwoker;
-        const rawTx = payload.params[0];
-        const tx = new L2Transaction(new Reader(rawTx));
-        const fromId = tx.getRaw().getFromId().toLittleEndianUint32();
+        const rawTx: string = payload.params[0];
+        const txWithAddressMapping =
+          deserializeL2TransactionWithAddressMapping(rawTx);
+        const fromId = parseInt(txWithAddressMapping.tx.raw.from_id);
         const scriptHash = await godwoker.getScriptHashByAccountId(fromId);
         const script = await godwoker.getScriptByScriptHash(scriptHash);
         const ethAddress = script.args.slice(66);
-        let nonce = tx.getRaw().getNonce().toLittleEndianUint32();
+        let nonce = parseInt(txWithAddressMapping.tx.raw.nonce);
 
         nonce++;
         // hexify and normalize

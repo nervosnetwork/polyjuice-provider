@@ -1,7 +1,7 @@
 /**
  * this file is a custom http provider used to proxy ETH rpc call to godwoken-polyjuice chain.
  * it is fork and based on https://github.com/ChainSafe/web3.js/tree/1.x/packages/web3-providers-http
- * this is only aims for nodejs development popurse. it will sign tx with private-key, which it is dangerours.
+ * this is only aims for nodejs development purpose. it will sign tx with private-key, which it is dangerous.
  * please ues it at your own risk.
  */
 
@@ -13,6 +13,8 @@ import { PolyjuiceHttpProvider } from "./providers";
 import {
   formalizeEthToAddress,
   PolyjuiceConfig,
+  buildSendTransaction,
+  SigningMessageType,
 } from "@polyjuice-provider/base";
 
 export interface HttpHeader {
@@ -58,51 +60,39 @@ export class PolyjuiceHttpProviderCli extends PolyjuiceHttpProvider {
     switch (method) {
       case "eth_sendTransaction":
         try {
+          const that = this;
           const { from, gas, gasPrice, value, data } = params[0];
           const to = formalizeEthToAddress(params[0].to);
-          const data_with_short_address =
-            await this.abi.refactor_data_with_short_address(
-              data,
-              this.godwoker.getShortAddressByAllTypeEthAddress.bind(
-                this.godwoker
-              )
-            );
 
           const t = {
             from: from,
             to: to,
             value: value || 0,
-            data: data_with_short_address || "",
+            data: data || "",
             gas: gas,
             gasPrice: gasPrice,
           };
 
-          const to_id = await this.godwoker.allTypeEthAddressToAccountId(to);
-          const sender_script_hash =
-            this.godwoker.computeScriptHashByEoaEthAddress(from);
-          const receiver_script_hash =
-            await this.godwoker.getScriptHashByAccountId(parseInt(to_id));
+          const signingMethod = async (message: string) => {
+            console.log(
+              `it is very dangerous to sign with private-key, please use it carefully and only use in test development!`
+            );
+            console.log(
+              "sinature: ",
+              await this.signer.sign_with_private_key(message)
+            );
+            return await that.signer.sign_with_private_key(message);
+          };
 
-          const polyjuice_tx = await this.godwoker.assembleRawL2Transaction(t);
-
-          // ready to sign tx
-          console.log(
-            `it is very dangerous to sign with private-key, please use it carefully and only use in test development!`
+          const rawTxString = await buildSendTransaction(
+            this.abi,
+            this.godwoker,
+            t,
+            signingMethod.bind(this),
+            SigningMessageType.noPrefix
           );
-          const message = this.godwoker.generateTransactionMessageToSign(
-            polyjuice_tx,
-            sender_script_hash,
-            receiver_script_hash
-          );
-          const _signature = await this.signer.sign_with_private_key(
-            message,
-            from
-          );
-          const signature = this.godwoker.packSignature(_signature);
-          const tx_hash = await this.godwoker.gw_submitL2Transaction(
-            polyjuice_tx,
-            signature
-          );
+          const tx_hash =
+            await this.godwoker.poly_submitSerializedL2Transaction(rawTxString);
 
           await this.godwoker.waitForTransactionReceipt(tx_hash);
           const res = {

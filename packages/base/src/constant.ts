@@ -14,3 +14,7 @@ export const U128_MAX = BigInt("340282366920938463463374607431768211455");
 export const DEFAULT_EMPTY_ETH_ADDRESS = `0x${"0".repeat(40)}`;
 
 export const DEFAULT_ETH_LOGS_BLOOM = "0x" + "00".repeat(256);
+
+export const HEX_CHARACTERS: string = "0123456789abcdef";
+
+export const EMPTY_ABI_ITEM_SERIALIZE_STR = "0x";
