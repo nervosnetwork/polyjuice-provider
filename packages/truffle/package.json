@@ -1,9 +1,10 @@
 {
   "name": "@polyjuice-provider/truffle",
-  "version": "0.0.1-rc9",
+  "version": "0.0.1-rc10",
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
+  "homepage": "https://github.com/nervosnetwork/polyjuice-provider#readme",
   "scripts": {
     "fmt": "prettier --write src/* tests/* package.json",
     "lint": "eslint -c ../../.eslintrc.js \"{src,tests}/**/*.ts\"",
@@ -17,6 +18,10 @@
   "publishConfig": {
     "access": "public",
     "registry": "http://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nervosnetwork/polyjuice-provider.git"
   },
   "files": [
     "/lib"
@@ -54,7 +59,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
-    "@polyjuice-provider/base": "0.0.1-rc9",
+    "@polyjuice-provider/base": "0.0.1-rc10",
     "@truffle/hdwallet-provider": "^1.4.1",
     "@trufflesuite/web3-provider-engine": "15.0.13-1",
     "ckb-js-toolkit": "^0.10.2",
