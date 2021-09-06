@@ -1,6 +1,19 @@
-import { Hash, HexNumber, Script } from "@ckb-lumos/base";
+import { Hash, HexNumber, HexString, Script } from "@ckb-lumos/base";
 import { normalizers, Reader } from "ckb-js-toolkit";
 import { L2Transaction, WithdrawalRequest } from "../index";
+import {
+  AddressMapping,
+  AddressMappingItem,
+  L2TransactionWithAddressMapping,
+  RawL2TransactionWithAddressMapping,
+} from "./addressTypes";
+import {
+  AbiInput,
+  AbiItem,
+  AbiOutput,
+  AbiType,
+  StateMutabilityType,
+} from "./abiTypes";
 
 // Taken for now from https://github.com/xxuejie/ckb-js-toolkit/blob/68f5ff709f78eb188ee116b2887a362123b016cc/src/normalizers.js#L17-L69,
 // later we can think about exposing those functions directly.
@@ -36,7 +49,13 @@ function normalizeHexNumber(length: number) {
 
 function normalizeRawData(length: number) {
   return function (debugPath: string, value: any) {
-    value = new Reader(value).toArrayBuffer();
+    try {
+      value = new Reader(value).toArrayBuffer();
+    } catch (error) {
+      throw new Error(
+        `${debugPath} invalid value ${value}, error: ${error.message}`
+      );
+    }
     if (length > 0 && value.byteLength !== length) {
       throw new Error(
         `${debugPath} has invalid length ${value.byteLength}, required: ${length}`
@@ -63,6 +82,14 @@ function toNormalize(normalize: Function) {
   return function (debugPath: string, value: any) {
     return normalize(value, {
       debugPath,
+    });
+  };
+}
+
+function toNormalizeArray(normalizeFunction: Function) {
+  return function (debugPath: string, array: any[]) {
+    return array.map((item, i) => {
+      return normalizeFunction(`${debugPath}[${i}]`, item);
     });
   };
 }
@@ -120,7 +147,7 @@ export interface CustodianLockArgs {
 
 export function NormalizeCustodianLockArgs(
   args: object,
-  { debugPath = "custondian_lock_args" } = {}
+  { debugPath = "custodian_lock_args" } = {}
 ) {
   return normalizeObject(debugPath, args, {
     owner_lock_hash: normalizeRawData(32),
@@ -148,6 +175,218 @@ export function NormalizeL2Transaction(
   return normalizeObject(debugPath, l2Transaction, {
     raw: toNormalize(NormalizeRawL2Transaction),
     signature: normalizeRawData(65),
+  });
+}
+
+export function utfStringToHexString(value: string) {
+  return "0x" + Buffer.from(value, "utf-8").toString("hex");
+}
+
+export function hexStringToUtfString(value: HexString) {
+  if (!value.startsWith("0x") || value.length % 2)
+    throw new Error(
+      `${value} expected hex string with 0x and even number length`
+    );
+
+  return Buffer.from(value.slice(2), "hex").toString("utf-8");
+}
+
+export function NormalizeAbiType(
+  value: AbiType,
+  { debugPath = "abi_item_abi_type" } = {}
+) {
+  switch (value) {
+    case "constructor":
+      return 1;
+
+    case "event":
+      return 2;
+
+    case "fallback":
+      return 3;
+
+    case "function":
+      return 4;
+
+    default:
+      throw new Error(`${debugPath} has invalid value: ${value}`);
+  }
+}
+
+export function NormalizeStateMutabilityType(
+  value: StateMutabilityType,
+  { debugPath = "abi_item_abi_type" } = {}
+) {
+  switch (value) {
+    case "view":
+      return 1;
+
+    case "nonpayable":
+      return 2;
+
+    case "payable":
+      return 3;
+
+    case "pure":
+      return 4;
+
+    default:
+      throw new Error(`${debugPath} has invalid value: ${value}`);
+  }
+}
+
+export function NormalizeBoolean(
+  value: boolean,
+  { debugPath = "boolean" } = {}
+) {
+  switch (value) {
+    case true:
+      return 1;
+
+    case false:
+      return 2;
+
+    default:
+      throw new Error(`${debugPath} has invalid value: ${value}`);
+  }
+}
+
+export function NormalizeAbiInput(
+  _abiInput: AbiInput,
+  { debugPath = "address_mapping_abi_item_input" } = {}
+) {
+  let abiInput = Object.assign({}, _abiInput); //don't change origin abi
+  abiInput.name = utfStringToHexString(abiInput.name);
+  abiInput.type = utfStringToHexString(abiInput.type);
+  const result = normalizeObject(debugPath, abiInput, {
+    name: normalizeRawData(-1),
+    type: normalizeRawData(-1),
+  });
+  if (abiInput.indexed != undefined) {
+    result.indexed = NormalizeBoolean(abiInput.indexed, {
+      debugPath: `${debugPath}.indexed`,
+    });
+  }
+  if (abiInput.components) {
+    result.components = abiInput.components.map((v) => NormalizeAbiInput(v));
+  }
+  if (abiInput.internalType) {
+    result.internalType = normalizeRawData(-1)(
+      debugPath,
+      utfStringToHexString(abiInput.internalType)
+    );
+  }
+  return result;
+}
+
+export function NormalizeAbiOutput(
+  _abiOutput: AbiOutput,
+  { debugPath = "address_mapping_abi_item_output" } = {}
+) {
+  let abiOutput = _abiOutput;
+  abiOutput.name = utfStringToHexString(abiOutput.name);
+  abiOutput.type = utfStringToHexString(abiOutput.type);
+  const result = normalizeObject(debugPath, abiOutput, {
+    name: normalizeRawData(-1),
+    type: normalizeRawData(-1),
+  });
+  if (abiOutput.components) {
+    result.components_ = abiOutput.components.map((v) => NormalizeAbiOutput(v));
+  }
+  if (abiOutput.internalType) {
+    result.internalType_ = normalizeRawData(-1);
+  }
+
+  return result;
+}
+
+export function NormalizeAbiItem(
+  _abiItem: AbiItem,
+  { debugPath = "address_mapping_abi_item" } = {}
+) {
+  let abiItem = Object.assign({}, _abiItem);
+  let result: any = {
+    type: NormalizeAbiType(abiItem.type),
+  };
+  if (abiItem.name) {
+    result.name = normalizeRawData(-1)(
+      debugPath,
+      utfStringToHexString(abiItem.name)
+    );
+  }
+  if (abiItem.inputs) {
+    result.inputs = abiItem.inputs!.map((v) => NormalizeAbiInput(v));
+  }
+  if (abiItem.outputs) {
+    result.outputs = abiItem.outputs!.map((v) => NormalizeAbiOutput(v));
+  }
+  if (abiItem.payable != undefined) {
+    result.payable = NormalizeBoolean(abiItem.payable!);
+  }
+  if (abiItem.anonymous != undefined) {
+    result.anonymous = NormalizeBoolean(abiItem.anonymous!);
+  }
+  if (abiItem.constant != undefined) {
+    result.constant = NormalizeBoolean(abiItem.constant!);
+  }
+  if (abiItem.stateMutability) {
+    result.stateMutability = NormalizeStateMutabilityType(
+      abiItem.stateMutability
+    );
+  }
+  if (abiItem.gas) {
+    result.gas = normalizeRawData(4)(debugPath, abiItem.stateMutability);
+  }
+  return result;
+}
+
+export function NormalizeAbiItems(
+  _abiItems: AbiItem[],
+  { debugPath = "address_mapping_abi_items" } = {}
+) {
+  let abiItems = _abiItems;
+  return toNormalizeArray(NormalizeAbiItem)(debugPath, abiItems);
+}
+
+export function NormalizeAddressMappingItem(
+  addressMappingItem: AddressMappingItem,
+  { debugPath = "address_mapping_item" } = {}
+) {
+  return normalizeObject(debugPath, addressMappingItem, {
+    eth_address: normalizeRawData(20),
+    gw_short_address: normalizeRawData(20),
+  });
+}
+
+export function NormalizeAddressMapping(
+  addressMapping: AddressMapping,
+  { debugPath = "address_mapping" } = {}
+) {
+  return normalizeObject(debugPath, addressMapping, {
+    length: normalizeHexNumber(4),
+    data: toNormalizeArray(toNormalize(NormalizeAddressMappingItem)),
+  });
+}
+
+export function NormalizeL2TransactionWithAddressMapping(
+  l2TransactionWithAddressMapping: L2TransactionWithAddressMapping,
+  { debugPath = "l2_transaction_with_address_mapping" } = {}
+) {
+  return normalizeObject(debugPath, l2TransactionWithAddressMapping, {
+    tx: toNormalize(NormalizeL2Transaction),
+    addresses: toNormalize(NormalizeAddressMapping),
+    extra: normalizeRawData(-1),
+  });
+}
+
+export function NormalizeRawL2TransactionWithAddressMapping(
+  rawL2TransactionWithAddressMapping: RawL2TransactionWithAddressMapping,
+  { debugPath = "raw_l2_transaction_with_address_mapping" } = {}
+) {
+  return normalizeObject(debugPath, rawL2TransactionWithAddressMapping, {
+    raw_tx: toNormalize(NormalizeRawL2Transaction),
+    addresses: toNormalize(NormalizeAddressMapping),
+    extra: normalizeRawData(-1),
   });
 }
 

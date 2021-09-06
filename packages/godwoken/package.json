@@ -10,6 +10,10 @@
     "lint": "eslint -c ../../.eslintrc.js \"src/**/*.ts\"",
     "clean": "rm -rf lib",
     "build": "tsc",
+    "moleculec:addressMapping": "moleculec --language - --schema-file schemas/addressMapping/addressMapping.mol --format json > schemas/addressMapping/schema.json",
+    "build:addressMapping": "yarn moleculec:addressMapping && moleculec-es -generateTypeScriptDefinition -hasBigInt -inputFile schemas/addressMapping/schema.json -outputFile schemas/addressMapping/addressMapping.esm.js && rollup -f umd -i schemas/addressMapping/addressMapping.esm.js -o schemas/addressMapping/addressMapping.js --name AddressCore && mv schemas/addressMapping/addressMapping.esm.d.ts schemas/addressMapping/addressMapping.d.ts",
+    "moleculec:abi": "moleculec --language - --schema-file schemas/abi/abi.mol --format json > schemas/abi/schema.json",
+    "build:abi": "yarn moleculec:abi && moleculec-es -generateTypeScriptDefinition -hasBigInt -inputFile schemas/abi/schema.json -outputFile schemas/abi/abi.esm.js && rollup -f umd -i schemas/abi/abi.esm.js -o schemas/abi/abi.js --name AbiCore && mv schemas/abi/abi.esm.d.ts schemas/abi/abi.d.ts",
     "publish": "npm publish",
     "test-publish": "npm publish --dry-run",
     "pack": "npm pack"

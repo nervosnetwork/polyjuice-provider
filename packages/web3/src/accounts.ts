@@ -14,6 +14,8 @@ import {
   PolyjuiceConfig,
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
+  buildSendTransaction,
+  deserializeL2TransactionWithAddressMapping,
 } from "@polyjuice-provider/base";
 import BN from "bn.js";
 import Account from "eth-lib/lib/account";
@@ -78,34 +80,33 @@ export class PolyjuiceAccounts extends Accounts {
     if (!_tx.from) {
       _tx.from = this.privateKeyToAccount(privateKey).address;
     }
-    // use godwoken-polyjuice's transaction signing method
-    // (which is deifferent tx structure and use a message signing)
+
+    // use godwoken-polyjuice transaction signing method
+    // (which is different tx structure and use a message signing)
     // to sign transaction.
     let tx = transactionConfigToPolyjuiceEthTransaction(_tx);
     try {
       // do init incase user not passing config parameter during construction
       return this.godwoker.initSync().then(async function () {
-        const data_with_short_address =
-          await that.abi.refactor_data_with_short_address(
-            tx.data,
-            that.godwoker.getShortAddressByAllTypeEthAddress.bind(that.godwoker)
-          );
-        tx.data = data_with_short_address;
-        const polyjuice_tx = await that.godwoker.assembleRawL2Transaction(tx);
-        const message = await that.godwoker.generateMessageFromEthTransaction(
-          tx
+        let message: string = null;
+        const signingMethod = (_message: string) => {
+          message = _message;
+          return Account.sign(message, privateKey);
+        };
+        const rawTx = await buildSendTransaction(
+          that.abi,
+          that.godwoker,
+          tx,
+          signingMethod
         );
-        const _signature = Account.sign(message, privateKey);
-        const signature = that.godwoker.packSignature(_signature);
-        const l2_tx = { raw: polyjuice_tx, signature: signature };
-
+        const deRawTx = deserializeL2TransactionWithAddressMapping(rawTx);
         let result = {
           messageHash: message,
           v: "0x0", // todo: replace with real v
           r: "0x0", // todo: replace with real r
-          s: signature,
-          rawTransaction: that.godwoker.serializeL2Transaction(l2_tx), // todo: replace with eth raw tx instead of godwoken raw tx
-          transactionHash: calcPolyjuiceTxHash(polyjuice_tx),
+          s: deRawTx.tx.signature,
+          rawTransaction: rawTx,
+          transactionHash: calcPolyjuiceTxHash(deRawTx.tx.raw),
         };
         callback(null, result);
         return Promise.resolve(result);
