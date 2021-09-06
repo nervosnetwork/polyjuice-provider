@@ -47,7 +47,8 @@ init library:
 
 ```ts
 import { ContractFactory } from "ethers";
-import { PolyjuiceWallet, PolyjuiceConfig, PolyjuiceJsonRpcProvider } from "@polyjuice-provider/ethers";
+import { PolyjuiceConfig } from "@polyjuice-provider/base";
+import { PolyjuiceWallet, PolyjuiceJsonRpcProvider } from "@polyjuice-provider/ethers";
 
 const polyjuiceConfig: PolyjuiceConfig = {
   rollupTypeHash: 'godwoken rollup type hash', // this is optional 
@@ -106,7 +107,8 @@ const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceCon
 
 ```ts
 import { ContractFactory } from "ethers";
-import { PolyjuiceWallet, PolyjuiceConfig, PolyjuiceJsonRpcProvider } from "@polyjuice-provider/ethers";
+import { PolyjuiceConfig } from "@polyjuice-provider/base";
+import { PolyjuiceWallet, PolyjuiceJsonRpcProvider } from "@polyjuice-provider/ethers";
 
 const polyjuiceConfig: PolyjuiceConfig = {
   web3Url: 'godwoken web3 rpc url', 
@@ -244,6 +246,7 @@ new Web3WsProvider(..) --> new PolyjuiceWebsocketProvider(...)
 init library:
 
 ```ts
+import { PolyjuiceConfig } from "@polyjuice-provider/base";
 import { PolyjuiceHttpProvider, PolyjuiceAccounts } from "@polyjuice-provider/web3";
 
 const polyjuiceConfig: PolyjuiceConfig = {
@@ -348,6 +351,7 @@ if your dapp are using `web3.js` and `metamask`, you can change it like this:
 
 ```js
 import Web3 from 'web3';
+import { PolyjuiceConfig } from "@polyjuice-provider/base";
 import { PolyjuiceHttpProvider } from '@polyjuice-provider/web3';
 
 const polyjuiceConfig: PolyjuiceConfig = {
