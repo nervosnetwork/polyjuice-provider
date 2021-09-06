@@ -1,6 +1,6 @@
 {
   "name": "@polyjuice-provider/web3",
-  "version": "0.0.1-rc9",
+  "version": "0.0.1-rc10",
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
@@ -61,7 +61,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
-    "@polyjuice-provider/base": "0.0.1-rc9",
+    "@polyjuice-provider/base": "0.0.1-rc10",
     "buffer": "^6.0.3",
     "encoding": "^0.1.13",
     "web3": "^1.4.0",

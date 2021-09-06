@@ -1,6 +1,6 @@
 {
   "name": "@polyjuice-provider/truffle",
-  "version": "0.0.1-rc9",
+  "version": "0.0.1-rc10",
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
@@ -59,7 +59,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
-    "@polyjuice-provider/base": "0.0.1-rc9",
+    "@polyjuice-provider/base": "0.0.1-rc10",
     "@truffle/hdwallet-provider": "^1.4.1",
     "@trufflesuite/web3-provider-engine": "15.0.13-1",
     "ckb-js-toolkit": "^0.10.2",
