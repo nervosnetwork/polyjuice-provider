@@ -4,6 +4,7 @@
   "description": "Godwoken utils",
   "main": "index.js",
   "license": "MIT",
+  "homepage": "https://github.com/nervosnetwork/polyjuice-provider#readme",
   "scripts": {
     "test": "echo 'no test for godwoken'",
     "fmt": "prettier --write \"src/**/*.ts\" package.json",
@@ -21,6 +22,10 @@
   "publishConfig": {
     "access": "public",
     "registry": "http://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nervosnetwork/polyjuice-provider.git"
   },
   "files": [
     "/lib",
