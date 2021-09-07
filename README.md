@@ -4,10 +4,7 @@ godwoken-polyjuice compatible providers for ethereum library like [ethers](https
 
 now you can call your smart-contract on godwoken-polyjuice with metamask and eth address.
 
-- Web3 compatible provider: `/packages/web3`
-- ethers compatible provider: `/packages/ethers`
-- truffle compatible HdWalletProvider: `/packages/truffle`
-- ...more providers coming
+## Install
 
 ```sh
 yarn add @polyjuice-provider/web3
@@ -15,14 +12,26 @@ yarn add @polyjuice-provider/ethers
 yarn add @polyjuice-provider/truffle
 ```
 
-A simple react example to use `@polyjuice-provider` module can [be found here](https://github.com/RetricSu/polyjuice-provider-example).
+## Usage
 
-`note: this project is still under development, some APIs might be changed in the future.`
+[simple React example](https://github.com/RetricSu/polyjuice-provider-example)
 
 ## Docs
 
 - [Getting-Started](docs/get-started.md)
 - [APIs](docs/api.md)
+
+`note: this project is still under development, some APIs might be changed in the future.`
+
+## Need another provider?
+
+right now we have 3 compatible providers:
+
+- Web3 compatible provider: `/packages/web3`
+- ethers compatible provider: `/packages/ethers`
+- truffle compatible HdWalletProvider: `/packages/truffle`
+
+if you need another compatible provider, you can request via opening an issue or even create an pull request by yourself :) we hope community can takes part in and build more useful tools together for godwoken-polyjuice.
 
 ## How It Works?
 
