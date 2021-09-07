@@ -1,8 +1,8 @@
 # Polyjuice Provider
 
-godwoken-polyjuice compatible providers for ethereum library like [ethers](https://github.com/ethers-io/ethers.js) and [web3js](https://github.com/ChainSafe/web3.js).
+godwoken-polyjuice compatible providers for ethereum library like [ethers](https://github.com/ethers-io/ethers.js) and [web3js](https://github.com/ChainSafe/web3.js). now you can call your smart-contract on godwoken-polyjuice with metamask and eth address.
 
-now you can call your smart-contract on godwoken-polyjuice with metamask and eth address.
+***Note: since [Godowoken-web3](https://github.com/nervosnetwork/godwoken-web3) will have some APIs deprecated in the future, it is recommand to upgrade your Polyjuice-Provider over [0.0.1-rc10](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.0.1-rc10) version or above. as early as possible.***
 
 ## Install
 
