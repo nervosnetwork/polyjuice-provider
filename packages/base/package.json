@@ -57,7 +57,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
-    "@ckb-lumos/base": "^0.16.0",
+    "@ckb-lumos/base": "0.17.0-rc5",
     "@polyjuice-provider/godwoken": "^0.0.1-rc10",
     "buffer": "^6.0.3",
     "encoding": "^0.1.13",
