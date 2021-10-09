@@ -65,6 +65,10 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
           hash_type: "type",
         },
       },
+      polyjuice: {
+        creator_id: polyjuiceConfig.creatorId,
+        default_from_address: polyjuiceConfig.defaultFromAddress
+      }
     };
     if (!polyjuiceConfig.web3Url || !verifyHttpUrl(polyjuiceConfig.web3Url)) {
       throw new Error(
@@ -183,7 +187,7 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
 
             const t = {
               from:
-                from || (await this.godwoker.getPolyjuiceDefaultFromAddress()),
+                from || this.godwoker.default_from_address,
               to: to,
               value: value || 0,
               data: data || "",
@@ -225,8 +229,7 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
             new_payload.params[0].data = data_with_short_address;
 
             new_payload.params[0].from =
-              new_payload.params[0].from ||
-              (await this.godwoker.getPolyjuiceDefaultFromAddress());
+              new_payload.params[0].from || this.godwoker.default_from_address;
             this.connection.send(JSON.stringify(new_payload)); // this should be handle by provider
           } catch (error) {
             request.callback(error);

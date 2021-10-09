@@ -147,7 +147,10 @@ export type GodwokerOption = {
     rollup_type_hash?: Hash;
     eth_account_lock?: Omit<Script, "args">;
   };
-  creator_id?: HexNumber;
+  polyjuice?: {
+    creator_id?: HexNumber;
+    default_from_address?: HexString;
+  };
   queryEthAddressByShortAddress?: (short_address: string) => string;
   saveEthAddressShortAddressMapping?: (
     eth_address: string,
@@ -496,6 +499,7 @@ export class Godwoker {
   public eth_account_lock: Omit<Script, "args"> | undefined;
   public rollup_type_hash: string | undefined;
   public creator_id: HexNumber | undefined;
+  public default_from_address: HexString | undefined;
   public client: any;
   public godwokenUtils: GodwokenUtils;
   public queryEthAddressByShortAddress;
@@ -525,7 +529,8 @@ export class Godwoker {
     this.godwokenUtils = new GodwokenUtils(option?.godwoken?.rollup_type_hash);
     this.eth_account_lock = option?.godwoken?.eth_account_lock;
     this.rollup_type_hash = option?.godwoken?.rollup_type_hash;
-    this.creator_id = option?.creator_id;
+    this.creator_id = option?.polyjuice?.creator_id;
+    this.default_from_address = option?.polyjuice?.default_from_address;
     this.queryEthAddressByShortAddress = option?.queryEthAddressByShortAddress;
     this.saveEthAddressShortAddressMapping =
       option?.saveEthAddressShortAddressMapping;
@@ -548,8 +553,13 @@ export class Godwoker {
       this.creator_id = await this.getPolyjuiceCreatorAccountId();
     }
 
-    if (!this.godwokenUtils.rollupTypeHash)
+    if(!this.default_from_address) {
+      this.default_from_address = await this.getPolyjuiceDefaultFromAddress();
+    }
+
+    if (!this.godwokenUtils.rollupTypeHash){
       this.godwokenUtils = new GodwokenUtils(this.rollup_type_hash);
+    }
   }
 
   initSync(): Promise<void> {
@@ -567,11 +577,15 @@ export class Godwoker {
     const creatorIdPromise = () => {
       return this.creator_id ? this.creator_id : this.getPolyjuiceCreatorAccountId();
     }
+    const defaultFromAddressPromise = () => {
+      return this.default_from_address ? this.default_from_address : this.getPolyjuiceDefaultFromAddress();
+    }
 
     return Promise.all([
       rollupPromise(),
       ethAccountPromise(),
       creatorIdPromise(),
+      defaultFromAddressPromise(),
     ])
       .then(function (args) {
         that.rollup_type_hash = args[0];
@@ -580,6 +594,7 @@ export class Godwoker {
           hash_type: "type",
         };
         that.creator_id = args[2];
+        that.default_from_address = args[3];
         if (!that.godwokenUtils.rollupTypeHash)
           that.godwokenUtils = new GodwokenUtils(that.rollup_type_hash);
 
@@ -783,13 +798,15 @@ export class Godwoker {
     );
   }
 
-  async isShortAddressOnChain(short_address: HexString): Promise<boolean> {
+  async isShortAddressOnChain(short_address: HexString, scriptHashCallback?: (script_hash: HexString) => void): Promise<boolean> {
+    scriptHashCallback = scriptHashCallback || function(script_hash: HexString){};
     try {
       const script_hash = await this.getScriptHashByShortAddress(
         short_address,
         RequireResult.canBeEmpty
       );
       if (script_hash) {
+        scriptHashCallback(script_hash);
         return true;
       }
       // not exist on chain
@@ -1118,14 +1135,20 @@ export class Godwoker {
       return this.creator_id || await this.getPolyjuiceCreatorAccountId();
 
     // assume it is normal contract address, thus an godwoken-short-address
-    const is_contract_address = await this.isShortAddressOnChain(_address);
+    let script_hash: HexString | undefined;
+    const setScriptHash = (value: HexString) => {
+      script_hash = value;
+    }
+    const is_contract_address = await this.isShortAddressOnChain(_address, setScriptHash);
     if (is_contract_address) {
-      const script_hash = await this.getScriptHashByShortAddress(_address);
-      return await this.getAccountIdByScriptHash(script_hash);
+      // below the getScriptHashByShortAddress request is no need 
+      // since we have pass callback fn to get ScriptHash value
+      //script_hash = await this.getScriptHashByShortAddress(_address);
+      return await this.getAccountIdByScriptHash(script_hash!);
     }
 
     // otherwise, assume it is EOA address
-    const script_hash = this.computeScriptHashByEoaEthAddress(_address);
+    script_hash = this.computeScriptHashByEoaEthAddress(_address);
     const accountId = await this.getAccountIdByScriptHash(script_hash);
     return accountId;
   }

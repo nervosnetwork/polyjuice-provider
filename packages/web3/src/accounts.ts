@@ -53,6 +53,10 @@ export class PolyjuiceAccounts extends Accounts {
           hash_type: "type",
         },
       },
+      polyjuice: {
+        creator_id: polyjuiceConfig.creatorId,
+        default_from_address: polyjuiceConfig.defaultFromAddress
+      }
     };
     this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwokerOption);
     this.abi = new Abi(polyjuiceConfig.abiItems || []);

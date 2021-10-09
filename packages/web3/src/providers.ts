@@ -65,21 +65,25 @@ export class PolyjuiceHttpProvider {
 
   constructor(
     host: string,
-    polyjuice_config: PolyjuiceConfig,
+    polyjuiceConfig: PolyjuiceConfig,
     options?: HttpProviderOptions
   ) {
     this.signer = new Signer();
     const godwoker_option: GodwokerOption = {
       godwoken: {
-        rollup_type_hash: polyjuice_config.rollupTypeHash,
+        rollup_type_hash: polyjuiceConfig.rollupTypeHash,
         eth_account_lock: {
-          code_hash: polyjuice_config.ethAccountLockCodeHash,
+          code_hash: polyjuiceConfig.ethAccountLockCodeHash,
           hash_type: "type",
         },
       },
+      polyjuice: {
+        creator_id: polyjuiceConfig.creatorId,
+        default_from_address: polyjuiceConfig.defaultFromAddress
+      }
     };
     this.godwoker = new Godwoker(host, godwoker_option);
-    this.abi = new Abi(polyjuice_config.abiItems || []);
+    this.abi = new Abi(polyjuiceConfig.abiItems || []);
 
     options = options || {};
 
@@ -183,7 +187,7 @@ export class PolyjuiceHttpProvider {
 
           const t = {
             from:
-              from || (await this.godwoker.getPolyjuiceDefaultFromAddress()),
+              from || this.godwoker.default_from_address,
             to: to,
             value: value || 0,
             data: data || "",
@@ -227,8 +231,7 @@ export class PolyjuiceHttpProvider {
           new_payload.params[0].data = data_with_short_address;
 
           new_payload.params[0].from =
-            new_payload.params[0].from ||
-            (await this.godwoker.getPolyjuiceDefaultFromAddress());
+            new_payload.params[0].from || this.godwoker.default_from_address;
           this._send(new_payload, callback); // this should be handle by provider
         } catch (error) {
           callback(null, {
