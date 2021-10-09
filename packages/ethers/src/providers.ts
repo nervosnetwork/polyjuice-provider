@@ -30,19 +30,19 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   godwoker: Godwoker;
 
   constructor(
-    polyjuice_config: PolyjuiceConfig,
+    polyjuiceConfig: PolyjuiceConfig,
     url?: ConnectionInfo | string,
     network?: Networkish
   ) {
     super(url, network);
-    const abi_items: AbiItems = polyjuice_config.abiItems || [];
+    const abi_items: AbiItems = polyjuiceConfig.abiItems || [];
     this.abi = new Abi(abi_items);
     const web3_url = typeof url === "string" ? url : url.url;
     const godwoker_option: GodwokerOption = {
       godwoken: {
-        rollup_type_hash: polyjuice_config.rollupTypeHash,
+        rollup_type_hash: polyjuiceConfig.rollupTypeHash,
         eth_account_lock: {
-          code_hash: polyjuice_config.ethAccountLockCodeHash,
+          code_hash: polyjuiceConfig.ethAccountLockCodeHash,
           hash_type: "type",
         },
       },

@@ -147,6 +147,7 @@ export type GodwokerOption = {
     rollup_type_hash?: Hash;
     eth_account_lock?: Omit<Script, "args">;
   };
+  creator_id?: HexNumber;
   queryEthAddressByShortAddress?: (short_address: string) => string;
   saveEthAddressShortAddressMapping?: (
     eth_address: string,
@@ -492,12 +493,13 @@ export function encodeArgs(_tx: EthTransaction) {
 }
 
 export class Godwoker {
-  private eth_account_lock: Omit<Script, "args"> | undefined;
-  private rollup_type_hash: string | undefined;
-  private client: any;
-  private godwokenUtils: GodwokenUtils;
-  private queryEthAddressByShortAddress;
-  private saveEthAddressShortAddressMapping;
+  public eth_account_lock: Omit<Script, "args"> | undefined;
+  public rollup_type_hash: string | undefined;
+  public creator_id: HexNumber | undefined;
+  public client: any;
+  public godwokenUtils: GodwokenUtils;
+  public queryEthAddressByShortAddress;
+  public saveEthAddressShortAddressMapping;
 
   constructor(host: string, option?: GodwokerOption) {
     const callServer = function (request: any, callback: any) {
@@ -523,6 +525,7 @@ export class Godwoker {
     this.godwokenUtils = new GodwokenUtils(option?.godwoken?.rollup_type_hash);
     this.eth_account_lock = option?.godwoken?.eth_account_lock;
     this.rollup_type_hash = option?.godwoken?.rollup_type_hash;
+    this.creator_id = option?.creator_id;
     this.queryEthAddressByShortAddress = option?.queryEthAddressByShortAddress;
     this.saveEthAddressShortAddressMapping =
       option?.saveEthAddressShortAddressMapping;
@@ -541,6 +544,10 @@ export class Godwoker {
       };
     }
 
+    if(!this.creator_id) {
+      this.creator_id = await this.getPolyjuiceCreatorAccountId();
+    }
+
     if (!this.godwokenUtils.rollupTypeHash)
       this.godwokenUtils = new GodwokenUtils(this.rollup_type_hash);
   }
@@ -557,10 +564,14 @@ export class Godwoker {
         ? this.eth_account_lock?.code_hash
         : this.getEthAccountLockHash();
     };
+    const creatorIdPromise = () => {
+      return this.creator_id ? this.creator_id : this.getPolyjuiceCreatorAccountId();
+    }
 
     return Promise.all([
-      rollupPromise(), // this.getRollupTypeHash(),
-      ethAccountPromise(), // this.getEthAccountLockHash()
+      rollupPromise(),
+      ethAccountPromise(),
+      creatorIdPromise(),
     ])
       .then(function (args) {
         that.rollup_type_hash = args[0];
@@ -568,6 +579,7 @@ export class Godwoker {
           code_hash: args[1],
           hash_type: "type",
         };
+        that.creator_id = args[2];
         if (!that.godwokenUtils.rollupTypeHash)
           that.godwokenUtils = new GodwokenUtils(that.rollup_type_hash);
 
@@ -723,7 +735,7 @@ export class Godwoker {
         value: short_addr,
         type: ShortAddressType.notExistEoaAddress,
       };
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(error.message);
     }
   }
@@ -782,7 +794,7 @@ export class Godwoker {
       }
       // not exist on chain
       return false;
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(error.message);
     }
   }
@@ -849,6 +861,25 @@ export class Godwoker {
       receiver_script_hash,
       is_add_prefix_in_signing_message
     );
+  }
+
+  async generateMessageFromRawL2Transaction(
+    rawL2Tx: RawL2Transaction,
+    msg_type: SigningMessageType = SigningMessageType.withPrefix
+  ){
+    const sender_script_hash = await this.getScriptHashByAccountId(
+      parseInt(rawL2Tx.from_id, 16)
+    );
+    const receiver_script_hash = await this.getScriptHashByAccountId(
+      parseInt(rawL2Tx.to_id, 16)
+    );
+    const message = this.generateTransactionMessageToSign(
+      rawL2Tx,
+      sender_script_hash,
+      receiver_script_hash,
+      msg_type === SigningMessageType.withPrefix // with personal sign prefix in message, default is true.
+    );
+    return message;
   }
 
   async generateMessageFromEthTransaction(
@@ -1084,7 +1115,7 @@ export class Godwoker {
       throw new Error(`Invalid eth address length: ${address.byteLength}`);
     if (address.equals(Buffer.from(Array(20).fill(0))))
       // special-case: meta-contract address should return creator id
-      return await this.getPolyjuiceCreatorAccountId();
+      return this.creator_id || await this.getPolyjuiceCreatorAccountId();
 
     // assume it is normal contract address, thus an godwoken-short-address
     const is_contract_address = await this.isShortAddressOnChain(_address);

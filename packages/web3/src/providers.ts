@@ -161,7 +161,7 @@ export class PolyjuiceHttpProvider {
           );
           const tx_hash =
             await this.godwoker.poly_submitSerializedL2Transaction(rawTxString);
-          await this.godwoker.waitForTransactionReceipt(tx_hash);
+          // await this.godwoker.waitForTransactionReceipt(tx_hash);
           const res = {
             jsonrpc: payload.jsonrpc,
             id: payload.id,

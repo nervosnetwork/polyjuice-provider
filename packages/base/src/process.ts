@@ -138,10 +138,12 @@ export async function buildProcess(
     case ProcessTransactionType.send: {
       const signingMessageType =
         process.signingMessageType || SigningMessageType.withPrefix;
-      const message = await godwoker.generateMessageFromEthTransaction(
-        t,
-        signingMessageType
-      );
+
+      // generate message to sign
+      const senderScriptHash = godwoker.computeScriptHashByEoaEthAddress(t.from);
+      const receiverScriptHash = await godwoker.getScriptHashByAccountId(parseInt(rawL2Tx.to_id, 16));
+      const message = godwoker.generateTransactionMessageToSign(rawL2Tx, senderScriptHash, receiverScriptHash, signingMessageType === SigningMessageType.withPrefix);
+      
       const _signature = await process.signingMethod!(message);
       const signature = godwoker.packSignature(_signature);
       const l2Tx = { raw: rawL2Tx, signature: signature };
