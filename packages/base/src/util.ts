@@ -807,7 +807,7 @@ export class Godwoker {
     scriptHashCallback?: (script_hash: HexString) => void
   ): Promise<boolean> {
     scriptHashCallback =
-      scriptHashCallback || function (script_hash: HexString) {};
+      scriptHashCallback || function (_script_hash: HexString) {};
     try {
       const script_hash = await this.getScriptHashByShortAddress(
         short_address,
