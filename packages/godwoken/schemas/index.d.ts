@@ -13,6 +13,14 @@ export interface UnionType {
   value: any;
 }
 
+export function SerializeUint32Vec(value: Array<CanCastToArrayBuffer>): ArrayBuffer;
+export class Uint32Vec {
+  constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
+  validate(compatible?: boolean): void;
+  indexAt(i: number): Uint32;
+  length(): number;
+}
+
 export function SerializeBlockMerkleState(value: object): ArrayBuffer;
 export class BlockMerkleState {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
@@ -180,9 +188,7 @@ export class RawWithdrawalRequest {
   getFee(): Fee;
 }
 
-export function SerializeWithdrawalRequestVec(
-  value: Array<object>
-): ArrayBuffer;
+export function SerializeWithdrawalRequestVec(value: Array<object>): ArrayBuffer;
 export class WithdrawalRequestVec {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -242,9 +248,7 @@ export class CustodianLockArgs {
   getDepositBlockNumber(): Uint64;
 }
 
-export function SerializeUnlockCustodianViaRevertWitness(
-  value: object
-): ArrayBuffer;
+export function SerializeUnlockCustodianViaRevertWitness(value: object): ArrayBuffer;
 export class UnlockCustodianViaRevertWitness {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -275,9 +279,7 @@ export class UnlockWithdrawalWitness {
   value(): any;
 }
 
-export function SerializeUnlockWithdrawalViaFinalize(
-  value: object
-): ArrayBuffer;
+export function SerializeUnlockWithdrawalViaFinalize(value: object): ArrayBuffer;
 export class UnlockWithdrawalViaFinalize {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -413,9 +415,18 @@ export class VerifyTransactionContext {
   validate(compatible?: boolean): void;
   getAccountCount(): Uint32;
   getKvState(): KVPairVec;
+  getLoadData(): BytesVec;
   getScripts(): ScriptVec;
   getReturnDataHash(): Byte32;
   getBlockHashes(): BlockHashEntryVec;
+}
+
+export function SerializeCKBMerkleProof(value: object): ArrayBuffer;
+export class CKBMerkleProof {
+  constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
+  validate(compatible?: boolean): void;
+  getIndices(): Uint32Vec;
+  getLemmas(): Byte32Vec;
 }
 
 export function SerializeVerifyTransactionWitness(value: object): ArrayBuffer;
@@ -424,15 +435,13 @@ export class VerifyTransactionWitness {
   validate(compatible?: boolean): void;
   getL2Tx(): L2Transaction;
   getRawL2Block(): RawL2Block;
-  getTxProof(): Bytes;
+  getTxProof(): CKBMerkleProof;
   getKvStateProof(): Bytes;
   getBlockHashesProof(): Bytes;
   getContext(): VerifyTransactionContext;
 }
 
-export function SerializeVerifyTransactionSignatureContext(
-  value: object
-): ArrayBuffer;
+export function SerializeVerifyTransactionSignatureContext(value: object): ArrayBuffer;
 export class VerifyTransactionSignatureContext {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -441,15 +450,13 @@ export class VerifyTransactionSignatureContext {
   getScripts(): ScriptVec;
 }
 
-export function SerializeVerifyTransactionSignatureWitness(
-  value: object
-): ArrayBuffer;
+export function SerializeVerifyTransactionSignatureWitness(value: object): ArrayBuffer;
 export class VerifyTransactionSignatureWitness {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
   getRawL2Block(): RawL2Block;
   getL2Tx(): L2Transaction;
-  getTxProof(): Bytes;
+  getTxProof(): CKBMerkleProof;
   getKvStateProof(): Bytes;
   getContext(): VerifyTransactionSignatureContext;
 }
@@ -460,7 +467,7 @@ export class VerifyWithdrawalWitness {
   validate(compatible?: boolean): void;
   getRawL2Block(): RawL2Block;
   getWithdrawalRequest(): WithdrawalRequest;
-  getWithdrawalProof(): Bytes;
+  getWithdrawalProof(): CKBMerkleProof;
 }
 
 export function SerializeRollupSubmitBlock(value: object): ArrayBuffer;
@@ -530,8 +537,8 @@ export class Uint64 {
   validate(compatible?: boolean): void;
   indexAt(i: number): number;
   raw(): ArrayBuffer;
-  toBigEndianUint64(): BigInt;
-  toLittleEndianUint64(): BigInt;
+  toBigEndianBigUint64(): bigint;
+  toLittleEndianBigUint64(): bigint;
   static size(): Number;
 }
 
@@ -571,9 +578,7 @@ export class Bytes {
   length(): number;
 }
 
-export function SerializeBytesOpt(
-  value: CanCastToArrayBuffer | null
-): ArrayBuffer;
+export function SerializeBytesOpt(value: CanCastToArrayBuffer | null): ArrayBuffer;
 export class BytesOpt {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -581,9 +586,7 @@ export class BytesOpt {
   hasValue(): boolean;
 }
 
-export function SerializeBytesVec(
-  value: Array<CanCastToArrayBuffer>
-): ArrayBuffer;
+export function SerializeBytesVec(value: Array<CanCastToArrayBuffer>): ArrayBuffer;
 export class BytesVec {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -591,9 +594,7 @@ export class BytesVec {
   length(): number;
 }
 
-export function SerializeByte32Vec(
-  value: Array<CanCastToArrayBuffer>
-): ArrayBuffer;
+export function SerializeByte32Vec(value: Array<CanCastToArrayBuffer>): ArrayBuffer;
 export class Byte32Vec {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -609,9 +610,7 @@ export class ScriptOpt {
   hasValue(): boolean;
 }
 
-export function SerializeProposalShortId(
-  value: CanCastToArrayBuffer
-): ArrayBuffer;
+export function SerializeProposalShortId(value: CanCastToArrayBuffer): ArrayBuffer;
 export class ProposalShortId {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -636,9 +635,7 @@ export class TransactionVec {
   length(): number;
 }
 
-export function SerializeProposalShortIdVec(
-  value: Array<CanCastToArrayBuffer>
-): ArrayBuffer;
+export function SerializeProposalShortIdVec(value: Array<CanCastToArrayBuffer>): ArrayBuffer;
 export class ProposalShortIdVec {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
   validate(compatible?: boolean): void;
@@ -748,7 +745,7 @@ export class RawHeader {
   getParentHash(): Byte32;
   getTransactionsRoot(): Byte32;
   getProposalsHash(): Byte32;
-  getUnclesHash(): Byte32;
+  getExtraHash(): Byte32;
   getDao(): Byte32;
 }
 
@@ -779,6 +776,17 @@ export class Block {
   getProposals(): ProposalShortIdVec;
 }
 
+export function SerializeBlockV1(value: object): ArrayBuffer;
+export class BlockV1 {
+  constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
+  validate(compatible?: boolean): void;
+  getHeader(): Header;
+  getUncles(): UncleBlockVec;
+  getTransactions(): TransactionVec;
+  getProposals(): ProposalShortIdVec;
+  getExtension(): Bytes;
+}
+
 export function SerializeCellbaseWitness(value: object): ArrayBuffer;
 export class CellbaseWitness {
   constructor(reader: CanCastToArrayBuffer, options?: CreateOptions);
@@ -795,3 +803,4 @@ export class WitnessArgs {
   getInputType(): BytesOpt;
   getOutputType(): BytesOpt;
 }
+

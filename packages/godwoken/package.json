@@ -1,6 +1,6 @@
 {
   "name": "@polyjuice-provider/godwoken",
-  "version": "0.0.1-rc11",
+  "version": "0.0.1-rc12-beta.1",
   "description": "Godwoken utils",
   "main": "index.js",
   "license": "MIT",
@@ -21,7 +21,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "registry": "http://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/"
   },
   "repository": {
     "type": "git",
@@ -35,7 +35,7 @@
     "/schemas"
   ],
   "dependencies": {
-    "@ckb-lumos/base": "0.17.0-rc5",
+    "@ckb-lumos/base": "0.18.0-rc1",
     "ckb-js-toolkit": "^0.9.3",
     "immutable": "^4.0.0-rc.12",
     "keccak256": "^1.0.2"

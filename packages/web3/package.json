@@ -1,6 +1,6 @@
 {
   "name": "@polyjuice-provider/web3",
-  "version": "0.0.1-rc11",
+  "version": "0.0.1-rc12-beta.1",
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
@@ -20,7 +20,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "registry": "http://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/"
   },
   "repository": {
     "type": "git",
@@ -61,7 +61,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
-    "@polyjuice-provider/base": "0.0.1-rc11",
+    "@polyjuice-provider/base": "0.0.1-rc12-beta.1",
     "buffer": "^6.0.3",
     "encoding": "^0.1.13",
     "web3": "^1.4.0",
