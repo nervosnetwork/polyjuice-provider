@@ -549,15 +549,15 @@ export class Godwoker {
       };
     }
 
-    if(!this.creator_id) {
+    if (!this.creator_id) {
       this.creator_id = await this.getPolyjuiceCreatorAccountId();
     }
 
-    if(!this.default_from_address) {
+    if (!this.default_from_address) {
       this.default_from_address = await this.getPolyjuiceDefaultFromAddress();
     }
 
-    if (!this.godwokenUtils.rollupTypeHash){
+    if (!this.godwokenUtils.rollupTypeHash) {
       this.godwokenUtils = new GodwokenUtils(this.rollup_type_hash);
     }
   }
@@ -575,11 +575,15 @@ export class Godwoker {
         : this.getEthAccountLockHash();
     };
     const creatorIdPromise = () => {
-      return this.creator_id ? this.creator_id : this.getPolyjuiceCreatorAccountId();
-    }
+      return this.creator_id
+        ? this.creator_id
+        : this.getPolyjuiceCreatorAccountId();
+    };
     const defaultFromAddressPromise = () => {
-      return this.default_from_address ? this.default_from_address : this.getPolyjuiceDefaultFromAddress();
-    }
+      return this.default_from_address
+        ? this.default_from_address
+        : this.getPolyjuiceDefaultFromAddress();
+    };
 
     return Promise.all([
       rollupPromise(),
@@ -798,8 +802,12 @@ export class Godwoker {
     );
   }
 
-  async isShortAddressOnChain(short_address: HexString, scriptHashCallback?: (script_hash: HexString) => void): Promise<boolean> {
-    scriptHashCallback = scriptHashCallback || function(script_hash: HexString){};
+  async isShortAddressOnChain(
+    short_address: HexString,
+    scriptHashCallback?: (script_hash: HexString) => void
+  ): Promise<boolean> {
+    scriptHashCallback =
+      scriptHashCallback || function (script_hash: HexString) {};
     try {
       const script_hash = await this.getScriptHashByShortAddress(
         short_address,
@@ -883,7 +891,7 @@ export class Godwoker {
   async generateMessageFromRawL2Transaction(
     rawL2Tx: RawL2Transaction,
     msg_type: SigningMessageType = SigningMessageType.withPrefix
-  ){
+  ) {
     const sender_script_hash = await this.getScriptHashByAccountId(
       parseInt(rawL2Tx.from_id, 16)
     );
@@ -1132,16 +1140,19 @@ export class Godwoker {
       throw new Error(`Invalid eth address length: ${address.byteLength}`);
     if (address.equals(Buffer.from(Array(20).fill(0))))
       // special-case: meta-contract address should return creator id
-      return this.creator_id || await this.getPolyjuiceCreatorAccountId();
+      return this.creator_id || (await this.getPolyjuiceCreatorAccountId());
 
     // assume it is normal contract address, thus an godwoken-short-address
     let script_hash: HexString | undefined;
     const setScriptHash = (value: HexString) => {
       script_hash = value;
-    }
-    const is_contract_address = await this.isShortAddressOnChain(_address, setScriptHash);
+    };
+    const is_contract_address = await this.isShortAddressOnChain(
+      _address,
+      setScriptHash
+    );
     if (is_contract_address) {
-      // below the getScriptHashByShortAddress request is no need 
+      // below the getScriptHashByShortAddress request is no need
       // since we have pass callback fn to get ScriptHash value
       //script_hash = await this.getScriptHashByShortAddress(_address);
       return await this.getAccountIdByScriptHash(script_hash!);

@@ -62,8 +62,8 @@ export class PolyjuiceHDWalletProvider extends HDWalletProvider {
       },
       polyjuice: {
         creator_id: polyjuiceConfig.creatorId,
-        default_from_address: polyjuiceConfig.defaultFromAddress
-      }
+        default_from_address: polyjuiceConfig.defaultFromAddress,
+      },
     };
 
     this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwokerOption);

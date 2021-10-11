@@ -48,8 +48,8 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
       },
       polyjuice: {
         creator_id: polyjuiceConfig.creatorId,
-        default_from_address: polyjuiceConfig.defaultFromAddress
-      }
+        default_from_address: polyjuiceConfig.defaultFromAddress,
+      },
     };
     this.godwoker = new Godwoker(web3_url, godwoker_option);
   }
@@ -97,9 +97,7 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
     switch (method) {
       case "eth_call":
         try {
-          params[0].from =
-            params[0].from ||
-            this.godwoker.default_from_address;
+          params[0].from = params[0].from || this.godwoker.default_from_address;
           params[0].gas =
             params[0].gas ||
             `0x${BigInt(POLY_MAX_TRANSACTION_GAS_LIMIT).toString(16)}`;
@@ -131,9 +129,7 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
               )
             );
           params[0].data = data_with_short_address;
-          params[0].from =
-            params[0].from ||
-            this.godwoker.default_from_address;
+          params[0].from = params[0].from || this.godwoker.default_from_address;
           return super.send(method, params); // todo: this should send and parse by provider
         } catch (error) {
           this.emit("debug", {
@@ -192,8 +188,8 @@ export class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
       },
       polyjuice: {
         creator_id: polyjuiceConfig.creatorId,
-        default_from_address: polyjuiceConfig.defaultFromAddress
-      }
+        default_from_address: polyjuiceConfig.defaultFromAddress,
+      },
     };
     if (!polyjuiceConfig.web3Url || !verifyHttpUrl(polyjuiceConfig.web3Url)) {
       throw new Error(
@@ -286,8 +282,7 @@ export class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
           case "eth_call":
             try {
               params[0].from =
-                params[0].from ||
-                this.godwoker.default_from_address;
+                params[0].from || this.godwoker.default_from_address;
               params[0].gas =
                 params[0].gas ||
                 `0x${BigInt(POLY_MAX_TRANSACTION_GAS_LIMIT).toString(16)}`;
@@ -325,8 +320,7 @@ export class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
                 );
               params[0].data = data_with_short_address;
               params[0].from =
-                params[0].from ||
-                this.godwoker.default_from_address;
+                params[0].from || this.godwoker.default_from_address;
               return this._websocket.send(payload); // this should handle and parse by provider
             } catch (error) {
               this.emit("debug", {

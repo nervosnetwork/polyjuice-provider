@@ -67,8 +67,8 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
       },
       polyjuice: {
         creator_id: polyjuiceConfig.creatorId,
-        default_from_address: polyjuiceConfig.defaultFromAddress
-      }
+        default_from_address: polyjuiceConfig.defaultFromAddress,
+      },
     };
     if (!polyjuiceConfig.web3Url || !verifyHttpUrl(polyjuiceConfig.web3Url)) {
       throw new Error(
@@ -186,8 +186,7 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
             const { from, gas, gasPrice, value, data, to } = params[0];
 
             const t = {
-              from:
-                from || this.godwoker.default_from_address,
+              from: from || this.godwoker.default_from_address,
               to: to,
               value: value || 0,
               data: data || "",

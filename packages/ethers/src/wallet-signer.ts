@@ -48,8 +48,8 @@ export class PolyjuiceWallet extends Wallet {
       },
       polyjuice: {
         creator_id: polyjuiceConfig.creatorId,
-        default_from_address: polyjuiceConfig.defaultFromAddress
-      }
+        default_from_address: polyjuiceConfig.defaultFromAddress,
+      },
     };
     if (!polyjuiceConfig.web3Url)
       throw new Error("should provide web3 rpc url in polyjuiceConfigs.");
