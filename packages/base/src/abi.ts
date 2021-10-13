@@ -289,9 +289,9 @@ export function getAddressesFromInputDataByAbi(
 }
 
 export class Abi {
-  private abi_items: AbiItem[] = [];
-  private interested_methods: AbiItem[] = [];
-  private interested_method_ids: MethodIDs = {};
+  public abi_items: AbiItem[] = [];
+  public interested_methods: AbiItem[] = [];
+  public interested_method_ids: MethodIDs = {};
 
   constructor(_abi_items: AbiItem[]) {
     this.abi_items = _abi_items;
