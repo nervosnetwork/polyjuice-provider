@@ -20,14 +20,20 @@ import { SOME_NAME } from "@polyjuice-provider/base";
 type PolyjuiceConfig = {
   rollupTypeHash?: string;
   ethAccountLockCodeHash?: string;
+  creatorId?: HexNumber;
+  defaultFromAddress?: HexString;
   abiItems?: AbiItems;
   web3Url?: string;
 };
 
-type GodwokerOption = {
+type GodwokerOption = {{
     godwoken?: {
         rollup_type_hash?: Hash;
         eth_account_lock?: Omit<Script, "args">;
+    };
+    polyjuice?: {
+        creator_id?: HexNumber;
+        default_from_address?: HexString;
     };
     queryEthAddressByShortAddress?: (short_address: string) => string;
     saveEthAddressShortAddressMapping?: (eth_address: string, short_address: string) => void;
@@ -76,12 +82,14 @@ function decodeArgs(_args: HexString): {
 function encodeArgs(_tx: EthTransaction): string;
 
 class Godwoker {
-    private eth_account_lock;
-    private rollup_type_hash;
-    private client;
-    private godwokenUtils;
-    private queryEthAddressByShortAddress;
-    private saveEthAddressShortAddressMapping;
+    eth_account_lock: Omit<Script, "args"> | undefined;
+    rollup_type_hash: string | undefined;
+    creator_id: HexNumber | undefined;
+    default_from_address: HexString | undefined;
+    client: any;
+    godwokenUtils: GodwokenUtils;
+    queryEthAddressByShortAddress: ((short_address: string) => string) | undefined;
+    saveEthAddressShortAddressMapping: ((eth_address: string, short_address: string) => void) | undefined;
     constructor(host: string, option?: GodwokerOption);
     init(): Promise<void>;
     initSync(): Promise<void>;
@@ -96,12 +104,13 @@ class Godwoker {
     computeShortAddressByEoaEthAddress(_address: string): HexString;
     getShortAddressByAllTypeEthAddress(_address: string): Promise<ShortAddress>;
     getEthAddressByAllTypeShortAddress(_short_address: HexString): Promise<HexString>;
-    isShortAddressOnChain(short_address: HexString): Promise<boolean>;
+    isShortAddressOnChain(short_address: HexString, scriptHashCallback?: (script_hash: HexString) => void): Promise<boolean>;
     checkEthAddressIsEoa(eth_address: string, _target_short_address: string): boolean;
     defaultQueryEthAddressByShortAddress(_short_address: string): Promise<HexString>;
     getNonce(account_id: number): Promise<HexNumber>;
     assembleRawL2Transaction(eth_tx: EthTransaction): Promise<RawL2Transaction>;
     generateTransactionMessageToSign(tx: RawL2Transaction, sender_script_hash: string, receiver_script_hash: string, is_add_prefix_in_signing_message?: boolean): string;
+    generateMessageFromRawL2Transaction(rawL2Tx: RawL2Transaction, msg_type?: SigningMessageType): Promise<string>;
     generateMessageFromEthTransaction(tx: EthTransaction, msg_type?: SigningMessageType): Promise<string>;
     serializeL2Transaction(tx: L2Transaction): HexString;
     serializeRawL2Transaction(tx: RawL2Transaction): HexString;
@@ -137,9 +146,9 @@ function filterInterestedInput(data: HexString, abiItem: AbiItem): DecodedMethod
 function getAddressesFromInputDataByAbi(data: HexString, abiItem: AbiItem): string[];
 
 class Abi {
-    private abi_items;
-    private interested_methods;
-    private interested_method_ids;
+    abi_items: AbiItem[];
+    interested_methods: AbiItem[];
+    interested_method_ids: MethodIDs;
     constructor(_abi_items: AbiItem[]);
     get_method_ids(_abi_items: AbiItem[]): MethodIDs;
     filter_interested_methods(_abi_items: AbiItem[]): AbiItem[];
@@ -163,6 +172,8 @@ class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
     godwoker: Godwoker;
     constructor(polyjuice_config: PolyjuiceConfig, url?: ConnectionInfo | string, network?: Networkish);
     setAbi(abiItems: AbiItems): void;
+    setMultiAbi(abiItemsArray: AbiItems[]): void;
+    addAbi(_abiItems: AbiItems): void;
     sendTransaction(signedTransaction: string | Promise<string>): Promise<TransactionResponse>;
     send(method: string, params: Array<any>): Promise<any>;
     prepareRequest(method: string, params: any): [string, Array<any>];
@@ -177,6 +188,8 @@ class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
     godwoker: Godwoker;
     constructor(polyjuiceConfig: PolyjuiceConfig, url: string, network?: Networkish);
     setAbi(abiItems: AbiItems): void;
+    setMultiAbi(abiItemsArray: AbiItems[]): void;
+    addAbi(_abiItems: AbiItems): void;
     sendTransaction(signedTransaction: string | Promise<string>): Promise<TransactionResponse>;
     prepareRequest(method: string, params: any): [string, Array<any>];
     send(method: string, params?: Array<any>): Promise<any>;
@@ -187,6 +200,8 @@ class PolyjuiceWallet extends Wallet {
     abi: Abi;
     constructor(privateKey: BytesLike | ExternallyOwnedAccount | SigningKey, polyjuiceConfig: PolyjuiceConfig, provider?: providers.JsonRpcProvider);
     setAbi(abiItems: AbiItems): void;
+    setMultiAbi(abiItemsArray: AbiItems[]): void;
+    addAbi(_abiItems: AbiItems): void;
     signTransaction(transaction: TransactionRequest): Promise<string>;
 }
 ```
@@ -200,6 +215,8 @@ class PolyjuiceHttpProvider {
     abi: Abi;
     constructor(host: string, polyjuice_config: PolyjuiceConfig, options?: HttpProviderOptions);
     setAbi(abiItems: AbiItems): void;
+    setMultiAbi(abiItemsArray: AbiItems[]): void;
+    addAbi(_abiItems: AbiItems): void;
     send(payload: any, callback?: (error: Error | null, result: JsonRpcResponse | undefined) => void):Promise<void>;
 }
 
@@ -216,6 +233,8 @@ class PolyjuiceWebsocketProvider extends Web3WsProvider {
     responseQueue: Map<number | string, RequestItem>;
     constructor(host: string, polyjuiceConfig: PolyjuiceConfig, option?: WebsocketProviderOptions);
     setAbi(abiItems: AbiItems): void;
+    setMultiAbi(abiItemsArray: AbiItems[]): void;
+    addAbi(_abiItems: AbiItems): void;
     simulateWebsocketResponse(result: JsonRpcResponse, id: string | number): void;
 }
 
@@ -224,6 +243,8 @@ class PolyjuiceAccounts extends Accounts {
     abi: Abi;
     constructor(polyjuiceConfig: PolyjuiceConfig, provider?: provider);
     setAbi(abiItems: AbiItems): void;
+    setMultiAbi(abiItemsArray: AbiItems[]): void;
+    addAbi(_abiItems: AbiItems): void;
     signTransaction(_tx: TransactionConfig, privateKey: string, callback?: (error: Error, signedTransaction?: SignedTransaction) => void): Promise<SignedTransaction>;
 }
 ```
