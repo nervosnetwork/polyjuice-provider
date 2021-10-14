@@ -66,6 +66,16 @@ export class PolyjuiceAccounts extends Accounts {
     this.abi = new Abi(abiItems);
   }
 
+  setMultiAbi(abiItemsArray: AbiItems[]) {
+    const abiItems = [].concat.apply([], abiItemsArray);
+    this.abi = new Abi(abiItems);
+  }
+
+  addAbi(_abiItems: AbiItems) {
+    const abiItems = this.abi.get_abi_items().concat(_abiItems);
+    this.abi = new Abi(abiItems);
+  }
+
   signTransaction(
     _tx: TransactionConfig,
     privateKey: string,

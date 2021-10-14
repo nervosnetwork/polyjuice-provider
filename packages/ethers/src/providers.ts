@@ -58,6 +58,16 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
     this.abi = new Abi(abiItems);
   }
 
+  setMultiAbi(abiItemsArray: AbiItems[]) {
+    const abiItems = [].concat.apply([], abiItemsArray);
+    this.abi = new Abi(abiItems);
+  }
+
+  addAbi(_abiItems: AbiItems) {
+    const abiItems = this.abi.get_abi_items().concat(_abiItems);
+    this.abi = new Abi(abiItems);
+  }
+
   async sendTransaction(
     signedTransaction: string | Promise<string>
   ): Promise<TransactionResponse> {
@@ -202,6 +212,16 @@ export class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
   }
 
   setAbi(abiItems: AbiItems) {
+    this.abi = new Abi(abiItems);
+  }
+
+  setMultiAbi(abiItemsArray: AbiItems[]) {
+    const abiItems = [].concat.apply([], abiItemsArray);
+    this.abi = new Abi(abiItems);
+  }
+
+  addAbi(_abiItems: AbiItems) {
+    const abiItems = this.abi.get_abi_items().concat(_abiItems);
     this.abi = new Abi(abiItems);
   }
 

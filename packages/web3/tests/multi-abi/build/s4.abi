@@ -1,0 +1,1 @@
+[{"constant":false,"inputs":[{"name":"newValue","type":"address"},{"name":"value","type":"uint8"}],"name":"set","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"get","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"}]
