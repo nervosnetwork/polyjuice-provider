@@ -90,7 +90,7 @@ const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceCon
 
 if you have multiple smart-contracts on the frontend, you can pass multiple abis to provider via `setMultiAbi()` / `addAbi()`:
 
-```sh
+```ts
 const polyjuiceConfig: PolyjuiceConfig = {
   web3Url: 'godwoken web3 rpc url', 
 };
@@ -321,7 +321,7 @@ polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig);
 
 if you have multiple smart-contracts on the frontend, you can pass multiple abis to provider via `setMultiAbi()` / `addAbi()`:
 
-```sh
+```ts
 const polyjuiceConfig: PolyjuiceConfig = {
   web3Url: 'godwoken web3 rpc url', 
 };
