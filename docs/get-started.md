@@ -54,7 +54,7 @@ const polyjuiceConfig: PolyjuiceConfig = {
   rollupTypeHash: 'godwoken rollup type hash', // this is optional 
   ethAccountLockCodeHash: 'godwoken eth account lock code hash', // this is optional
   creatorId: 'polyjuice creator account id', // this is optional
-  defaultFromAddress: 'an default eth address, which will be used as a default from in ethereum transaction', // this is optional
+  defaultFromAddress: 'a default eth address, which will be used as a default from in ethereum transaction', // this is optional
   abiItems: ['your abi items array'],
   web3Url: 'godwoken web3 rpc url', 
 };
@@ -276,7 +276,7 @@ const polyjuiceConfig: PolyjuiceConfig = {
   rollupTypeHash: 'godwoken rollup type hash', // this is optional 
   ethAccountLockCodeHash: 'godwoken eth account lock code hash', // this is optional
   creatorId: 'polyjuice creator account id', // this is optional
-  defaultFromAddress: 'an default eth address, which will be used as a default from in ethereum transaction', // this is optional
+  defaultFromAddress: 'a default eth address, which will be used as a default from in ethereum transaction', // this is optional
   abiItems: ['your abi items array'],
   web3Url: 'godwoken web3 rpc url', 
 };

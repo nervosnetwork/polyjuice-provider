@@ -26,7 +26,7 @@ type PolyjuiceConfig = {
   web3Url?: string;
 };
 
-type GodwokerOption = {{
+type GodwokerOption = {
     godwoken?: {
         rollup_type_hash?: Hash;
         eth_account_lock?: Omit<Script, "args">;
