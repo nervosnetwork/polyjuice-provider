@@ -45,7 +45,7 @@ provider are designed to got these 3 things done for you and your dapp, mainly b
 
 1. convert Ethereum transaction to Godwoken L2 transaction.
 2. generate signing message from Godwoken L2 transaction and call Metamask for signing (or use privateKey in non-browser env).
-3. do address type converting according to your contract's Abi. that's why you need to pass AbiItems to provider constructor.
+3. do address type converting according to your contract's Abi. that's why you need to pass AbiItems to provider constructor. you can pass [multiple smart-contracts ABIs to provider](docs/get-started.md#L91) if needed.
 
 ## Known Caveats Of polyjuice-provider
 
