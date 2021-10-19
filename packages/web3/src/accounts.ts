@@ -53,12 +53,26 @@ export class PolyjuiceAccounts extends Accounts {
           hash_type: "type",
         },
       },
+      polyjuice: {
+        creator_id: polyjuiceConfig.creatorId,
+        default_from_address: polyjuiceConfig.defaultFromAddress,
+      },
     };
     this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwokerOption);
     this.abi = new Abi(polyjuiceConfig.abiItems || []);
   }
 
   setAbi(abiItems: AbiItems) {
+    this.abi = new Abi(abiItems);
+  }
+
+  setMultiAbi(abiItemsArray: AbiItems[]) {
+    const abiItems = [].concat.apply([], abiItemsArray);
+    this.abi = new Abi(abiItems);
+  }
+
+  addAbi(_abiItems: AbiItems) {
+    const abiItems = this.abi.get_abi_items().concat(_abiItems);
     this.abi = new Abi(abiItems);
   }
 

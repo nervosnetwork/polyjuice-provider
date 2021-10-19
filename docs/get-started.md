@@ -53,6 +53,8 @@ import { PolyjuiceWallet, PolyjuiceJsonRpcProvider } from "@polyjuice-provider/e
 const polyjuiceConfig: PolyjuiceConfig = {
   rollupTypeHash: 'godwoken rollup type hash', // this is optional 
   ethAccountLockCodeHash: 'godwoken eth account lock code hash', // this is optional
+  creatorId: 'polyjuice creator account id', // this is optional
+  defaultFromAddress: 'a default eth address, which will be used as a default from in ethereum transaction', // this is optional
   abiItems: ['your abi items array'],
   web3Url: 'godwoken web3 rpc url', 
 };
@@ -84,6 +86,27 @@ const polyjuiceConfig: PolyjuiceConfig = {
 
 const rpc = new PolyjuiceJsonRpcProvider(polyjuiceConfig, polyjuiceConfig.web3Url); 
 const deployer = new PolyjuiceWallet('<your deployer private key>', polyjuiceConfig, rpc);
+```
+
+if you have multiple smart-contracts on the frontend, you can pass multiple abis to provider via `setMultiAbi()` / `addAbi()`:
+
+```ts
+const polyjuiceConfig: PolyjuiceConfig = {
+  web3Url: 'godwoken web3 rpc url', 
+};
+const provider = new PolyjuiceJsonRpcProvider(polyjuiceConfig, polyjuiceConfig.web3Url);
+
+const abi_items_1 = [...];
+const abi_items_2 = [...];
+const abi_items_3 = [...];
+
+provider.setMultiAbi([abi_items_1, abi_items_2, abi_items_3]);
+
+// or
+
+provider.addAbi(abi_items1);
+provider.addAbi(abi_items2);
+provider.addAbi(abi_items3);
 ```
 
 when init websocket provider, one thing to pay attention is that you still need to feed PolyjuiceConfig with web3-http-rpc-url:
@@ -252,6 +275,8 @@ import { PolyjuiceHttpProvider, PolyjuiceAccounts } from "@polyjuice-provider/we
 const polyjuiceConfig: PolyjuiceConfig = {
   rollupTypeHash: 'godwoken rollup type hash', // this is optional 
   ethAccountLockCodeHash: 'godwoken eth account lock code hash', // this is optional
+  creatorId: 'polyjuice creator account id', // this is optional
+  defaultFromAddress: 'a default eth address, which will be used as a default from in ethereum transaction', // this is optional
   abiItems: ['your abi items array'],
   web3Url: 'godwoken web3 rpc url', 
 };
@@ -292,6 +317,30 @@ provider = new PolyjuiceHttpProvider(
   polyjuiceConfig,
 );
 polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig);
+```
+
+if you have multiple smart-contracts on the frontend, you can pass multiple abis to provider via `setMultiAbi()` / `addAbi()`:
+
+```ts
+const polyjuiceConfig: PolyjuiceConfig = {
+  web3Url: 'godwoken web3 rpc url', 
+};
+const provider = new PolyjuiceHttpProvider(
+  polyjuiceConfig.web3Url,
+  polyjuiceConfig,
+);
+
+const abi_items_1 = [...];
+const abi_items_2 = [...];
+const abi_items_3 = [...];
+
+provider.setMultiAbi([abi_items_1, abi_items_2, abi_items_3]);
+
+// or
+
+provider.addAbi(abi_items1);
+provider.addAbi(abi_items2);
+provider.addAbi(abi_items3);
 ```
 
 when init websocket provider, one thing to pay attention is that you still need to feed PolyjuiceConfig with web3-http-rpc-url:

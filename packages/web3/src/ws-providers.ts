@@ -65,6 +65,10 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
           hash_type: "type",
         },
       },
+      polyjuice: {
+        creator_id: polyjuiceConfig.creatorId,
+        default_from_address: polyjuiceConfig.defaultFromAddress,
+      },
     };
     if (!polyjuiceConfig.web3Url || !verifyHttpUrl(polyjuiceConfig.web3Url)) {
       throw new Error(
@@ -77,6 +81,16 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
   }
 
   setAbi(abiItems: AbiItems) {
+    this.abi = new Abi(abiItems);
+  }
+
+  setMultiAbi(abiItemsArray: AbiItems[]) {
+    const abiItems = [].concat.apply([], abiItemsArray);
+    this.abi = new Abi(abiItems);
+  }
+
+  addAbi(_abiItems: AbiItems) {
+    const abiItems = this.abi.get_abi_items().concat(_abiItems);
     this.abi = new Abi(abiItems);
   }
 
@@ -163,7 +177,7 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
               await this.godwoker.poly_submitSerializedL2Transaction(
                 rawTxString
               );
-            await this.godwoker.waitForTransactionReceipt(tx_hash);
+            // await this.godwoker.waitForTransactionReceipt(tx_hash);
             const res = {
               jsonrpc: payload.jsonrpc,
               id: jsonRpcId,
@@ -182,8 +196,7 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
             const { from, gas, gasPrice, value, data, to } = params[0];
 
             const t = {
-              from:
-                from || (await this.godwoker.getPolyjuiceDefaultFromAddress()),
+              from: from || this.godwoker.default_from_address,
               to: to,
               value: value || 0,
               data: data || "",
@@ -225,8 +238,7 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
             new_payload.params[0].data = data_with_short_address;
 
             new_payload.params[0].from =
-              new_payload.params[0].from ||
-              (await this.godwoker.getPolyjuiceDefaultFromAddress());
+              new_payload.params[0].from || this.godwoker.default_from_address;
             this.connection.send(JSON.stringify(new_payload)); // this should be handle by provider
           } catch (error) {
             request.callback(error);

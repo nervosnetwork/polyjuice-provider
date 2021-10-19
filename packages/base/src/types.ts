@@ -1,4 +1,4 @@
-import { HexString } from "@ckb-lumos/base";
+import { HexNumber, HexString } from "@ckb-lumos/base";
 import { AbiItem } from "web3-utils";
 
 export type AbiItems = AbiItem[];
@@ -6,6 +6,8 @@ export type AbiItems = AbiItem[];
 export type PolyjuiceConfig = {
   rollupTypeHash?: string;
   ethAccountLockCodeHash?: string;
+  creatorId?: HexNumber;
+  defaultFromAddress?: HexString;
   abiItems?: AbiItems;
   web3Url?: string;
 };

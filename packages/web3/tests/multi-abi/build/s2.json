@@ -1,0 +1,301 @@
+{
+  "contractName": "s2",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "get",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes20"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "newValue",
+          "type": "bytes20"
+        }
+      ],
+      "name": "set",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.5.0+commit.1d4f565a\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"constant\":true,\"inputs\":[],\"name\":\"get\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes20\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"newValue\",\"type\":\"bytes20\"}],\"name\":\"set\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/Users/retric/Desktop/polyjuice-provider/packages/web3/tests/multi-abi/contracts/s2.sol\":\"s2\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/retric/Desktop/polyjuice-provider/packages/web3/tests/multi-abi/contracts/s2.sol\":{\"keccak256\":\"0x01248a8f640f7ffcaefdda721f6d5ecb5a1552f47c30ab8626e0621206de0a28\",\"urls\":[\"bzzr://9a353e69c33155253f4d777d1266f780a448833bf3b94c75494b96e187f66c62\"]}},\"version\":1}",
+  "bytecode": "608060405234801561001057600080fd5b50610137806100206000396000f3fe60806040526004361061004b5763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416636d4ce63c8114610050578063935bf69b14610087575b600080fd5b34801561005c57600080fd5b506100656100c2565b604080516bffffffffffffffffffffffff199092168252519081900360200190f35b34801561009357600080fd5b506100c0600480360360208110156100aa57600080fd5b50356bffffffffffffffffffffffff19166100d7565b005b6000546c010000000000000000000000000290565b6000805473ffffffffffffffffffffffffffffffffffffffff19166c0100000000000000000000000090920491909117905556fea165627a7a7230582028bd13cc697ea9ca7b7bd0671288b360a518896fad5df4833587e133aeb4eb500029",
+  "deployedBytecode": "60806040526004361061004b5763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416636d4ce63c8114610050578063935bf69b14610087575b600080fd5b34801561005c57600080fd5b506100656100c2565b604080516bffffffffffffffffffffffff199092168252519081900360200190f35b34801561009357600080fd5b506100c0600480360360208110156100aa57600080fd5b50356bffffffffffffffffffffffff19166100d7565b005b6000546c010000000000000000000000000290565b6000805473ffffffffffffffffffffffffffffffffffffffff19166c0100000000000000000000000090920491909117905556fea165627a7a7230582028bd13cc697ea9ca7b7bd0671288b360a518896fad5df4833587e133aeb4eb500029",
+  "sourceMap": "60:320:0:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;60:320:0;;;;;;;",
+  "deployedSourceMap": "60:320:0:-;;;;;;;;;;;;;;;;;;;;;;;;;;;;308:70;;8:9:-1;5:2;;;30:1;27;20:12;5:2;308:70:0;;;;;;;;-1:-1:-1;;308:70:0;;;;;;;;;;;;;;188:67;;8:9:-1;5:2;;;30:1;27;20:12;5:2;188:67:0;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;188:67:0;-1:-1:-1;;188:67:0;;;;;308:70;344:7;370:1;;;308:70;:::o;188:67::-;236:1;:12;;-1:-1:-1;;236:12:0;;;;;;;;;;;188:67::o",
+  "sourcePath": "/Users/retric/Desktop/polyjuice-provider/packages/web3/tests/multi-abi/contracts/s2.sol",
+  "compiler": {
+    "name": "solc",
+    "version": "0.5.0+commit.1d4f565a"
+  },
+  "ast": {
+    "absolutePath": "/Users/retric/Desktop/polyjuice-provider/packages/web3/tests/multi-abi/contracts/s2.sol",
+    "exportedSymbols": {
+      "s2": [22]
+    },
+    "id": 23,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 1,
+        "literals": ["solidity", ">=", "0.4", ".0", "<", "0.7", ".0"],
+        "nodeType": "PragmaDirective",
+        "src": "1:31:0"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": true,
+        "id": 22,
+        "linearizedBaseContracts": [22],
+        "name": "s2",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "constant": false,
+            "id": 3,
+            "name": "x",
+            "nodeType": "VariableDeclaration",
+            "scope": 22,
+            "src": "126:9:0",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_bytes20",
+              "typeString": "bytes20"
+            },
+            "typeName": {
+              "id": 2,
+              "name": "bytes20",
+              "nodeType": "ElementaryTypeName",
+              "src": "126:7:0",
+              "typeDescriptions": {
+                "typeIdentifier": "t_bytes20",
+                "typeString": "bytes20"
+              }
+            },
+            "value": null,
+            "visibility": "internal"
+          },
+          {
+            "body": {
+              "id": 12,
+              "nodeType": "Block",
+              "src": "226:29:0",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 10,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 8,
+                      "name": "x",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3,
+                      "src": "236:1:0",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bytes20",
+                        "typeString": "bytes20"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 9,
+                      "name": "newValue",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 5,
+                      "src": "240:8:0",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bytes20",
+                        "typeString": "bytes20"
+                      }
+                    },
+                    "src": "236:12:0",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes20",
+                      "typeString": "bytes20"
+                    }
+                  },
+                  "id": 11,
+                  "nodeType": "ExpressionStatement",
+                  "src": "236:12:0"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 13,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "set",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 6,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5,
+                  "name": "newValue",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 13,
+                  "src": "201:16:0",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes20",
+                    "typeString": "bytes20"
+                  },
+                  "typeName": {
+                    "id": 4,
+                    "name": "bytes20",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "201:7:0",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes20",
+                      "typeString": "bytes20"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "200:18:0"
+            },
+            "returnParameters": {
+              "id": 7,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "226:0:0"
+            },
+            "scope": 22,
+            "src": "188:67:0",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": {
+              "id": 20,
+              "nodeType": "Block",
+              "src": "353:25:0",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 18,
+                    "name": "x",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 3,
+                    "src": "370:1:0",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes20",
+                      "typeString": "bytes20"
+                    }
+                  },
+                  "functionReturnParameters": 17,
+                  "id": 19,
+                  "nodeType": "Return",
+                  "src": "363:8:0"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 21,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "get",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 14,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "320:2:0"
+            },
+            "returnParameters": {
+              "id": 17,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 16,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 21,
+                  "src": "344:7:0",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes20",
+                    "typeString": "bytes20"
+                  },
+                  "typeName": {
+                    "id": 15,
+                    "name": "bytes20",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "344:7:0",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes20",
+                      "typeString": "bytes20"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "343:9:0"
+            },
+            "scope": 22,
+            "src": "308:70:0",
+            "stateMutability": "view",
+            "superFunction": null,
+            "visibility": "public"
+          }
+        ],
+        "scope": 23,
+        "src": "60:320:0"
+      }
+    ],
+    "src": "1:379:0"
+  },
+  "functionHashes": {
+    "get()": "6d4ce63c",
+    "set(bytes20)": "935bf69b"
+  },
+  "gasEstimates": {
+    "creation": {
+      "codeDepositCost": "62200",
+      "executionCost": "111",
+      "totalCost": "62311"
+    },
+    "external": {
+      "get()": "404",
+      "set(bytes20)": "20447"
+    }
+  }
+}
