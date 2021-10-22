@@ -1,6 +1,6 @@
 import { providers } from "ethers";
 import { Transaction } from "@ethersproject/transactions";
-import { hexlify } from "@ethersproject/bytes";
+import { hexDataLength, hexlify } from "@ethersproject/bytes";
 import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { BigNumber } from "@ethersproject/bignumber";
 import { ConnectionInfo } from "@ethersproject/web";
@@ -16,6 +16,9 @@ import {
   verifyHttpUrl,
   executeCallTransaction,
 } from "@polyjuice-provider/base";
+
+import { Logger } from "@ethersproject/logger";
+const logger = new Logger("Polyjuice-Provider/0.0.1");
 
 export interface PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   constructor(
@@ -100,6 +103,90 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
       (<any>error).transactionHash = null;
       throw error;
     }
+  }
+
+  // This should be called by any subclass wrapping a TransactionResponse
+  _wrapTransaction(
+    tx: Transaction,
+    hash?: string,
+    startBlock?: number,
+    instantFinality?: boolean
+  ): TransactionResponse {
+    // by default we turn on the instantFinality feature
+    if (instantFinality == null) {
+      instantFinality = true;
+    }
+
+    if (hash != null && hexDataLength(hash) !== 32) {
+      throw new Error("invalid response - sendTransaction");
+    }
+
+    const result = <TransactionResponse>tx;
+
+    // Check the hash we expect is the same as the hash the server reported
+    if (hash != null && tx.hash !== hash) {
+      logger.throwError(
+        "Transaction hash mismatch from Provider.sendTransaction.",
+        Logger.errors.UNKNOWN_ERROR,
+        { expectedHash: tx.hash, returnedHash: hash }
+      );
+    }
+
+    result.wait = async (confirms?: number, timeout?: number) => {
+      if (confirms == null) {
+        confirms = 1;
+      }
+      if (timeout == null) {
+        timeout = 0;
+      }
+
+      // Get the details to detect replacement
+      let replacement = undefined;
+      if (confirms !== 0 && startBlock != null) {
+        replacement = {
+          data: tx.data,
+          from: tx.from,
+          nonce: tx.nonce,
+          to: tx.to,
+          value: tx.value,
+          startBlock,
+        };
+      }
+
+      const waitTransaction = `wait-transaction-instantFinality-turn-on:${instantFinality} =>`; 
+      console.time(waitTransaction);
+      if (instantFinality == true) {
+        await this.godwoker.waitForTransactionReceipt(tx.hash, 5000, 20, false);
+      }
+      console.timeEnd(waitTransaction);
+      
+      const fetchReceiptTime = `fetch-receipt-instantFinality-turn-on:${instantFinality} =>`;
+      console.time(fetchReceiptTime);
+      const receipt = await this._waitForTransaction(
+        tx.hash,
+        confirms,
+        timeout,
+        replacement
+      );
+      console.timeEnd(fetchReceiptTime);
+      if (receipt == null && confirms === 0) {
+        return null;
+      }
+
+      // No longer pending, allow the polling loop to garbage collect this
+      this._emitted["t:" + tx.hash] = receipt.blockNumber;
+
+      if (receipt.status === 0) {
+        logger.throwError("transaction failed", Logger.errors.CALL_EXCEPTION, {
+          transactionHash: tx.hash,
+          transaction: tx,
+          receipt: receipt,
+        });
+      }
+      return receipt;
+    };
+
+    return result;
   }
 
   async send(method: string, params: Array<any>): Promise<any> {
