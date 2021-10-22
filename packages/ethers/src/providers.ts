@@ -153,13 +153,13 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
         };
       }
 
-      const waitTransaction = `wait-transaction-instantFinality-turn-on:${instantFinality} =>`; 
+      const waitTransaction = `wait-transaction-instantFinality-turn-on:${instantFinality} =>`;
       console.time(waitTransaction);
       if (instantFinality == true) {
         await this.godwoker.waitForTransactionReceipt(tx.hash, 5000, 20, false);
       }
       console.timeEnd(waitTransaction);
-      
+
       const fetchReceiptTime = `fetch-receipt-instantFinality-turn-on:${instantFinality} =>`;
       console.time(fetchReceiptTime);
       const receipt = await this._waitForTransaction(

@@ -180,13 +180,13 @@ export enum L2TransactionStatus {
 }
 
 export interface L2TransactionView {
-  inner: L2Transaction,
-  tx_hash: HexString
+  inner: L2Transaction;
+  tx_hash: HexString;
 }
 
 export interface L2TransactionWithStatus {
-  transaction: L2TransactionView | null,
-  status: L2TransactionStatus
+  transaction: L2TransactionView | null;
+  status: L2TransactionStatus;
 }
 
 export function formalizeEthToAddress(to_address: string | undefined | null) {
@@ -1125,14 +1125,14 @@ export class Godwoker {
     );
   }
 
-  async gw_getTransaction(tx_hash: Hash, verbose?: GetTxVerbose){
+  async gw_getTransaction(tx_hash: Hash, verbose?: GetTxVerbose) {
     const args = verbose != null ? [tx_hash, verbose] : [tx_hash];
     return this.jsonRPC(
       "gw_get_transaction",
       args,
       null,
       RequireResult.canBeEmpty
-    ); 
+    );
   }
 
   async waitForTransactionReceipt(
@@ -1142,14 +1142,14 @@ export class Godwoker {
     showLog = false
   ) {
     for (let index = 0; index < timeout_ms; index += loopInterval_ms) {
-
-      const tx_with_status: L2TransactionWithStatus | null = await this.gw_getTransaction(tx_hash);
+      const tx_with_status: L2TransactionWithStatus | null =
+        await this.gw_getTransaction(tx_hash);
       if (tx_with_status !== null) {
         return;
       }
 
       await this.asyncSleep(loopInterval_ms);
-      if(showLog === true){
+      if (showLog === true) {
         console.log(
           `keep fetching tx_receipt with ${tx_hash}, waited for ${index} mil seconds`
         );
