@@ -31,11 +31,13 @@ export interface PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
 export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   abi: Abi;
   godwoker: Godwoker;
+  enableInstantFinalityForReceipt: boolean;
 
   constructor(
     polyjuiceConfig: PolyjuiceConfig,
     url?: ConnectionInfo | string,
-    network?: Networkish
+    network?: Networkish,
+    enableInstantFinalityForReceipt: boolean = true
   ) {
     super(url, network);
     const abi_items: AbiItems = polyjuiceConfig.abiItems || [];
@@ -55,6 +57,7 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
       },
     };
     this.godwoker = new Godwoker(web3_url, godwoker_option);
+    this.enableInstantFinalityForReceipt = enableInstantFinalityForReceipt;
   }
 
   setAbi(abiItems: AbiItems) {
@@ -97,96 +100,17 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
         value: BigNumber.from("0x00"),
         chainId: 3,
       };
-      return this._wrapTransaction(fake_tx, hash, blockNumber);
+      return _wrapTransaction.bind(this)(
+        fake_tx,
+        hash,
+        blockNumber,
+        this.enableInstantFinalityForReceipt
+      );
     } catch (error) {
       (<any>error).transaction = null;
       (<any>error).transactionHash = null;
       throw error;
     }
-  }
-
-  // This should be called by any subclass wrapping a TransactionResponse
-  _wrapTransaction(
-    tx: Transaction,
-    hash?: string,
-    startBlock?: number,
-    instantFinality?: boolean
-  ): TransactionResponse {
-    // by default we turn on the instantFinality feature
-    if (instantFinality == null) {
-      instantFinality = true;
-    }
-
-    if (hash != null && hexDataLength(hash) !== 32) {
-      throw new Error("invalid response - sendTransaction");
-    }
-
-    const result = <TransactionResponse>tx;
-
-    // Check the hash we expect is the same as the hash the server reported
-    if (hash != null && tx.hash !== hash) {
-      logger.throwError(
-        "Transaction hash mismatch from Provider.sendTransaction.",
-        Logger.errors.UNKNOWN_ERROR,
-        { expectedHash: tx.hash, returnedHash: hash }
-      );
-    }
-
-    result.wait = async (confirms?: number, timeout?: number) => {
-      if (confirms == null) {
-        confirms = 1;
-      }
-      if (timeout == null) {
-        timeout = 0;
-      }
-
-      // Get the details to detect replacement
-      let replacement = undefined;
-      if (confirms !== 0 && startBlock != null) {
-        replacement = {
-          data: tx.data,
-          from: tx.from,
-          nonce: tx.nonce,
-          to: tx.to,
-          value: tx.value,
-          startBlock,
-        };
-      }
-
-      const waitTransaction = `wait-transaction-instantFinality-turn-on:${instantFinality} =>`;
-      console.time(waitTransaction);
-      if (instantFinality == true) {
-        await this.godwoker.waitForTransactionReceipt(tx.hash, 5000, 20, false);
-      }
-      console.timeEnd(waitTransaction);
-
-      const fetchReceiptTime = `fetch-receipt-instantFinality-turn-on:${instantFinality} =>`;
-      console.time(fetchReceiptTime);
-      const receipt = await this._waitForTransaction(
-        tx.hash,
-        confirms,
-        timeout,
-        replacement
-      );
-      console.timeEnd(fetchReceiptTime);
-      if (receipt == null && confirms === 0) {
-        return null;
-      }
-
-      // No longer pending, allow the polling loop to garbage collect this
-      this._emitted["t:" + tx.hash] = receipt.blockNumber;
-
-      if (receipt.status === 0) {
-        logger.throwError("transaction failed", Logger.errors.CALL_EXCEPTION, {
-          transactionHash: tx.hash,
-          transaction: tx,
-          receipt: receipt,
-        });
-      }
-      return receipt;
-    };
-
-    return result;
   }
 
   async send(method: string, params: Array<any>): Promise<any> {
@@ -268,11 +192,13 @@ export interface PolyjuiceWebsocketProvider
 export class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
   abi: Abi;
   godwoker: Godwoker;
+  enableInstantFinalityForReceipt: boolean;
 
   constructor(
     polyjuiceConfig: PolyjuiceConfig,
     url: string,
-    network?: Networkish
+    network?: Networkish,
+    enableInstantFinalityForReceipt: boolean = true
   ) {
     super(url, network);
     const godwoker_option: GodwokerOption = {
@@ -296,6 +222,7 @@ export class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
     this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwoker_option);
     const abi_items: AbiItems = polyjuiceConfig.abiItems || [];
     this.abi = new Abi(abi_items);
+    this.enableInstantFinalityForReceipt = enableInstantFinalityForReceipt;
   }
 
   setAbi(abiItems: AbiItems) {
@@ -338,7 +265,13 @@ export class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
         value: BigNumber.from("0x00"),
         chainId: 3,
       };
-      return this._wrapTransaction(fake_tx, hash, blockNumber);
+
+      return _wrapTransaction.bind(this)(
+        fake_tx,
+        hash,
+        blockNumber,
+        this.enableInstantFinalityForReceipt
+      );
     } catch (error) {
       (<any>error).transaction = null;
       (<any>error).transactionHash = null;
@@ -446,5 +379,96 @@ export class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
     });
   }
 }
+
+// overwrite _wrapTransaction with instant-finality option.
+export function _wrapTransaction(
+  tx: Transaction,
+  hash?: string,
+  startBlock?: number,
+  instantFinality?: boolean
+): TransactionResponse {
+  // by default we turn on the instantFinality feature
+  if (instantFinality == null) {
+    instantFinality = true;
+  }
+
+  if (hash != null && hexDataLength(hash) !== 32) {
+    throw new Error("invalid response - sendTransaction");
+  }
+
+  const result = <TransactionResponse>tx;
+
+  // Check the hash we expect is the same as the hash the server reported
+  if (hash != null && tx.hash !== hash) {
+    logger.throwError(
+      "Transaction hash mismatch from Provider.sendTransaction.",
+      Logger.errors.UNKNOWN_ERROR,
+      { expectedHash: tx.hash, returnedHash: hash }
+    );
+  }
+
+  result.wait = async (confirms?: number, timeout?: number) => {
+    if (confirms == null) {
+      confirms = 1;
+    }
+    if (timeout == null) {
+      timeout = 0;
+    }
+
+    // Get the details to detect replacement
+    let replacement = undefined;
+    if (confirms !== 0 && startBlock != null) {
+      replacement = {
+        data: tx.data,
+        from: tx.from,
+        nonce: tx.nonce,
+        to: tx.to,
+        value: tx.value,
+        startBlock,
+      };
+    }
+
+    // const waitTransaction = `wait-transaction-instantFinality-turn-on:${instantFinality} =>`;
+    // console.time(waitTransaction);
+    if (instantFinality == true) {
+      await this.godwoker.waitForTransactionReceipt(tx.hash, 5000, 20, false);
+    }
+    // console.timeEnd(waitTransaction);
+
+    // const fetchReceiptTime = `fetch-receipt-instantFinality-turn-on:${instantFinality} =>`;
+    // console.time(fetchReceiptTime);
+    const receipt = await this._waitForTransaction(
+      tx.hash,
+      confirms,
+      timeout,
+      replacement
+    );
+    // console.timeEnd(fetchReceiptTime);
+    if (receipt == null && confirms === 0) {
+      return null;
+    }
+
+    // No longer pending, allow the polling loop to garbage collect this
+    this._emitted["t:" + tx.hash] = receipt.blockNumber;
+
+    if (receipt.status === 0) {
+      logger.throwError("transaction failed", Logger.errors.CALL_EXCEPTION, {
+        transactionHash: tx.hash,
+        transaction: tx,
+        receipt: receipt,
+      });
+    }
+    return receipt;
+  };
+
+  return result;
+}
+
+PolyjuiceJsonRpcProvider.prototype._wrapTransaction = _wrapTransaction.bind(
+  PolyjuiceJsonRpcProvider
+);
+PolyjuiceWebsocketProvider.prototype._wrapTransaction = _wrapTransaction.bind(
+  PolyjuiceWebsocketProvider
+);
 
 export default { PolyjuiceJsonRpcProvider, PolyjuiceWebsocketProvider };

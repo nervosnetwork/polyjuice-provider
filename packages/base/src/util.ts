@@ -39,6 +39,8 @@ import {
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
   EMPTY_ABI_ITEM_SERIALIZE_STR,
+  WAIT_TIMEOUT_MILSECS,
+  WAIT_LOOP_INTERVAL_MILSECS,
 } from "./constant";
 import { Reader } from "ckb-js-toolkit";
 import crossFetch from "cross-fetch"; // for nodejs compatibility polyfill
@@ -1137,8 +1139,8 @@ export class Godwoker {
 
   async waitForTransactionReceipt(
     tx_hash: Hash,
-    timeout_ms: number = 225000,
-    loopInterval_ms = 1000,
+    timeout_ms: number = WAIT_TIMEOUT_MILSECS,
+    loopInterval_ms = WAIT_LOOP_INTERVAL_MILSECS,
     showLog = false
   ) {
     for (let index = 0; index < timeout_ms; index += loopInterval_ms) {
