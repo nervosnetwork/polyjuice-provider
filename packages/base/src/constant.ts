@@ -18,3 +18,8 @@ export const DEFAULT_ETH_LOGS_BLOOM = "0x" + "00".repeat(256);
 export const HEX_CHARACTERS: string = "0123456789abcdef";
 
 export const EMPTY_ABI_ITEM_SERIALIZE_STR = "0x";
+
+// utils
+// waitForTransactionReceipt
+export const WAIT_TIMEOUT_MILSECS = 225000; // 3.75 minutes
+export const WAIT_LOOP_INTERVAL_MILSECS = 1000; // 1 secs
