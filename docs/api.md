@@ -170,7 +170,8 @@ class Abi {
 class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
     abi: Abi;
     godwoker: Godwoker;
-    constructor(polyjuice_config: PolyjuiceConfig, url?: ConnectionInfo | string, network?: Networkish);
+    enableInstantFinalityForReceipt: boolean;
+    constructor(polyjuiceConfig: PolyjuiceConfig, url?: ConnectionInfo | string, network?: Networkish, enableInstantFinalityForReceipt?: boolean);
     setAbi(abiItems: AbiItems): void;
     setMultiAbi(abiItemsArray: AbiItems[]): void;
     addAbi(_abiItems: AbiItems): void;
@@ -179,14 +180,11 @@ class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
     prepareRequest(method: string, params: any): [string, Array<any>];
 }
 
-interface PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
-    constructor(polyjuiceConfig: PolyjuiceConfig, url: string, network?: Networkish): any;
-}
-
-class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
+export declare class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
     abi: Abi;
     godwoker: Godwoker;
-    constructor(polyjuiceConfig: PolyjuiceConfig, url: string, network?: Networkish);
+    enableInstantFinalityForReceipt: boolean;
+    constructor(polyjuiceConfig: PolyjuiceConfig, url: string, network?: Networkish, enableInstantFinalityForReceipt?: boolean);
     setAbi(abiItems: AbiItems): void;
     setMultiAbi(abiItemsArray: AbiItems[]): void;
     addAbi(_abiItems: AbiItems): void;
