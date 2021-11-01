@@ -39,6 +39,8 @@ import {
   POLY_MAX_TRANSACTION_GAS_LIMIT,
   POLY_MIN_GAS_PRICE,
   EMPTY_ABI_ITEM_SERIALIZE_STR,
+  WAIT_TIMEOUT_MILSECS,
+  WAIT_LOOP_INTERVAL_MILSECS,
 } from "./constant";
 import { Reader } from "ckb-js-toolkit";
 import crossFetch from "cross-fetch"; // for nodejs compatibility polyfill
@@ -167,6 +169,26 @@ export type RequestRpcResult = {
 export enum RequireResult {
   canBeEmpty,
   canNotBeEmpty,
+}
+
+export enum GetTxVerbose {
+  TxWithStatus = 0,
+  OnlyStatus = 1,
+}
+
+export enum L2TransactionStatus {
+  Pending,
+  Committed,
+}
+
+export interface L2TransactionView {
+  inner: L2Transaction;
+  tx_hash: HexString;
+}
+
+export interface L2TransactionWithStatus {
+  transaction: L2TransactionView | null;
+  status: L2TransactionStatus;
 }
 
 export function formalizeEthToAddress(to_address: string | undefined | null) {
@@ -1105,26 +1127,38 @@ export class Godwoker {
     );
   }
 
-  // todo: timeout should be set with > 5 blocks long, may change in mainnet.
+  async gw_getTransaction(tx_hash: Hash, verbose?: GetTxVerbose) {
+    const args = verbose != null ? [tx_hash, verbose] : [tx_hash];
+    return this.jsonRPC(
+      "gw_get_transaction",
+      args,
+      null,
+      RequireResult.canBeEmpty
+    );
+  }
+
   async waitForTransactionReceipt(
     tx_hash: Hash,
-    timeout: number = 225,
-    loopInterval = 3
+    timeout_ms: number = WAIT_TIMEOUT_MILSECS,
+    loopInterval_ms = WAIT_LOOP_INTERVAL_MILSECS,
+    showLog = false
   ) {
-    for (let index = 0; index < timeout; index += loopInterval) {
-      const tx_receipt = await this.eth_getTransactionReceipt(tx_hash);
-      console.log(
-        `keep fetching tx_receipt with ${tx_hash}, waited for ${index} seconds`
-      );
-
-      await this.asyncSleep(loopInterval * 1000);
-
-      if (tx_receipt !== null) {
+    for (let index = 0; index < timeout_ms; index += loopInterval_ms) {
+      const tx_with_status: L2TransactionWithStatus | null =
+        await this.gw_getTransaction(tx_hash);
+      if (tx_with_status !== null) {
         return;
+      }
+
+      await this.asyncSleep(loopInterval_ms);
+      if (showLog === true) {
+        console.log(
+          `keep fetching tx_receipt with ${tx_hash}, waited for ${index} mil seconds`
+        );
       }
     }
     throw new Error(
-      `tx might be failed: cannot fetch tx_receipt with tx ${tx_hash} in ${timeout} seconds`
+      `tx might be failed: cannot fetch tx_receipt with tx ${tx_hash} in ${timeout_ms} mil seconds`
     );
   }
 
