@@ -33,17 +33,12 @@ generate_test_env(){
     printf "Web3 websocket rpc url: ";
     read;
     [ -z "$REPLY" ] && web3WsRpcUrl=${DEFAULT_WS_WEB3_RPC} || web3WsRpcUrl=${REPLY}
-
-    printf "SimpleStorageV2 contract address: ";
-    read;
-    exampleContractAddress=${REPLY}
     
     cat > $1 <<EOF
 WEB3_JSON_RPC=${web3RpcUrl}
 WEB3_WS_JSON_RPC=${web3WsRpcUrl}
 ROLLUP_TYPE_HASH=${rollupTypeHash}
 ETH_ACCOUNT_LOCK_CODE_HASH=${ethAccountLockCodeHash}
-EXAMPLE_CONTRACT_ADDRESS=${exampleContractAddress}
 PRIVATE_KEY=${privateKey}
 ETH_ADDRESS=${ethAddress}
 EOF
