@@ -7,6 +7,7 @@ import {
   TransactionReceipt as GwTransactionReceipt,
 } from "@polyjuice-provider/godwoken";
 import {
+  SerializeSUDTArgs,
   SerializeL2Transaction,
   SerializeRawL2Transaction,
 } from "@polyjuice-provider/godwoken/schemas";
@@ -25,6 +26,9 @@ import {
   AddressMapping as AddressMappingClass,
 } from "@polyjuice-provider/godwoken/schemas/addressMapping/addressMapping";
 import {
+  UnionType,
+  SUDTTransfer,
+  NormalizeSUDTTransfer,
   NormalizeL2Transaction,
   NormalizeAddressMapping,
   NormalizeL2TransactionWithAddressMapping,
@@ -41,6 +45,9 @@ import {
   EMPTY_ABI_ITEM_SERIALIZE_STR,
   WAIT_TIMEOUT_MILSECS,
   WAIT_LOOP_INTERVAL_MILSECS,
+  DEFAULT_SUDT_ID_HEX_STRING,
+  DEFAULT_SUDT_FEE_HEX_STRING,
+  DEFAULT_ETH_TO_CKB_SUDT_DECIMAL,
 } from "./constant";
 import { Reader } from "ckb-js-toolkit";
 import crossFetch from "cross-fetch"; // for nodejs compatibility polyfill
@@ -517,6 +524,40 @@ export function encodeArgs(_tx: EthTransaction) {
   return args;
 }
 
+export function encodeSudtTransferArgs(
+  toAddress: HexString,
+  amount: bigint,
+  fee: bigint
+) {
+  const sudtTransfer: SUDTTransfer = {
+    to: toAddress,
+    amount: "0x" + amount.toString(16),
+    fee: "0x" + fee.toString(16),
+  };
+  const sudtArgs: UnionType = {
+    type: "SUDTTransfer",
+    value: NormalizeSUDTTransfer(sudtTransfer),
+  };
+  const serializedSudtArgs = new Reader(
+    SerializeSUDTArgs(sudtArgs)
+  ).serializeJson();
+  return serializedSudtArgs;
+}
+
+export function ethToCkb(
+  value: HexString,
+  decimal = DEFAULT_ETH_TO_CKB_SUDT_DECIMAL
+) {
+  return BigInt(value) / BigInt(decimal);
+}
+
+export function ckbToEth(
+  value: HexString,
+  decimal = DEFAULT_ETH_TO_CKB_SUDT_DECIMAL
+) {
+  return BigInt(value) * BigInt(decimal);
+}
+
 export class Godwoker {
   public eth_account_lock: Omit<Script, "args"> | undefined;
   public rollup_type_hash: string | undefined;
@@ -883,8 +924,32 @@ export class Godwoker {
   async assembleRawL2Transaction(
     eth_tx: EthTransaction
   ): Promise<RawL2Transaction> {
+    // TODO: reduce one http request when to_address is creator
+    const toScriptHash = await this.allTypeEthAddressToScriptHash(eth_tx.to);
+    if (toScriptHash === this.computeScriptHashByEoaEthAddress(eth_tx.to)) {
+      // transfer transaction when to_address is an eoa address
+      const from = await this.getAccountIdByEoaEthAddress(eth_tx.from);
+      const nonce = await this.getNonce(parseInt(from));
+
+      // eth = 10 ^ 18, ckb = 10 ^ 8.
+      // we treat 1 ckb = 1 eth in layer2.
+      const amount = ethToCkb(eth_tx.value);
+      const fee = BigInt(DEFAULT_SUDT_FEE_HEX_STRING);
+      const toAddress = toScriptHash.slice(0, 42);
+
+      const serializedSudtArgs = encodeSudtTransferArgs(toAddress, amount, fee);
+
+      const tx: RawL2Transaction = {
+        from_id: "0x" + BigInt(from).toString(16),
+        to_id: DEFAULT_SUDT_ID_HEX_STRING,
+        args: serializedSudtArgs,
+        nonce: "0x" + BigInt(nonce).toString(16),
+      };
+      return tx;
+    }
+
     const from = await this.getAccountIdByEoaEthAddress(eth_tx.from);
-    const to = await this.allTypeEthAddressToAccountId(eth_tx.to);
+    const to = await this.getAccountIdByScriptHash(toScriptHash);
     const nonce = await this.getNonce(parseInt(from));
     const encodedArgs = encodeArgs(eth_tx);
     const tx: RawL2Transaction = {
@@ -1164,6 +1229,36 @@ export class Godwoker {
 
   asyncSleep(ms = 0) {
     return new Promise((r) => setTimeout(r, ms));
+  }
+
+  async allTypeEthAddressToScriptHash(_address: HexString): Promise<HexNumber> {
+    // todo: support create2 address in such case that it haven't create real contract yet.
+    const address = Buffer.from(_address.slice(2), "hex");
+
+    if (address.byteLength !== 20)
+      throw new Error(`Invalid eth address length: ${address.byteLength}`);
+    if (address.equals(Buffer.from(Array(20).fill(0)))) {
+      // special-case: meta-contract address should return creator id
+      const to_id =
+        this.creator_id || (await this.getPolyjuiceCreatorAccountId());
+      return await this.getScriptHashByAccountId(parseInt(to_id, 16));
+    }
+
+    // assume it is normal contract address, thus an godwoken-short-address
+    let script_hash: HexString | undefined;
+    const setScriptHash = (value: HexString) => {
+      script_hash = value;
+    };
+    const is_contract_address = await this.isShortAddressOnChain(
+      _address,
+      setScriptHash
+    );
+    if (is_contract_address) {
+      return script_hash!;
+    }
+
+    // otherwise, assume it is EOA address
+    return this.computeScriptHashByEoaEthAddress(_address);
   }
 
   async allTypeEthAddressToAccountId(_address: HexString): Promise<HexNumber> {
