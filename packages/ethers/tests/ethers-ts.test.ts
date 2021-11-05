@@ -1,6 +1,10 @@
 import test from "ava";
 import { Contract, ContractFactory } from "ethers";
-import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
+import {
+  AbiItems,
+  DEFAULT_ETH_TO_CKB_SUDT_DECIMAL,
+  PolyjuiceConfig,
+} from "@polyjuice-provider/base";
 import {
   PolyjuiceWallet,
   PolyjuiceJsonRpcProvider,
@@ -76,18 +80,19 @@ const SimpleStorageV2_Abi = [
     type: "function",
   },
 ];
-var provider: PolyjuiceJsonRpcProvider;
-var wsProvider: PolyjuiceWebsocketProvider;
-var deployer: PolyjuiceWallet;
-var wsDeployer: PolyjuiceWallet;
-var SimpleStorageV2_Address = process.env.EXAMPLE_CONTRACT_ADDRESS;
+let provider: PolyjuiceJsonRpcProvider;
+let wsProvider: PolyjuiceWebsocketProvider;
+let deployer: PolyjuiceWallet;
+let wsDeployer: PolyjuiceWallet;
+let SimpleStorageV2_Address = process.env.EXAMPLE_CONTRACT_ADDRESS;
 
-var not_exist_address = genNewEthAddress();
-var not_exist_address_for_ws = genNewEthAddress();
-var test_address_array = [
+let ethAddressForPrivateKey = process.env.ETH_ADDRESS;
+let notExistAddress = genNewEthAddress();
+let notExistAddressForWs = genNewEthAddress();
+let testAddressArray = [
   genNewEthAddress(),
   "0x0000000000000000000000000000000000000000",
-  process.env.ETH_ADDRESS,
+  ethAddressForPrivateKey,
 ];
 
 function genNewEthAddress() {
@@ -121,6 +126,26 @@ test.serial("import class", (t) => {
   t.not(deployer, undefined);
 });
 
+test.serial("transfer eth", async (t) => {
+  const newAddress = genNewEthAddress();
+  const origin_balance = await provider.getBalance(newAddress);
+  t.is(origin_balance.toHexString(), "0x00");
+  const amount = "0x" + BigInt(300_0000_0000_0000_0000).toString(16); // 3 eth
+  const eth_tx = {
+    from: ethAddressForPrivateKey,
+    to: newAddress,
+    value: amount,
+    data: "0x00",
+    gasLimit: "0xffffff",
+    gasPrice: "0x00",
+  };
+  const transaction = await deployer.sendTransaction(eth_tx);
+  await transaction.wait(1);
+  const balance = BigInt((await provider.getBalance(newAddress)).toHexString());
+  const decimal = BigInt(DEFAULT_ETH_TO_CKB_SUDT_DECIMAL);
+  t.is(amount, "0x" + (balance * decimal).toString(16));
+});
+
 test.serial("deploy_example_contract", async (t) => {
   const implementationFactory = new ContractFactory(
     SimpleStorageV2_Abi,
@@ -135,7 +160,7 @@ test.serial("deploy_example_contract", async (t) => {
   const txReceipt = await res.wait();
   t.is(txReceipt.contractAddress.slice(0, 2), "0x");
   SimpleStorageV2_Address = txReceipt.contractAddress;
-  test_address_array.push(SimpleStorageV2_Address);
+  testAddressArray.push(SimpleStorageV2_Address);
 });
 
 test.serial("call set not-exist address on contract", async (t) => {
@@ -144,7 +169,7 @@ test.serial("call set not-exist address on contract", async (t) => {
     SimpleStorageV2_Abi,
     deployer
   );
-  const res = await simpleStorageV2.set(not_exist_address);
+  const res = await simpleStorageV2.set(notExistAddress);
   t.is(typeof res.wait, "function");
   const txReceipt = await res.wait();
   t.not(txReceipt, undefined);
@@ -158,7 +183,7 @@ test.serial("call contract get for not-exist address", async (t) => {
   );
 
   const address = await simpleStorageV2.callStatic.get();
-  t.is(address, not_exist_address);
+  t.is(address, notExistAddress);
 });
 
 test.serial("call set array address on contract", async (t) => {
@@ -167,7 +192,7 @@ test.serial("call set array address on contract", async (t) => {
     SimpleStorageV2_Abi,
     deployer
   );
-  const res = await simpleStorageV2.setArray(test_address_array);
+  const res = await simpleStorageV2.setArray(testAddressArray);
   t.is(typeof res.wait, "function");
   const txReceipt = await res.wait();
   t.not(txReceipt, undefined);
@@ -182,7 +207,7 @@ test.serial("call contract get array address", async (t) => {
   );
 
   const address_array = await simpleStorageV2.callStatic.getArray();
-  t.deepEqual(address_array, test_address_array);
+  t.deepEqual(address_array, testAddressArray);
 });
 
 test.serial("ws-provider: call set address on contract", async (t) => {
@@ -191,7 +216,7 @@ test.serial("ws-provider: call set address on contract", async (t) => {
     SimpleStorageV2_Abi,
     wsDeployer
   );
-  const res = await simpleStorageV2.set(not_exist_address_for_ws);
+  const res = await simpleStorageV2.set(notExistAddressForWs);
   t.is(typeof res.wait, "function");
   const txReceipt = await res.wait();
   t.not(txReceipt, undefined);
@@ -205,7 +230,7 @@ test.serial("ws-provider: call contract get_address", async (t) => {
   );
 
   const address = await simpleStorageV2.callStatic.get();
-  t.is(address, not_exist_address_for_ws);
+  t.is(address, notExistAddressForWs);
 });
 
 // test.serial("make a lot of send at serial", async (t) => {
