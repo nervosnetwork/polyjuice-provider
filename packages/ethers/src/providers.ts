@@ -22,7 +22,7 @@ const logger = new Logger("Polyjuice-Provider/0.0.1");
 
 // instant-finality feature of Godwoken enable very quick tx-receipt fetching,
 // so you do not need to wait for blocks to get transaction
-const WAIT_TRANSACTION_TIMEOUT_MILSECS = 10 * 1000; // 10 seconds
+const WAIT_TRANSACTION_TIMEOUT_MILSECS = 20 * 1000; // 20 seconds
 const WAIT_TRANSACTION_INTERVAL_MILSECS = 100; // 100ms
 
 export interface PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
@@ -436,11 +436,17 @@ export function _wrapTransaction(
     // const waitTransaction = `wait-transaction-instantFinality-turn-on:${instantFinality} =>`;
     // console.time(waitTransaction);
     if (instantFinality == true) {
-      await (this.godwoker as Godwoker).waitForTransactionReceipt(
-        tx.hash,
-        WAIT_TRANSACTION_TIMEOUT_MILSECS,
-        WAIT_TRANSACTION_INTERVAL_MILSECS
-      );
+      try {
+        await (this.godwoker as Godwoker).waitForTransactionReceipt(
+          tx.hash,
+          WAIT_TRANSACTION_TIMEOUT_MILSECS,
+          WAIT_TRANSACTION_INTERVAL_MILSECS
+        );
+      } catch (error) {
+        console.error(
+          `instant-finality failed: unable to fetch tx receipt under ${WAIT_TRANSACTION_TIMEOUT_MILSECS} ms. continue.`
+        );
+      }
     }
     // console.timeEnd(waitTransaction);
 
