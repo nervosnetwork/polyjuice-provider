@@ -105,7 +105,7 @@ export class PolyjuiceHttpProviderCli extends PolyjuiceHttpProvider {
           callback(null, {
             jsonrpc: payload.jsonrpc,
             id: payload.id,
-            error: error.message,
+            error: error,
           });
         }
         break;

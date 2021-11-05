@@ -6,7 +6,13 @@ import {
   PolyjuiceHttpProviderCli,
   PolyjuiceWebsocketProvider,
 } from "../lib/index";
-import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
+import {
+  AbiItems,
+  DEFAULT_EMPTY_ETH_ADDRESS,
+  PolyjuiceConfig,
+  RpcFailedError,
+} from "@polyjuice-provider/base";
+import errorReceiptContract from "../../../contract-testcase/ErrorReceipt.json";
 
 const Contract = require("web3-eth-contract");
 
@@ -202,6 +208,32 @@ test.serial("account: sign-tx-send", async (t) => {
   t.is(txRes.status, true);
 });
 
+test.serial("account: get revert message", async (t) => {
+  polyjuiceAccounts.wallet.add(PRIVATE_KEY);
+  Contract.setProvider(provider, polyjuiceAccounts);
+  const errorCotnract = new Contract(errorReceiptContract.abi as AbiItems);
+  const contractInstance = await errorCotnract
+    .deploy({
+      data: errorReceiptContract.bytecode,
+      arguments: [],
+    })
+    .send({ from: ETH_ADDRESS, gas: "0x30d40", gasPrice: "0x00" });
+  t.is(contractInstance._address.slice(0, 2), "0x");
+  t.is(contractInstance._address.length, 42);
+
+  // get revert message
+  const callRevert = async () =>
+    await contractInstance.methods
+      .getRevertMsg(555)
+      .call({ from: ETH_ADDRESS });
+  const callError = await t.throwsAsync(callRevert);
+  t.is(callError.message, "Returned error: revert: you trigger crying value!");
+  t.is(
+    (callError as unknown as RpcFailedError).data.failed_reason.status_code,
+    "0x2"
+  );
+});
+
 //# cli provider test
 test.serial("cli: sign message method", (t) => {
   const message =
@@ -237,7 +269,7 @@ test.serial("cli: proxy rpc, call_transaction", async (t) => {
   t.is(result.length, 42);
 });
 
-test.serial("change abi then send_transaction", async (t) => {
+test.serial("cli: change abi then send_transaction", async (t) => {
   const BoxContractArtifact = {
     _format: "hh-sol-artifact-1",
     contractName: "Box",

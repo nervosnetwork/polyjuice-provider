@@ -111,7 +111,7 @@ export class PolyjuiceWallet extends Wallet {
           signingMethod.bind(that)
         );
       } catch (error) {
-        logger.throwError(error.message);
+        logger.throwError(error.message, error.code, t);
         throw new Error(error.message);
       }
     });

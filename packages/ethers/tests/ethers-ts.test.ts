@@ -1,6 +1,10 @@
 import test from "ava";
 import { Contract, ContractFactory } from "ethers";
-import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
+import {
+  AbiItems,
+  PolyjuiceConfig,
+  RpcFailedError,
+} from "@polyjuice-provider/base";
 import {
   PolyjuiceWallet,
   PolyjuiceJsonRpcProvider,
@@ -8,6 +12,7 @@ import {
 } from "../lib/index";
 import crypto from "crypto";
 import Web3 from "web3";
+import errorReceiptContract from "../../../contract-testcase/ErrorReceipt.json";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
@@ -206,6 +211,46 @@ test.serial("ws-provider: call contract get_address", async (t) => {
 
   const address = await simpleStorageV2.callStatic.get();
   t.is(address, not_exist_address_for_ws);
+});
+
+test.serial("test_error_receipt_contract", async (t) => {
+  const implementationFactory = new ContractFactory(
+    errorReceiptContract.abi,
+    errorReceiptContract.bytecode,
+    deployer
+  );
+
+  const tx = implementationFactory.getDeployTransaction();
+  tx.gasPrice = 0;
+  tx.gasLimit = 500000;
+  const res = await deployer.sendTransaction(tx);
+  const txReceipt = await res.wait();
+  t.is(txReceipt.contractAddress.slice(0, 2), "0x");
+
+  const contract = new Contract(
+    txReceipt.contractAddress,
+    errorReceiptContract.abi,
+    deployer
+  );
+  const callRevert = async () => {
+    try {
+      await contract.callStatic.getRevertMsg(555);
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  };
+  const callRevertRunResult = await t.throwsAsync(callRevert);
+  t.is(callRevertRunResult.message, "revert: you trigger crying value!");
+  const sendRevert = async () => {
+    try {
+      const callRevertRes = await contract.getRevertMsg(555);
+      await callRevertRes.wait(1);
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  };
+  const callRevertRes = await t.throwsAsync(sendRevert);
+  t.is(callRevertRes.message, "revert: you trigger crying value!");
 });
 
 // test.serial("make a lot of send at serial", async (t) => {
