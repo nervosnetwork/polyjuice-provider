@@ -417,7 +417,7 @@ export function NormalizeWithdrawalRequest(
   });
 }
 
-export interface UnoinType {
+export interface UnionType {
   type: string;
   value: any;
 }
@@ -453,7 +453,7 @@ export function NormalizeSUDTQuery(
 }
 
 export interface SUDTTransfer {
-  to: HexNumber;
+  to: HexString;
   amount: HexNumber;
   fee: HexNumber;
 }
@@ -463,7 +463,7 @@ export function NormalizeSUDTTransfer(
   { debugPath = "sudt_transfer" } = {}
 ) {
   return normalizeObject(debugPath, sudt_transfer, {
-    to: normalizeHexNumber(4),
+    to: normalizeRawData(20),
     amount: normalizeHexNumber(16),
     fee: normalizeHexNumber(16),
   });

@@ -23,3 +23,8 @@ export const EMPTY_ABI_ITEM_SERIALIZE_STR = "0x";
 // waitForTransactionReceipt
 export const WAIT_TIMEOUT_MILSECS = 225000; // 3.75 minutes
 export const WAIT_LOOP_INTERVAL_MILSECS = 1000; // 1 secs
+
+// sudt transfer
+export const DEFAULT_SUDT_ID_HEX_STRING = "0x1";
+export const DEFAULT_SUDT_FEE_HEX_STRING = "0x0";
+export const DEFAULT_ETH_TO_CKB_SUDT_DECIMAL = 100_0000_0000; // 1 eth = 1 ckb in layer2
