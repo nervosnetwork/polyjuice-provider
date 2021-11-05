@@ -2,9 +2,8 @@ import test from "ava";
 import { Contract, ContractFactory } from "ethers";
 import {
   AbiItems,
-  RpcFailedError,
   DEFAULT_ETH_TO_CKB_SUDT_DECIMAL,
-  PolyjuiceConfig
+  PolyjuiceConfig,
 } from "@polyjuice-provider/base";
 import {
   PolyjuiceWallet,
