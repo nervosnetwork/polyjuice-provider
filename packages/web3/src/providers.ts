@@ -144,7 +144,7 @@ export class PolyjuiceHttpProvider {
           callback(null, {
             jsonrpc: payload.jsonrpc,
             id: payload.id,
-            error: error.message,
+            error: error,
           });
         }
         break;
@@ -186,7 +186,7 @@ export class PolyjuiceHttpProvider {
           callback(null, {
             jsonrpc: payload.jsonrpc,
             id: payload.id,
-            error: error.message,
+            error: error,
           });
         }
         break;
@@ -219,7 +219,7 @@ export class PolyjuiceHttpProvider {
           callback(null, {
             jsonrpc: payload.jsonrpc,
             id: payload.id,
-            error: error.message,
+            error: error,
           });
         }
         break;
@@ -246,7 +246,7 @@ export class PolyjuiceHttpProvider {
           callback(null, {
             jsonrpc: payload.jsonrpc,
             id: payload.id,
-            error: error.message,
+            error: error,
           });
         }
         break;
