@@ -50,6 +50,7 @@ provider are designed to got these 3 things done for you and your dapp, mainly b
 ## Known Caveats Of polyjuice-provider
 
 - currently we do not support not-created-yet contract-address passing as address type parameter to interact with smart-contract. noticed that, this doesn't mean we do not support `create2`. you can use create2 whenever you want. but if it has not been created on chain, you can not use this address as parameter to feed other contracts. the address type converting will go wrong. as soon as the contract been created, there is no limit.
+- currently we are **NOT** supporting transfer ether to another EOA address directly via provider for safety reason, so if you are sending a transfer transaction through polyjuice-provider, it won't work. however, you can still construct a transaction which interact with ERC20-contract and tell the contract to transfer token for you.
 
 ## How To Develop This Project
 
