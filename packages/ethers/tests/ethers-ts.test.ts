@@ -127,25 +127,25 @@ test.serial("import class", (t) => {
   t.not(deployer, undefined);
 });
 
-test.serial("transfer eth", async (t) => {
-  const newAddress = genNewEthAddress();
-  const origin_balance = await provider.getBalance(newAddress);
-  t.is(origin_balance.toHexString(), "0x00");
-  const amount = "0x" + BigInt(300_0000_0000_0000_0000).toString(16); // 3 eth
-  const eth_tx = {
-    from: ethAddressForPrivateKey,
-    to: newAddress,
-    value: amount,
-    data: "0x00",
-    gasLimit: "0xffffff",
-    gasPrice: "0x00",
-  };
-  const transaction = await deployer.sendTransaction(eth_tx);
-  await transaction.wait(1);
-  const balance = BigInt((await provider.getBalance(newAddress)).toHexString());
-  const decimal = BigInt(DEFAULT_ETH_TO_CKB_SUDT_DECIMAL);
-  t.is(amount, "0x" + (balance * decimal).toString(16));
-});
+// test.serial("transfer eth", async (t) => {
+//   const newAddress = genNewEthAddress();
+//   const origin_balance = await provider.getBalance(newAddress);
+//   t.is(origin_balance.toHexString(), "0x00");
+//   const amount = "0x" + BigInt(300_0000_0000_0000_0000).toString(16); // 3 eth
+//   const eth_tx = {
+//     from: ethAddressForPrivateKey,
+//     to: newAddress,
+//     value: amount,
+//     data: "0x00",
+//     gasLimit: "0xffffff",
+//     gasPrice: "0x00",
+//   };
+//   const transaction = await deployer.sendTransaction(eth_tx);
+//   await transaction.wait(1);
+//   const balance = BigInt((await provider.getBalance(newAddress)).toHexString());
+//   const decimal = BigInt(DEFAULT_ETH_TO_CKB_SUDT_DECIMAL);
+//   t.is(amount, "0x" + (balance * decimal).toString(16));
+// });
 
 test.serial("deploy_example_contract", async (t) => {
   const implementationFactory = new ContractFactory(
