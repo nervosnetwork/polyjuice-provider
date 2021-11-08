@@ -45,8 +45,6 @@ import {
   EMPTY_ABI_ITEM_SERIALIZE_STR,
   WAIT_TIMEOUT_MILSECS,
   WAIT_LOOP_INTERVAL_MILSECS,
-  DEFAULT_SUDT_ID_HEX_STRING,
-  DEFAULT_SUDT_FEE_HEX_STRING,
   DEFAULT_ETH_TO_CKB_SUDT_DECIMAL,
 } from "./constant";
 import { Reader } from "ckb-js-toolkit";
@@ -924,32 +922,8 @@ export class Godwoker {
   async assembleRawL2Transaction(
     eth_tx: EthTransaction
   ): Promise<RawL2Transaction> {
-    // TODO: reduce one http request when to_address is creator
-    const toScriptHash = await this.allTypeEthAddressToScriptHash(eth_tx.to);
-    if (toScriptHash === this.computeScriptHashByEoaEthAddress(eth_tx.to)) {
-      // transfer transaction when to_address is an eoa address
-      const from = await this.getAccountIdByEoaEthAddress(eth_tx.from);
-      const nonce = await this.getNonce(parseInt(from));
-
-      // eth = 10 ^ 18, ckb = 10 ^ 8.
-      // we treat 1 ckb = 1 eth in layer2.
-      const amount = ethToCkb(eth_tx.value);
-      const fee = BigInt(DEFAULT_SUDT_FEE_HEX_STRING);
-      const toAddress = toScriptHash.slice(0, 42);
-
-      const serializedSudtArgs = encodeSudtTransferArgs(toAddress, amount, fee);
-
-      const tx: RawL2Transaction = {
-        from_id: "0x" + BigInt(from).toString(16),
-        to_id: DEFAULT_SUDT_ID_HEX_STRING,
-        args: serializedSudtArgs,
-        nonce: "0x" + BigInt(nonce).toString(16),
-      };
-      return tx;
-    }
-
     const from = await this.getAccountIdByEoaEthAddress(eth_tx.from);
-    const to = await this.getAccountIdByScriptHash(toScriptHash);
+    const to = await this.allTypeEthAddressToAccountId(eth_tx.to);
     const nonce = await this.getNonce(parseInt(from));
     const encodedArgs = encodeArgs(eth_tx);
     const tx: RawL2Transaction = {
