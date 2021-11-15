@@ -2,7 +2,9 @@
 
 godwoken-polyjuice compatible providers for ethereum library like [ethers](https://github.com/ethers-io/ethers.js) and [web3js](https://github.com/ChainSafe/web3.js). now you can call your smart-contract on godwoken-polyjuice with metamask and eth address.
 
-***Note: since [Godwoken-web3](https://github.com/nervosnetwork/godwoken-web3) will have some APIs deprecated in the future, it is recommend to upgrade your Polyjuice-Provider over [0.0.1-rc10](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.0.1-rc10) version or above. as early as possible.***
+***- Note: since [Godwoken](https://github.com/nervosnetwork/godwoken) had some changed for instant-finality, please upgrade your Polyjuice-Provider over [0.0.1-rc14](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.0.1-rc10) version or above. otherwise you might not be able to fetch tx-receipt as fast as possible. (2021.11.15)***
+
+***- Note: since [Godwoken-web3](https://github.com/nervosnetwork/godwoken-web3) will have some APIs deprecated in the future, it is recommend to upgrade your Polyjuice-Provider over [0.0.1-rc10](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.0.1-rc10) version or above. as early as possible. (2021.09.15)***
 
 ## Install
 
