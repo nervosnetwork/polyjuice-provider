@@ -1,10 +1,14 @@
 # Polyjuice Provider
 
-godwoken-polyjuice compatible providers for ethereum library like [ethers](https://github.com/ethers-io/ethers.js) and [web3js](https://github.com/ChainSafe/web3.js). now you can call your smart-contract on godwoken-polyjuice with metamask and eth address.
+godwoken-polyjuice compatible providers for ethereum library like [ethers](https://github.com/ethers-io/ethers.js) and [web3js](https://github.com/ChainSafe/web3.js).
 
-***- Note: since [Godwoken](https://github.com/nervosnetwork/godwoken) had some changed for instant-finality, please upgrade your Polyjuice-Provider over [0.0.1-rc14](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.0.1-rc10) version or above. otherwise you might not be able to fetch tx-receipt as fast as possible. (2021.11.15)***
+## Important Notes
 
-***- Note: since [Godwoken-web3](https://github.com/nervosnetwork/godwoken-web3) will have some APIs deprecated in the future, it is recommend to upgrade your Polyjuice-Provider over [0.0.1-rc10](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.0.1-rc10) version or above. as early as possible. (2021.09.15)***
+- new version [v0.1.0](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.1.0) has been release including some bug fixed, please upgrade to latest version. (2021.11.18)
+
+- since [Godwoken](https://github.com/nervosnetwork/godwoken) had some changed for instant-finality, please upgrade your Polyjuice-Provider over [0.0.1-rc14](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.0.1-rc10) version or above. otherwise you might not be able to fetch tx-receipt as fast as possible. (2021.11.15)
+
+- since [Godwoken-web3](https://github.com/nervosnetwork/godwoken-web3) will have some APIs deprecated in the future, it is recommend to upgrade your Polyjuice-Provider over [0.0.1-rc10](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.0.1-rc10) version or above. as early as possible. (2021.09.15)
 
 ## Install
 
@@ -25,15 +29,19 @@ yarn add @polyjuice-provider/truffle
 
 `note: this project is still under development, some APIs might be changed in the future.`
 
-## Need another provider?
+## Known Caveats(things you should be careful!!)
 
-right now we have 3 compatible providers:
+short version:
 
-- Web3 compatible provider: `/packages/web3`
-- ethers compatible provider: `/packages/ethers`
-- truffle compatible HdWalletProvider: `/packages/truffle`
+- do not use polyjuice-provider with contract address which has not been created on-chain.
+- do not use polyjuice-provider to transfer ether.
 
-if you need another compatible provider, you can request via opening an issue or even create an pull request by yourself :) we hope community can takes part in and build more useful tools together for godwoken-polyjuice.
+long version and why:
+
+- currently we do **NOT** support passing contract-address which has not been created yet on chain as address parameter in tx's [data field](https://ethereum.org/en/developers/docs/transactions/) to interact with smart-contract. noticed that, this doesn't mean we do not support `create2`. you can use create2 whenever you want. but if it has not been created on chain, you can not use this address as parameter to feed other contracts. the address-converting will go wrong. as soon as the contract been created, there is no limit.
+- currently we are **NOT** supporting transfer ether to another EOA address directly via provider for safety reason, so if you are sending a transfer transaction through polyjuice-provider, it won't work. however, you can still construct a transaction which interact with ERC20-contract and tell the contract to transfer token for you.
+
+you can learn more by reading how it works below.
 
 ## How It Works?
 
@@ -49,10 +57,15 @@ provider are designed to got these 3 things done for you and your dapp, mainly b
 2. generate signing message from Godwoken L2 transaction and call Metamask for signing (or use privateKey in non-browser env).
 3. do address type converting according to your contract's Abi. that's why you need to pass AbiItems to provider constructor. you can pass [multiple smart-contracts ABIs to provider](docs/get-started.md#L91) if needed.
 
-## Known Caveats Of polyjuice-provider
+## Need another provider?
 
-- currently we do not support not-created-yet contract-address passing as address type parameter to interact with smart-contract. noticed that, this doesn't mean we do not support `create2`. you can use create2 whenever you want. but if it has not been created on chain, you can not use this address as parameter to feed other contracts. the address type converting will go wrong. as soon as the contract been created, there is no limit.
-- currently we are **NOT** supporting transfer ether to another EOA address directly via provider for safety reason, so if you are sending a transfer transaction through polyjuice-provider, it won't work. however, you can still construct a transaction which interact with ERC20-contract and tell the contract to transfer token for you.
+right now we have 3 compatible providers:
+
+- Web3 compatible provider: `/packages/web3`
+- ethers compatible provider: `/packages/ethers`
+- truffle compatible HdWalletProvider: `/packages/truffle`
+
+if you need another compatible provider, you can request via opening an issue or even create an pull request by yourself :) we hope community can takes part in and build more useful tools together for godwoken-polyjuice.
 
 ## How To Develop This Project
 
