@@ -19,6 +19,7 @@ import {
   NormalizeAbiItem,
   hexStringToUtfString,
 } from "@polyjuice-provider/godwoken/lib/normalizer";
+import _ from "lodash";
 import { Reader } from "ckb-js-toolkit";
 const Web3EthAbi = require("web3-eth-abi");
 
@@ -36,7 +37,7 @@ export interface DecodedMethod {
 }
 
 export function serializeAbiItem(_abiItem: AbiItem): HexString {
-  let abiItem = Object.assign({}, _abiItem);
+  let abiItem = _.cloneDeep(_abiItem); // do not change the original abiItem;
   return new Reader(
     SerializeAbiItem(NormalizeAbiItem(abiItem))
   ).serializeJson();
@@ -470,7 +471,7 @@ export class Abi {
   // 	if it is related with address type, replace godwoken_short_address with eth_address.
   //
   // known-issue:
-  // 	- when the return value is EOA address and when it haven't create account on godowken,
+  // 	- when the return value is EOA address and when it haven't create account on godwoken,
   //	  we query from web3 address mapping store layer to get the origin EOA address.
   //	  however, we do not support return address type with create2 contract address which not exist yet.
   async refactor_return_value_with_short_address(
