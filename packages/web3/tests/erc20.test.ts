@@ -128,7 +128,7 @@ test.serial("call erc20 transfer", async (t) => {
 
   const contract = new Contract(ABI as AbiItems, contractAddress);
 
-  const amount = 10_0000_0000;
+  const amount = "1000000000";
   const to = testAddressArray[0];
   const beforeBalance: string = await contract.methods.balanceOf(to).call();
 
@@ -142,10 +142,7 @@ test.serial("call erc20 transfer", async (t) => {
   t.is(txRes.status, true);
 
   const afterBalance: string = await contract.methods.balanceOf(to).call();
-  t.is(
-    amount.toString(),
-    (BigInt(afterBalance) - BigInt(beforeBalance)).toString()
-  );
+  t.is(amount, (BigInt(afterBalance) - BigInt(beforeBalance)).toString());
 });
 
 function genNewEthAddress() {

@@ -109,7 +109,7 @@ test.serial("call erc20 info", async (t) => {
 test.serial("call erc20 for transfer", async (t) => {
   const contract = new Contract(contractAddress, ABI, deployer);
 
-  const amount = 10_0000_0000;
+  const amount = "1000000000";
   const to = testAddressArray[0];
   const beforeBalance: BigNumber = await contract.callStatic.balanceOf(to);
 
