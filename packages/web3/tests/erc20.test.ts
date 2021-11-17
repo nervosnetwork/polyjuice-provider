@@ -64,7 +64,6 @@ test.before((t) => {
   wsWeb3 = new Web3(wsProvider as any);
 });
 
-//# account test
 test.serial("deploy example contract", async (t) => {
   web3.eth.accounts = polyjuiceAccounts;
   web3.eth.accounts.wallet.add(PRIVATE_KEY);
@@ -83,6 +82,7 @@ test.serial("deploy example contract", async (t) => {
 
   t.is(contract.options.address.slice(0, 2), "0x");
   contractAddress = contract.options.address;
+  testAddressArray.push(contractAddress);
 });
 
 test.serial("call erc20 info", async (t) => {
@@ -91,34 +91,35 @@ test.serial("call erc20 info", async (t) => {
 
   const contract = new Contract(ABI as AbiItems, contractAddress);
 
-  const totalSupply = await contract.methods.totalSupply().call();
-  const sudtId = await contract.methods.sudtId().call();
-  const name = await contract.methods.name().call();
-  const symbol = await contract.methods.symbol().call();
-  const decimals = await contract.methods.decimals().call();
-  const notExistAddressBalance = await contract.methods
+  const totalSupply: string = await contract.methods.totalSupply().call();
+  const sudtId: string = await contract.methods.sudtId().call();
+  const name: string = await contract.methods.name().call();
+  const symbol: string = await contract.methods.symbol().call();
+  const decimals: string = await contract.methods.decimals().call();
+
+  const notExistAddressBalance: string = await contract.methods
     .balanceOf(testAddressArray[0])
     .call();
-  const zeroAddressBalance = await contract.methods
+  const zeroAddressBalance: string = await contract.methods
     .balanceOf(testAddressArray[1])
     .call();
-  const realAddressBalance = await contract.methods
+  const realAddressBalance: string = await contract.methods
     .balanceOf(testAddressArray[2])
     .call();
-  const contractAddressBalance = await contract.methods
+  const contractAddressBalance: string = await contract.methods
     .balanceOf(testAddressArray[3])
     .call();
 
   t.is(totalSupply, ERC20_TOTAL_SUPPLY);
-  t.is(sudtId, ERC20_SUDT_ID);
+  t.is(sudtId, ERC20_SUDT_ID.toString());
   t.is(name, ERC20_NAME);
   t.is(symbol, ERC20_SYMBOL);
-  t.is(decimals, 18);
+  t.is(decimals, "18");
 
-  t.is(notExistAddressBalance, 0);
-  t.is(zeroAddressBalance, 0);
-  t.not(realAddressBalance, 0);
-  t.is(contractAddressBalance, 0);
+  t.is(notExistAddressBalance, "0");
+  t.is(zeroAddressBalance, "0");
+  t.not(realAddressBalance, "0");
+  t.is(contractAddressBalance, "0");
 });
 
 test.serial("call erc20 transfer", async (t) => {
@@ -129,10 +130,10 @@ test.serial("call erc20 transfer", async (t) => {
 
   const amount = 10_0000_0000;
   const to = testAddressArray[0];
-  const beforeBalance = await contract.methods.balanceOf(to).call();
+  const beforeBalance: string = await contract.methods.balanceOf(to).call();
 
   const txRes = await contract.methods
-    .transfer(ethAddressFromPrivateKey)
+    .transfer(to, amount)
     .send({ from: ethAddressFromPrivateKey, gas: "0x30d40", gasPrice: "0x00" });
 
   t.is(txRes.transactionHash.slice(0, 2), "0x");
@@ -140,8 +141,11 @@ test.serial("call erc20 transfer", async (t) => {
   t.is(typeof txRes.gasUsed, "number");
   t.is(txRes.status, true);
 
-  const afterBalance = await contract.methods.balanceOf(to).call();
-  t.is(amount, afterBalance - beforeBalance);
+  const afterBalance: string = await contract.methods.balanceOf(to).call();
+  t.is(
+    amount.toString(),
+    (BigInt(afterBalance) - BigInt(beforeBalance)).toString()
+  );
 });
 
 function genNewEthAddress() {

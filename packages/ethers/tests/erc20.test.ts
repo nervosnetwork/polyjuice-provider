@@ -1,5 +1,5 @@
 import test from "ava";
-import { Contract, ContractFactory } from "ethers";
+import { BigNumber, Contract, ContractFactory } from "ethers";
 import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
 import {
   PolyjuiceWallet,
@@ -76,34 +76,34 @@ test.serial("deploy_example_contract", async (t) => {
 
 test.serial("call erc20 info", async (t) => {
   const contract = new Contract(contractAddress, ABI, deployer);
-  const totalSupply = await contract.callStatic.totalSupply();
-  const sudtId = await contract.callStatic.sudtId();
+  const totalSupply: BigNumber = await contract.callStatic.totalSupply();
+  const sudtId: BigNumber = await contract.callStatic.sudtId();
   const name = await contract.callStatic.name();
   const symbol = await contract.callStatic.symbol();
-  const decimals = await contract.callStatic.decimals();
-  const notExistAddressBalance = await contract.callStatic.balanceOf(
+  const decimals: BigNumber = await contract.callStatic.decimals();
+  const notExistAddressBalance: BigNumber = await contract.callStatic.balanceOf(
     testAddressArray[0]
   );
-  const zeroAddressBalance = await contract.callStatic.balanceOf(
+  const zeroAddressBalance: BigNumber = await contract.callStatic.balanceOf(
     testAddressArray[1]
   );
-  const realAddressBalance = await contract.callStatic.balanceOf(
+  const realAddressBalance: BigNumber = await contract.callStatic.balanceOf(
     testAddressArray[2]
   );
-  const contractAddressBalance = await contract.callStatic.balanceOf(
+  const contractAddressBalance: BigNumber = await contract.callStatic.balanceOf(
     testAddressArray[3]
   );
 
-  t.is(totalSupply, ERC20_TOTAL_SUPPLY);
-  t.is(sudtId, ERC20_SUDT_ID);
+  t.is(totalSupply.toString(), ERC20_TOTAL_SUPPLY);
+  t.is(sudtId.toString(), ERC20_SUDT_ID.toString());
   t.is(name, ERC20_NAME);
   t.is(symbol, ERC20_SYMBOL);
-  t.is(decimals, 18);
+  t.is(decimals.toString(), "18");
 
-  t.is(notExistAddressBalance, 0);
-  t.is(zeroAddressBalance, 0);
-  t.not(realAddressBalance, 0);
-  t.is(contractAddressBalance, 0);
+  t.is(notExistAddressBalance.toString(), "0");
+  t.is(zeroAddressBalance.toString(), "0");
+  t.not(realAddressBalance.toString(), "0");
+  t.is(contractAddressBalance.toString(), "0");
 });
 
 test.serial("call erc20 for transfer", async (t) => {
@@ -111,15 +111,15 @@ test.serial("call erc20 for transfer", async (t) => {
 
   const amount = 10_0000_0000;
   const to = testAddressArray[0];
-  const beforeBalance = await contract.callStatic.balanceOf(to);
+  const beforeBalance: BigNumber = await contract.callStatic.balanceOf(to);
 
   const res = await contract.transfer(to, amount);
   t.is(typeof res.wait, "function");
   const txReceipt = await res.wait();
   t.not(txReceipt, undefined);
 
-  const afterBalance = await contract.callStatic.balanceOf(to);
-  t.is(amount, afterBalance - beforeBalance);
+  const afterBalance: BigNumber = await contract.callStatic.balanceOf(to);
+  t.is(beforeBalance.add(amount), afterBalance);
 });
 
 function genNewEthAddress() {
