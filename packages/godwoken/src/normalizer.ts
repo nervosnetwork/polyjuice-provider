@@ -14,6 +14,7 @@ import {
   AbiType,
   StateMutabilityType,
 } from "./abiTypes";
+import _ from "lodash";
 
 // Taken for now from https://github.com/xxuejie/ckb-js-toolkit/blob/68f5ff709f78eb188ee116b2887a362123b016cc/src/normalizers.js#L17-L69,
 // later we can think about exposing those functions directly.
@@ -255,7 +256,7 @@ export function NormalizeAbiInput(
   _abiInput: AbiInput,
   { debugPath = "address_mapping_abi_item_input" } = {}
 ) {
-  let abiInput = Object.assign({}, _abiInput); //don't change origin abi
+  let abiInput = _.cloneDeep(_abiInput); //don't change origin abi
   abiInput.name = utfStringToHexString(abiInput.name);
   abiInput.type = utfStringToHexString(abiInput.type);
   const result = normalizeObject(debugPath, abiInput, {
@@ -304,7 +305,7 @@ export function NormalizeAbiItem(
   _abiItem: AbiItem,
   { debugPath = "address_mapping_abi_item" } = {}
 ) {
-  let abiItem = Object.assign({}, _abiItem);
+  let abiItem = _.cloneDeep(_abiItem); // do not change the original abi;
   let result: any = {
     type: NormalizeAbiType(abiItem.type),
   };

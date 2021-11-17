@@ -119,7 +119,7 @@ test.serial("call erc20 for transfer", async (t) => {
   t.not(txReceipt, undefined);
 
   const afterBalance: BigNumber = await contract.callStatic.balanceOf(to);
-  t.is(beforeBalance.add(amount), afterBalance);
+  t.deepEqual(beforeBalance.add(amount), afterBalance);
 });
 
 function genNewEthAddress() {

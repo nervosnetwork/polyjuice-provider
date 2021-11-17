@@ -12,6 +12,7 @@ import {
 import { serializeAbiItem } from "./abi";
 import { SigningMessageType } from "./types";
 import { EMPTY_ABI_ITEM_SERIALIZE_STR } from "./constant";
+import _ from "lodash";
 
 export type SerializeSignedTransactionString = HexString;
 
@@ -208,7 +209,7 @@ export function buildSerializeAddressMappingAbiItem(abi: Abi, data: HexString) {
   const abiInputs = abi.filter_interested_inputs(abiItem);
   if (abiInputs.length === 0) return EMPTY_ABI_ITEM_SERIALIZE_STR; // we only want abiItem with interested inputs not outputs
 
-  const _abiItem = Object.assign({}, abiItem); // do not change the original abi object
+  const _abiItem = _.cloneDeep(abiItem); // do not change the original abi object
   return serializeAbiItem(_abiItem);
 }
 
