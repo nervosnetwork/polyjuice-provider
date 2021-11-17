@@ -19,7 +19,7 @@ const ABI = erc20TestContract.abi;
 const BYTECODE = erc20TestContract.bytecode;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
-let ethAddressFromPrivateKey = process.env.ethAddressFromPrivateKey;
+let ethAddressFromPrivateKey = process.env.ETH_ADDRESS;
 let testAddressArray = [
   genNewEthAddress(),
   "0x0000000000000000000000000000000000000000",
@@ -67,21 +67,22 @@ test.before((t) => {
 //# account test
 test.serial("deploy example contract", async (t) => {
   web3.eth.accounts = polyjuiceAccounts;
-  web3.eth.Contract._accounts = web3.eth.accounts;
   web3.eth.accounts.wallet.add(PRIVATE_KEY);
+  web3.eth.Contract.setProvider(provider, web3.eth.accounts);
 
-  const myContract = await web3.eth.Contract(ABI);
-  const contractInstance = myContract
+  const deployTx = new web3.eth.Contract(ABI)
     .deploy({
       data: BYTECODE,
       arguments: [ERC20_NAME, ERC20_SYMBOL, ERC20_TOTAL_SUPPLY, ERC20_SUDT_ID],
     })
     .send({
-      gas: "0x30d40",
+      from: ethAddressFromPrivateKey,
       gasPrice: "0x00",
     });
-  t.is(contractInstance._address.slice(0, 2), "0x");
-  contractAddress = contractInstance._address;
+  const contract = await deployTx;
+
+  t.is(contract.options.address.slice(0, 2), "0x");
+  contractAddress = contract.options.address;
 });
 
 test.serial("call erc20 info", async (t) => {
@@ -120,7 +121,7 @@ test.serial("call erc20 info", async (t) => {
   t.is(contractAddressBalance, 0);
 });
 
-test.serial("call erc20 info", async (t) => {
+test.serial("call erc20 transfer", async (t) => {
   polyjuiceAccounts.wallet.add(PRIVATE_KEY);
   Contract.setProvider(provider, polyjuiceAccounts);
 
