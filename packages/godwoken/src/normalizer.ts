@@ -52,9 +52,9 @@ function normalizeRawData(length: number) {
   return function (debugPath: string, value: any) {
     try {
       value = new Reader(value).toArrayBuffer();
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(
-        `${debugPath} invalid value ${value}, error: ${error.message}`
+        `${debugPath} invalid value ${value}, error: ${error?.message}`
       );
     }
     if (length > 0 && value.byteLength !== length) {

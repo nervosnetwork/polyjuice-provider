@@ -1,16 +1,17 @@
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "es2019",
     "module": "commonjs",
     "declaration": true,
     "outDir": "./lib",
-    "lib": ["es2020", "DOM"],
+    "lib": ["DOM", "ES2015", "ES2019"],
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-    "allowJs": true
+    "allowJs": true,
+    "strict": true
   },
   "exclude": ["node_modules", "tests", "lib", "schemas"],
   "include": ["src"]
