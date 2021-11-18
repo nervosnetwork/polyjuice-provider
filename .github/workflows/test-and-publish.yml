@@ -1,0 +1,128 @@
+on:
+  push:
+    branches: [main, "ci"]
+    # Publish semver tags as releases.
+    tags: ["v*.*.*"]
+  pull_request:
+    branches: [main]
+
+env:
+  TEST_ETH_ADDRESS: "0xFb2C72d3ffe10Ef7c9960272859a23D24db9e04A"
+  TEST_ETH_PRIVATE_KEY: "0xcd277d1a87ffc737b01f6f079a721fe34910b673755130399ea379200a6ef9f2"
+  WEB3_URL: "http://localhost:8024"
+  WEB3_WS_URL: "ws://localhost:8024/ws"
+  POLYJUICE_URL: "http://localhost:6101"
+  PUBLISH_REGISTRY: ${{ github.repository_owner != 'nervosnetwork' && 'https://npm.pkg.github.com' || 'https://registry.npmjs.org' }}
+
+jobs:
+  integration-test-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: setup .test.env to all workspace.
+        shell: bash
+        run: |
+          cat << EOF > .test.env
+          WEB3_JSON_RPC=${{ env.WEB3_URL }}
+          WEB3_WS_JSON_RPC=${{ env.WEB3_WS_URL }}
+          PRIVATE_KEY=${{ env.TEST_ETH_PRIVATE_KEY }}
+          ETH_ADDRESS=${{ env.TEST_ETH_ADDRESS }}
+          EOF
+          . scripts/tool.sh && paste_env_file_to_all_workspaces .test.env
+
+      - name: Clone kicker repository
+        uses: actions/checkout@v2
+        with:
+          repository: RetricSu/godwoken-kicker
+          path: tools/kicker/
+          ref: master
+
+      - name: Cache Kicker cache folder
+        uses: john-shaffer/cache@sudo-tar
+        env:
+          cache-name: kicker-cache
+        with:
+          # kicker cache files are stored in `cache`
+          path: tools/kicker/cache
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('tools/kicker/docker/.build.mode.env') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('tools/kicker/docker/.build.mode.env') }}
+
+      - name: Cache Kicker workspace
+        uses: actions/cache@v2
+        env:
+          cache-name: kicker-workspace
+        with:
+          # kicker workspace files are stored in `workspace`
+          path: tools/kicker/workspace
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('tools/kicker/docker/.build.mode.env') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('tools/kicker/docker/.build.mode.env') }}
+
+      - name: start kicker
+        run: |
+          cd tools/kicker && make init && make start
+          docker-compose --file docker/docker-compose.yml logs --tail 6
+      - name: make sure kicker is starting..
+        run: cd tools/kicker && make start
+
+      - name: deposit account if balance is 0
+        run: scripts/checkBalance.sh
+        shell: bash
+        env:
+          WEB3_URL: ${{ env.WEB3_URL }}
+          TEST_ETH_ADDRESS: ${{ env.TEST_ETH_ADDRESS }}
+          POLYJUICE_URL: ${{ env.POLYJUICE_URL }}
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14.x"
+          registry-url: ${{ env.PUBLISH_REGISTRY }}
+          # Defaults to the user or organization that owns the workflow file
+          scope: "@polyjuice-provider"
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - name: Node Cache
+        uses: actions/cache@v2
+        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: build and test
+        run: yarn && yarn build && yarn test
+
+      - name: stop kicker
+        run: cd tools/kicker && make down
+
+      # # Build and push npm package to github package (don't push on PR)
+      # # https://github.com/docker/build-push-action
+      # - name: Build and push npm package to https://npm.pkg.github.com
+      #   if: ${{ github.repository_owner != 'nervosnetwork'}}
+      #   run: yarn publish
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # # Build and push npm package to npm registry (don't push on PR)
+      # # only for new tag
+      # - name: Build and push npm package to https://registry.npmjs.org
+      #   if: ${{ github.repository_owner == 'nervosnetwork' && startsWith(github.ref, 'refs/tags') }}
+      #   run: yarn publish
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 15
