@@ -29,7 +29,7 @@ yarn add @polyjuice-provider/truffle
 
 `note: this project is still under development, some APIs might be changed in the future.`
 
-## Known Caveats(things you should be careful!!)
+## Known Caveats(things you should be careful about !!)
 
 short version:
 
