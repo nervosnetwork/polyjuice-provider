@@ -8,7 +8,8 @@ import {
 } from "../lib/index";
 import crypto from "crypto";
 import Web3 from "web3";
-import erc20TestContract from "../../../contract-testcase/erc20.json";
+import erc20TestContract from "../../../contract-testcase/Erc20.json";
+import { genNewEthAddress } from "../../../contract-testcase/helper";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
@@ -121,7 +122,3 @@ test.serial("call erc20 for transfer", async (t) => {
   const afterBalance: BigNumber = await contract.callStatic.balanceOf(to);
   t.deepEqual(beforeBalance.add(amount), afterBalance);
 });
-
-function genNewEthAddress() {
-  return Web3.utils.toChecksumAddress(crypto.randomBytes(20).toString("hex"));
-}

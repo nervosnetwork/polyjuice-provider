@@ -2,6 +2,8 @@
 
 godwoken-polyjuice compatible providers for ethereum library like [ethers](https://github.com/ethers-io/ethers.js) and [web3js](https://github.com/ChainSafe/web3.js).
 
+## <u>Please Read [Known-Caveats](https://github.com/nervosnetwork/polyjuice-provider#known-caveatsthings-you-should-be-careful-about-) Carefully Before Using This Library</u>
+
 ## Important Notes
 
 - new version [v0.1.0](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.1.0) has been release including some bug fixed, please upgrade to latest version. (2021.11.18)
@@ -31,13 +33,19 @@ yarn add @polyjuice-provider/truffle
 
 ## Known Caveats(things you should be careful about !!)
 
+polyjuice can run your solidity contract code compatible with EVM, but in order to achieve max interoperability with more than just Ethereum, it use polyjuice address, which is different from ethereum address.
+
+the polyjuice-provider convert the two different address type automatically for your Dapp. we aims to provide 100% compatibility, but there are still some limits as this library developing. 
+
 short version:
 
+- you need to take care of the address converting by yourself when deploying contract with constructor arguments which contains address type.
 - do not use polyjuice-provider with contract address which has not been created on-chain.
 - do not use polyjuice-provider to transfer ether.
 
 long version and why:
 
+- currently we do **NOT** support address-converting [for contract deployment arguments](packages/ethers/tests/deployArgs.test.ts#L77), that is to say, when you use ethers/web3.js/truffle to deploy contract with address as constructor arguments, you should take care of the address converting by yourself to pass the right polyjuiceAddress instead of ethAddress. however, this limits might be removed in the future for new release version. please stay alert.
 - currently we do **NOT** support passing contract-address which has not been created yet on chain as address parameter in tx's [data field](https://ethereum.org/en/developers/docs/transactions/) to interact with smart-contract. noticed that, this doesn't mean we do not support `create2`. you can use create2 whenever you want. but if it has not been created on chain, you can not use this address as parameter to feed other contracts. the address-converting will go wrong. as soon as the contract been created, there is no limit.
 - currently we are **NOT** supporting transfer ether to another EOA address directly via provider for safety reason, so if you are sending a transfer transaction through polyjuice-provider, it won't work. however, you can still construct a transaction which interact with ERC20-contract and tell the contract to transfer token for you.
 
@@ -49,7 +57,7 @@ there are three main differences between Godwoken-Polyjuice and Ethereum:
 
 1. Different Transaction Structure: when you send an ethereum transaction to Godwoken-Polyjuice, the data structure of this very transaction needs to be converting to godwoken transaction type.
 2. Different Signing Message: when you are signing a Godwoken-Polyjuice tx, it will looks like you are requesting to signing a message using ethereum personal-sign method.
-3. Different Address Type: when you pass some address-type parameters to call smart-contract, the address converting must be done in order to feed the right data for Godwoken-Polyjuice. vice versa for the return address value.
+3. Different Address Type: polyjuice address is different from ethereum address. when you pass some address-type parameters to call smart-contract, the address converting must be done in order to feed the right polyjuice address for Godwoken-Polyjuice. vice versa for the return address value.
 
 provider are designed to got these 3 things done for you and your dapp, mainly by:
 

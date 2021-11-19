@@ -13,6 +13,7 @@ import {
 import crypto from "crypto";
 import Web3 from "web3";
 import errorReceiptContract from "../../../contract-testcase/ErrorReceipt.json";
+import { genNewEthAddress } from "../../../contract-testcase/helper";
 
 const root = require("path").join.bind(this, __dirname, "..");
 require("dotenv").config({ path: root(".test.env") });
@@ -95,10 +96,6 @@ let testAddressArray = [
   "0x0000000000000000000000000000000000000000",
   ethAddressForPrivateKey,
 ];
-
-function genNewEthAddress() {
-  return Web3.utils.toChecksumAddress(crypto.randomBytes(20).toString("hex"));
-}
 
 test.before((t) => {
   // init provider and web3
