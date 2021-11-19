@@ -8,7 +8,7 @@ import {
   PolyjuiceWebsocketProvider,
 } from "../lib/index";
 import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
-import erc20TestContract from "../../../contract-testcase/Erc20.json";
+import erc20TestContract from "../../../contract-testcase/erc20.json";
 
 const Contract = require("web3-eth-contract");
 

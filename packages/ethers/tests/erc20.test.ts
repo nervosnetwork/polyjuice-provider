@@ -6,9 +6,7 @@ import {
   PolyjuiceJsonRpcProvider,
   PolyjuiceWebsocketProvider,
 } from "../lib/index";
-import crypto from "crypto";
-import Web3 from "web3";
-import erc20TestContract from "../../../contract-testcase/Erc20.json";
+import erc20TestContract from "../../../contract-testcase/erc20.json";
 import { genNewEthAddress } from "../../../contract-testcase/helper";
 
 const root = require("path").join.bind(this, __dirname, "..");
