@@ -96,8 +96,14 @@ test.serial("serialize abi item", (t) => {
   const serialize_abi = serializeAbiItem(abi_item);
   t.is(serialize_abi.slice(0, 2), "0x");
   const deserialize_abi = deserializeAbiItem(serialize_abi);
-  //t.deepEqual(deserialize_abi, abi_item);
-  t.is(deserialize_abi.name, abi_item.name);
+  t.deepEqual(deserialize_abi, abi_item);
+
+  for (const abi_item of TEST_ABI_ITEMS) {
+    const serialize_abi = serializeAbiItem(abi_item);
+    t.is(serialize_abi.slice(0, 2), "0x");
+    const deserialize_abi = deserializeAbiItem(serialize_abi);
+    t.deepEqual(deserialize_abi, abi_item);
+  }
 });
 
 test.serial("get_interested_methods", (t) => {
