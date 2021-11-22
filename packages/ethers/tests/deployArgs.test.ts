@@ -93,10 +93,7 @@ test.serial(
         "result from jsonRPC poly_getEthAddressByGodwokenShortAddress is null or undefined. "
       )
     );
-    const errorAddress = callRevertRunResult.message.slice(
-      callRevertRunResult.message.length - 42,
-      callRevertRunResult.message.length
-    );
+    const errorAddress = callRevertRunResult.message.slice(-42);
     t.true(testAddressArray.includes(errorAddress));
   }
 );
