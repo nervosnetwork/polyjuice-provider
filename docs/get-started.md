@@ -143,7 +143,9 @@ const implementationFactory = new ContractFactory(
   contract.bytecode,
   deployer,
 );
-const tx = implementationFactory.getDeployTransaction();
+const tx = implementationFactory.getDeployTransaction(
+  '<your deploy arguments> Note: if the arguments contains address type, you need to provide polyjuiceAddress instead of ethAddress, here provider can not do address-converting for you'
+);
 tx.gasPrice = 0;
 tx.gasLimit = 1_000_000;
 deployer.sendTransaction(tx);
@@ -385,7 +387,7 @@ const myContract = await web3.eth.Contract(`your contract's abi`);
 const contractInstance = myContract
     .deploy({
       data: `contract bin`,
-      arguments: [],
+      arguments: ['<your deploy arguments> Note: if the arguments contains address type, you need to provide polyjuiceAddress instead of ethAddress, here provider can not do address-converting for you'],
     })
     .send({
       gas: "0x30d40", 
@@ -479,3 +481,5 @@ module.exports = {
 ```
 
 checkout this [example](https://github.com/RetricSu/simple-storage-v2)
+
+Note: if contract constructor arguments contains address type parameter, you need to provide polyjuiceAddress instead of ethAddress, here provider can not do address-converting for you
