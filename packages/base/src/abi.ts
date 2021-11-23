@@ -72,7 +72,7 @@ export function deserializeAbiType(value: number): AbiType {
       return "constructor";
 
     case 2:
-      return "constructor";
+      return "event";
 
     case 3:
       return "fallback";
