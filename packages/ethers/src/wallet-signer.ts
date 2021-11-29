@@ -14,7 +14,12 @@ import {
   POLY_MIN_GAS_PRICE,
   formalizeEthToAddress,
   buildSendTransaction,
+  buildDeployProcess,
+  convertContractConstructorArgs,
+  DeploymentRecords,
+  DEFAULT_EMPTY_ETH_ADDRESS,
 } from "@polyjuice-provider/base";
+import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
 
 import { Logger } from "@ethersproject/logger";
 import { joinSignature, BytesLike, hexlify } from "@ethersproject/bytes";
@@ -31,6 +36,8 @@ export interface PolyjuiceWallet extends Wallet {
 export class PolyjuiceWallet extends Wallet {
   godwoker: Godwoker;
   abi: Abi;
+  deploymentRecords: DeploymentRecords;
+  deployAddressMapping: AddressMappingItem[];
 
   constructor(
     privateKey: BytesLike | ExternallyOwnedAccount | SigningKey,
@@ -56,6 +63,8 @@ export class PolyjuiceWallet extends Wallet {
 
     this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwokerOption);
     this.abi = new Abi(polyjuiceConfig.abiItems || []);
+    this.deploymentRecords = {};
+    this.deployAddressMapping = [];
   }
 
   setAbi(abiItems: AbiItems) {
@@ -70,6 +79,27 @@ export class PolyjuiceWallet extends Wallet {
   addAbi(_abiItems: AbiItems) {
     const abiItems = this.abi.get_abi_items().concat(_abiItems);
     this.abi = new Abi(abiItems);
+  }
+
+  async convertDeployArgs(args: any[], abiItems: AbiItems, bytecode: string) {
+    const convertResult = await convertContractConstructorArgs(
+      args,
+      abiItems,
+      bytecode,
+      this.godwoker.getShortAddressByAllTypeEthAddress.bind(this.godwoker)
+    );
+
+    // later when sending this deployment transaction,
+    // we will submit this.deployContractAddressMapping to web3 as well,
+    // for saving address mapping if needed.
+    this.deployAddressMapping = convertResult.addressMapping;
+    // deploymentRecords will be used to extract constructor args from eth_tx's input data
+    this.deploymentRecords = {
+      ...this.deploymentRecords,
+      ...convertResult.deploymentRecords,
+    };
+
+    return convertResult.newArgs;
   }
 
   signTransaction(transaction: TransactionRequest): Promise<string> {
@@ -104,6 +134,18 @@ export class PolyjuiceWallet extends Wallet {
         return joinSignature(that._signingKey().signDigest(message));
       };
       try {
+        // special case: contract deployment
+        if (t.to === DEFAULT_EMPTY_ETH_ADDRESS) {
+          return await buildDeployProcess(
+            this.deployAddressMapping,
+            this.deploymentRecords,
+            this.abi,
+            this.godwoker,
+            t,
+            signingMethod.bind(that)
+          );
+        }
+
         return await buildSendTransaction(
           this.abi,
           this.godwoker,

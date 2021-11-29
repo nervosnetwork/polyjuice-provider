@@ -22,7 +22,12 @@ import {
   buildSendTransaction,
   executeCallTransaction,
   SigningMessageType,
+  DEFAULT_EMPTY_ETH_ADDRESS,
+  buildDeployProcess,
+  convertContractConstructorArgs,
+  DeploymentRecords,
 } from "@polyjuice-provider/base";
+import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
 
 export interface HttpHeader {
   name: string;
@@ -62,6 +67,9 @@ export class PolyjuiceHttpProvider {
   httpsAgent: https.Agent;
   httpAgent: http.Agent;
   baseUrl: any;
+
+  deployAddressMapping: AddressMappingItem[];
+  deploymentRecords: DeploymentRecords;
 
   constructor(
     host: string,
@@ -103,6 +111,9 @@ export class PolyjuiceHttpProvider {
         this.httpAgent = new http.Agent({ keepAlive });
       }
     }
+
+    this.deployAddressMapping = [];
+    this.deploymentRecords = {};
   }
 
   setAbi(abiItems: AbiItems) {
@@ -117,6 +128,27 @@ export class PolyjuiceHttpProvider {
   addAbi(_abiItems: AbiItems) {
     const abiItems = this.abi.get_abi_items().concat(_abiItems);
     this.abi = new Abi(abiItems);
+  }
+
+  async convertDeployArgs(args: any[], abiItems: AbiItems, bytecode: string) {
+    const convertResult = await convertContractConstructorArgs(
+      args,
+      abiItems,
+      bytecode,
+      this.godwoker.getShortAddressByAllTypeEthAddress.bind(this.godwoker)
+    );
+
+    // later when sending this deployment transaction,
+    // we will submit this.deployContractAddressMapping to web3 as well,
+    // for saving address mapping if needed.
+    this.deployAddressMapping = convertResult.addressMapping;
+    // deploymentRecords will be used to extract constructor args from eth_tx's input data
+    this.deploymentRecords = {
+      ...this.deploymentRecords,
+      ...convertResult.deploymentRecords,
+    };
+
+    return convertResult.newArgs;
   }
 
   async send(
@@ -166,13 +198,25 @@ export class PolyjuiceHttpProvider {
             return await this.signer.sign_with_metamask(message, from);
           };
 
-          const rawTxString = await buildSendTransaction(
-            this.abi,
-            this.godwoker,
-            t,
-            signingMethod.bind(this),
-            SigningMessageType.noPrefix
-          );
+          // special case: contract deployment
+          const rawTxString =
+            t.to === DEFAULT_EMPTY_ETH_ADDRESS
+              ? await buildDeployProcess(
+                  this.deployAddressMapping,
+                  this.deploymentRecords,
+                  this.abi,
+                  this.godwoker,
+                  t,
+                  signingMethod.bind(this)
+                )
+              : await buildSendTransaction(
+                  this.abi,
+                  this.godwoker,
+                  t,
+                  signingMethod.bind(this),
+                  SigningMessageType.noPrefix
+                );
+
           const tx_hash =
             await this.godwoker.poly_submitSerializedL2Transaction(rawTxString);
           // await this.godwoker.waitForTransactionReceipt(tx_hash);

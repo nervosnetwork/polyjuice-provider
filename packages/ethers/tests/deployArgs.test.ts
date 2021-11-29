@@ -14,7 +14,8 @@ const BYTECODE = deployArgsTestContract.bytecode;
 
 let provider: PolyjuiceJsonRpcProvider;
 let deployer: PolyjuiceWallet;
-let contractAddress: string;
+let contractAddressFromBadDeployment: string;
+let contractAddressFromGoodDeployment: string;
 let contractDeployArgs: any[];
 
 let ethAddressFromPrivateKey = process.env.ETH_ADDRESS;
@@ -39,7 +40,7 @@ test.before((t) => {
   );
 });
 
-test.serial("deploy address-tester-contract", async (t) => {
+test.serial("prepare one contract address by deploying", async (t) => {
   const implementationFactory = new ContractFactory(
     anotherContractAsAddressTester.abi,
     anotherContractAsAddressTester.bytecode,
@@ -54,7 +55,7 @@ test.serial("deploy address-tester-contract", async (t) => {
   testAddressArray.push(txReceipt.contractAddress);
 });
 
-test.serial("deploy example contract", async (t) => {
+test.serial("deploy example contract without converting address", async (t) => {
   const constructorArgs = [1, testAddressArray];
   contractDeployArgs = constructorArgs;
   const implementationFactory = new ContractFactory(ABI, BYTECODE, deployer);
@@ -64,13 +65,17 @@ test.serial("deploy example contract", async (t) => {
   const res = await deployer.sendTransaction(tx);
   const txReceipt = await res.wait();
   t.is(txReceipt.contractAddress.slice(0, 2), "0x");
-  contractAddress = txReceipt.contractAddress;
+  contractAddressFromBadDeployment = txReceipt.contractAddress;
 });
 
 test.serial(
   "call example contract to show deploy arguments is not supporting automatically address-converting",
   async (t) => {
-    const contract = new Contract(contractAddress, ABI, deployer);
+    const contract = new Contract(
+      contractAddressFromBadDeployment,
+      ABI,
+      deployer
+    );
     const value: BigNumber = await contract.callStatic.getValue();
     t.is(value.toString(), contractDeployArgs[0].toString());
 
@@ -95,5 +100,44 @@ test.serial(
     );
     const errorAddress = callRevertRunResult.message.slice(-42);
     t.true(testAddressArray.includes(errorAddress));
+  }
+);
+
+test.serial("deploy example contract in the right way", async (t) => {
+  const constructorArgs = [1, testAddressArray];
+  contractDeployArgs = constructorArgs;
+  const implementationFactory = new ContractFactory(ABI, BYTECODE, deployer);
+  // you need this extra steps to convert your constructor arguments
+  // for deploying contract otherwise the address will be the
+  const newConstructorArgs = await deployer.convertDeployArgs(
+    constructorArgs,
+    ABI as AbiItems,
+    BYTECODE
+  );
+  t.not(constructorArgs, newConstructorArgs);
+  // pass the new args with address converting to deploy contract
+  const tx = implementationFactory.getDeployTransaction(...newConstructorArgs);
+  tx.gasPrice = 0;
+  tx.gasLimit = 500000;
+  const res = await deployer.sendTransaction(tx);
+  const txReceipt = await res.wait();
+  t.is(txReceipt.contractAddress.slice(0, 2), "0x");
+  contractAddressFromGoodDeployment = txReceipt.contractAddress;
+});
+
+test.serial(
+  "call example contract with good deployment to show deploy arguments supporting automatically address-converting",
+  async (t) => {
+    const contract = new Contract(
+      contractAddressFromGoodDeployment,
+      ABI,
+      deployer
+    );
+    const value: BigNumber = await contract.callStatic.getValue();
+    t.is(value.toString(), contractDeployArgs[0].toString());
+
+    // the return addressList should be the same with the contract constructor arguments
+    const addressList = await contract.callStatic.getAddressList();
+    t.deepEqual(addressList, contractDeployArgs[1]);
   }
 );

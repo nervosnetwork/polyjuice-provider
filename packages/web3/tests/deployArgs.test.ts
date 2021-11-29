@@ -21,7 +21,8 @@ let testAddressArray = [
   ethAddressFromPrivateKey,
 ];
 
-let contractAddress: string;
+let contractAddressFromBadDeployment: string;
+let contractAddressFromGoodDeployment: string;
 let contractDeployArgs: any[];
 
 let provider: PolyjuiceHttpProvider, polyjuiceAccounts: PolyjuiceAccounts;
@@ -43,7 +44,7 @@ test.before((t) => {
   Contract.setProvider(provider, polyjuiceAccounts);
 });
 
-test.serial("deploy address-tester-contract", async (t) => {
+test.serial("prepare one contract address by deploying", async (t) => {
   const deployTx = new Contract(anotherContractAsAddressTester.abi as AbiItems)
     .deploy({
       data: anotherContractAsAddressTester.bytecode,
@@ -56,11 +57,11 @@ test.serial("deploy address-tester-contract", async (t) => {
   const contract = await deployTx;
 
   t.is(contract.options.address.slice(0, 2), "0x");
-  contractAddress = contract.options.address;
-  testAddressArray.push(contractAddress);
+  contractAddressFromBadDeployment = contract.options.address;
+  testAddressArray.push(contractAddressFromBadDeployment);
 });
 
-test.serial("deploy example contract", async (t) => {
+test.serial("deploy example contract without converting address", async (t) => {
   const constructorArgs = [1, testAddressArray];
   contractDeployArgs = constructorArgs;
   const deployTx = new Contract(ABI)
@@ -75,13 +76,16 @@ test.serial("deploy example contract", async (t) => {
   const contract = await deployTx;
 
   t.is(contract.options.address.slice(0, 2), "0x");
-  contractAddress = contract.options.address;
+  contractAddressFromBadDeployment = contract.options.address;
 });
 
 test.serial(
   "call example contract to show deploy arguments is not supporting automatically address-converting",
   async (t) => {
-    const contract = new web3.eth.Contract(ABI as AbiItems, contractAddress);
+    const contract = new web3.eth.Contract(
+      ABI as AbiItems,
+      contractAddressFromBadDeployment
+    );
     const value: string = await contract.methods.getValue().call();
     t.is(value, contractDeployArgs[0].toString());
 
@@ -106,5 +110,48 @@ test.serial(
     );
     const errorAddress = callRevertRunResult.message.slice(-42);
     t.true(testAddressArray.includes(errorAddress));
+  }
+);
+
+test.serial("deploy example contract in the right way", async (t) => {
+  const constructorArgs = [1, testAddressArray];
+  contractDeployArgs = constructorArgs;
+
+  // you need this extra steps to convert your constructor arguments
+  // for deploying contract otherwise the address will be the
+  const newConstructorArgs = await polyjuiceAccounts.convertDeployArgs(
+    constructorArgs,
+    ABI as AbiItems,
+    BYTECODE
+  );
+  t.not(constructorArgs, newConstructorArgs);
+  // pass the new args with address converting to deploy contract
+  const deployTx = new Contract(ABI)
+    .deploy({
+      data: BYTECODE,
+      arguments: newConstructorArgs,
+    })
+    .send({
+      from: ethAddressFromPrivateKey,
+      gasPrice: "0x00",
+    });
+  const contract = await deployTx;
+  t.is(contract.options.address.slice(0, 2), "0x");
+  contractAddressFromGoodDeployment = contract.options.address;
+});
+
+test.serial(
+  "call example contract with good deployment to show deploy arguments supporting automatically address-converting",
+  async (t) => {
+    const contract = new web3.eth.Contract(
+      ABI as AbiItems,
+      contractAddressFromGoodDeployment
+    );
+    const value: string = await contract.methods.getValue().call();
+    t.is(value, contractDeployArgs[0].toString());
+
+    // the return addressList should be the same with the contract constructor arguments
+    const addressList = await contract.methods.getAddressList().call();
+    t.deepEqual(addressList, contractDeployArgs[1]);
   }
 );

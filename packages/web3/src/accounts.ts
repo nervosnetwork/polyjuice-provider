@@ -16,12 +16,17 @@ import {
   POLY_MIN_GAS_PRICE,
   buildSendTransaction,
   deserializeL2TransactionWithAddressMapping,
+  convertContractConstructorArgs,
+  DEFAULT_EMPTY_ETH_ADDRESS,
+  buildDeployProcess,
+  DeploymentRecords,
 } from "@polyjuice-provider/base";
 import BN from "bn.js";
 import Account from "eth-lib/lib/account";
 import { utils as lumosUtils } from "@ckb-lumos/base";
 import { normalizer, RawL2Transaction } from "@polyjuice-provider/godwoken";
 import { SerializeRawL2Transaction } from "@polyjuice-provider/godwoken/schemas";
+import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
 // do not change the following require to import, otherwise it will cause error.
 // the original web3-eth-accounts Account class is exported by module.exports.
 const Accounts = require("web3-eth-accounts");
@@ -33,6 +38,8 @@ export interface PolyjuiceAccounts extends AccountsBase {
 export class PolyjuiceAccounts extends Accounts {
   godwoker: Godwoker;
   abi: Abi;
+  deployAddressMapping: AddressMappingItem[];
+  deploymentRecords: DeploymentRecords;
 
   constructor(polyjuiceConfig: PolyjuiceConfig, provider?: provider) {
     if (provider) {
@@ -60,6 +67,8 @@ export class PolyjuiceAccounts extends Accounts {
     };
     this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwokerOption);
     this.abi = new Abi(polyjuiceConfig.abiItems || []);
+    this.deployAddressMapping = [];
+    this.deploymentRecords = {};
   }
 
   setAbi(abiItems: AbiItems) {
@@ -74,6 +83,27 @@ export class PolyjuiceAccounts extends Accounts {
   addAbi(_abiItems: AbiItems) {
     const abiItems = this.abi.get_abi_items().concat(_abiItems);
     this.abi = new Abi(abiItems);
+  }
+
+  async convertDeployArgs(args: any[], abiItems: AbiItems, bytecode: string) {
+    const convertResult = await convertContractConstructorArgs(
+      args,
+      abiItems,
+      bytecode,
+      this.godwoker.getShortAddressByAllTypeEthAddress.bind(this.godwoker)
+    );
+
+    // later when sending this deployment transaction,
+    // we will submit this.deployContractAddressMapping to web3 as well,
+    // for saving address mapping if needed.
+    this.deployAddressMapping = convertResult.addressMapping;
+    // deploymentRecords will be used to extract constructor args from eth_tx's input data
+    this.deploymentRecords = {
+      ...this.deploymentRecords,
+      ...convertResult.deploymentRecords,
+    };
+
+    return convertResult.newArgs;
   }
 
   signTransaction(
@@ -107,12 +137,24 @@ export class PolyjuiceAccounts extends Accounts {
           message = _message;
           return Account.sign(message, privateKey);
         };
-        const rawTx = await buildSendTransaction(
-          that.abi,
-          that.godwoker,
-          tx,
-          signingMethod
-        );
+
+        const rawTx =
+          tx.to === DEFAULT_EMPTY_ETH_ADDRESS
+            ? await buildDeployProcess(
+                that.deployAddressMapping,
+                that.deploymentRecords,
+                that.abi,
+                that.godwoker,
+                tx,
+                signingMethod.bind(that)
+              )
+            : await buildSendTransaction(
+                that.abi,
+                that.godwoker,
+                tx,
+                signingMethod
+              );
+
         const deRawTx = deserializeL2TransactionWithAddressMapping(rawTx);
         let result = {
           messageHash: message,

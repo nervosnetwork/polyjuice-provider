@@ -6,13 +6,19 @@ import {
   buildL2TransactionWithAddressMapping,
   buildRawL2TransactionWithAddressMapping,
   EthTransaction,
+  formalizeEthToAddress,
   Godwoker,
   normalizeEthTransaction,
+  splitByteCodeAndConstructorArgs,
 } from "./util";
 import { serializeAbiItem } from "./abi";
 import { SigningMessageType } from "./types";
-import { EMPTY_ABI_ITEM_SERIALIZE_STR } from "./constant";
+import {
+  DEPLOY_CONTRACT_DOCS_LINK,
+  EMPTY_ABI_ITEM_SERIALIZE_STR,
+} from "./constant";
 import _ from "lodash";
+import { DEFAULT_EMPTY_ETH_ADDRESS, DeploymentRecords } from ".";
 
 export type SerializeSignedTransactionString = HexString;
 
@@ -83,6 +89,98 @@ export async function buildEstimateGasTransaction(
     );
 
   return rawL2Tx;
+}
+
+// one special type transaction: contract deployment.
+// to address must be zero address and must be a send transaction
+// we can't convert address for contract deployment since:
+//  (1. it doesn't have a function signature in eth_tx's input data
+//  (2. we support multiple contract ABIs
+// thus it is impossible to identified a deploy transaction's abiItem and do the address converting
+// instead, we ask developer to explicitly convert the address while we recorded some info to build address mapping if needed.
+export async function buildDeployProcess(
+  deployAddressMapping: AddressMappingItem[],
+  deploymentRecords: DeploymentRecords,
+  abi: Abi,
+  godwoker: Godwoker,
+  tx: EthTransaction,
+  signingMethod: any,
+  signingMessageType_?: SigningMessageType
+): Promise<SerializeSignedTransactionString> {
+  const process: Process = {
+    type: ProcessTransactionType.send,
+    signingMethod: signingMethod,
+    signingMessageType: signingMessageType_,
+  };
+  if (formalizeEthToAddress(tx.to) != DEFAULT_EMPTY_ETH_ADDRESS) {
+    throw new Error(`deployTransaction must be a zero to address transaction`);
+  }
+  if (!tx.from) {
+    throw new Error("tx.from can not be missing in sendTransaction!");
+  }
+  if (!process.signingMethod) {
+    throw new Error(
+      "process.signingMethod can not be missing in deployTransaction!"
+    );
+  }
+
+  const t = normalizeEthTransaction({
+    from: tx.from,
+    to: tx.to,
+    value: tx.value,
+    gas: tx.gas,
+    gasPrice: tx.gasPrice,
+    data: tx.data,
+  });
+
+  const rawL2Tx = await godwoker.assembleRawL2Transaction(t);
+
+  const signingMessageType =
+    process.signingMessageType || SigningMessageType.withPrefix;
+
+  // generate message to sign
+  const senderScriptHash = godwoker.computeScriptHashByEoaEthAddress(t.from);
+  const receiverScriptHash = await godwoker.getScriptHashByAccountId(
+    parseInt(rawL2Tx.to_id, 16)
+  );
+  const message = godwoker.generateTransactionMessageToSign(
+    rawL2Tx,
+    senderScriptHash,
+    receiverScriptHash,
+    signingMessageType === SigningMessageType.withPrefix
+  );
+
+  const _signature = await process.signingMethod!(message);
+  const signature = godwoker.packSignature(_signature);
+  const l2Tx = { raw: rawL2Tx, signature: signature };
+
+  const result = splitByteCodeAndConstructorArgs(tx.data, deploymentRecords);
+  if (result == undefined) {
+    // let's build a standard send transaction
+    // since we can't find matched deploymentRecords
+    // here we should notify user the standard way to deploy contract
+    console.log(
+      `Are you trying to deploy contract? If so, we should use the standard way to convert the constructor arguments in case some unexpected behavior. you can check more at ${DEPLOY_CONTRACT_DOCS_LINK} \n`
+    );
+    return buildSendTransaction(
+      abi,
+      godwoker,
+      tx,
+      signingMethod,
+      signingMessageType_
+    );
+  }
+
+  const abiItem = deploymentRecords[result.signature];
+  const _abiItem = _.cloneDeep(abiItem); // do not change the original abi object
+  let serializedAbiItem = serializeAbiItem(_abiItem);
+
+  const polyL2Tx = buildL2TransactionWithAddressMapping(
+    l2Tx,
+    deployAddressMapping,
+    serializedAbiItem
+  );
+  return godwoker.serializeL2TransactionWithAddressMapping(polyL2Tx);
 }
 
 export async function buildProcess(
