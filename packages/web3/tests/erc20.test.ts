@@ -70,7 +70,7 @@ test.serial("deploy example contract", async (t) => {
   web3.eth.Contract.setProvider(provider, web3.eth.accounts);
 
   const args = [ERC20_NAME, ERC20_SYMBOL, ERC20_TOTAL_SUPPLY, ERC20_SUDT_ID];
-  const deployArgs = await provider.convertDeployArgs(
+  const deployArgs = await polyjuiceAccounts.convertDeployArgs(
     args,
     ABI as AbiItems,
     BYTECODE
