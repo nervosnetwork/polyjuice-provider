@@ -1,8 +1,8 @@
 import test from "ava";
 import Web3 from "web3";
 import { PolyjuiceHttpProvider, PolyjuiceAccounts } from "../lib/index";
-import { Abi, AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
-import anotherContractAsAddressTester from "../../../contract-testcase/ErrorReceipt.json";
+import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
+import anotherContract from "../../../contract-testcase/ErrorReceipt.json";
 import deployArgsTestContract from "../../../contract-testcase/DeployArgs.json";
 import { genNewEthAddress } from "../../../contract-testcase/helper";
 const Contract = require("web3-eth-contract");
@@ -32,7 +32,7 @@ test.before((t) => {
   // init provider and web3
   const web3Rpc = process.env.WEB3_JSON_RPC;
   const polyjuiceConfig: PolyjuiceConfig = {
-    abiItems: ABI as AbiItems,
+    abiItems: [...ABI, ...anotherContract.abi] as AbiItems,
     web3Url: web3Rpc,
   };
 
@@ -45,9 +45,9 @@ test.before((t) => {
 });
 
 test.serial("prepare one contract address by deploying", async (t) => {
-  const deployTx = new Contract(anotherContractAsAddressTester.abi as AbiItems)
+  const deployTx = new Contract(anotherContract.abi as AbiItems)
     .deploy({
-      data: anotherContractAsAddressTester.bytecode,
+      data: anotherContract.bytecode,
       arguments: [],
     })
     .send({

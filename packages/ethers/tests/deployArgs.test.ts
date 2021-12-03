@@ -2,7 +2,7 @@ import test from "ava";
 import { BigNumber, Contract, ContractFactory } from "ethers";
 import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
 import { PolyjuiceWallet, PolyjuiceJsonRpcProvider } from "../lib/index";
-import anotherContractAsAddressTester from "../../../contract-testcase/ErrorReceipt.json";
+import anotherContract from "../../../contract-testcase/ErrorReceipt.json";
 import deployArgsTestContract from "../../../contract-testcase/DeployArgs.json";
 import { genNewEthAddress } from "../../../contract-testcase/helper";
 
@@ -29,7 +29,7 @@ test.before((t) => {
   // init provider and web3
   const web3Rpc = process.env.WEB3_JSON_RPC;
   const polyjuiceConfig: PolyjuiceConfig = {
-    abiItems: ABI as AbiItems,
+    abiItems: [...ABI, ...anotherContract.abi] as AbiItems,
     web3Url: web3Rpc,
   };
   provider = new PolyjuiceJsonRpcProvider(polyjuiceConfig, web3Rpc);
@@ -42,8 +42,8 @@ test.before((t) => {
 
 test.serial("prepare one contract address by deploying", async (t) => {
   const implementationFactory = new ContractFactory(
-    anotherContractAsAddressTester.abi,
-    anotherContractAsAddressTester.bytecode,
+    anotherContract.abi,
+    anotherContract.bytecode,
     deployer
   );
   const tx = implementationFactory.getDeployTransaction();

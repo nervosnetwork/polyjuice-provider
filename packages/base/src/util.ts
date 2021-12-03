@@ -1340,7 +1340,7 @@ export function splitByteCodeAndConstructorArgs(
       };
     }
 
-    // throw new Error(`can't split the bytecode and args, did not find matched deploymentRecords. inputData: ${inputData}, deploymentRecords: ${deploymentRecords}`);
+    // did not find matched deploymentRecords
     return undefined;
   }
 }
@@ -1386,10 +1386,23 @@ export async function convertContractConstructorArgs(
   calculate_short_address: (ethAddress: HexString) => Promise<ShortAddress>
 ): Promise<ConvertConstructorArgsResult> {
   validateBytecode(bytecode);
+  const deploymentSignature = calculateDeploymentSignature(bytecode);
+
+  let deploymentRecords: DeploymentRecords = {};
+  let addressMapping: AddressMappingItem[] = [];
 
   const constructorAbiItems = abiItems.filter(
     (item) => item.type === "constructor"
   );
+
+  if (constructorAbiItems.length === 0) {
+    return {
+      newArgs: args,
+      isInterested: false,
+      addressMapping,
+      deploymentRecords,
+    };
+  }
 
   if (constructorAbiItems.length > 1) {
     throw new Error(
@@ -1402,10 +1415,6 @@ export async function convertContractConstructorArgs(
   }
 
   const abiItem = constructorAbiItems[0];
-  let deploymentRecords: DeploymentRecords = {};
-  let addressMapping: AddressMappingItem[] = [];
-
-  const deploymentSignature = calculateDeploymentSignature(bytecode);
   deploymentRecords[deploymentSignature] = abiItem;
 
   if (!abiItem.inputs) {

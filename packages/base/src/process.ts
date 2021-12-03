@@ -158,10 +158,6 @@ export async function buildDeployProcess(
   if (result == undefined) {
     // let's build a standard send transaction
     // since we can't find matched deploymentRecords
-    // here we should notify user the standard way to deploy contract
-    console.log(
-      `Are you trying to deploy contract? If so, we should use the standard way to convert the constructor arguments in case some unexpected behavior. you can check more at ${DEPLOY_CONTRACT_DOCS_LINK} \n`
-    );
     return buildSendTransaction(
       abi,
       godwoker,

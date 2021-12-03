@@ -57,13 +57,12 @@ test.before((t) => {
 
 test.serial("deploy_example_contract", async (t) => {
   const implementationFactory = new ContractFactory(ABI, BYTECODE, deployer);
-
-  const tx = implementationFactory.getDeployTransaction(
-    ERC20_NAME,
-    ERC20_SYMBOL,
-    ERC20_TOTAL_SUPPLY,
-    ERC20_SUDT_ID
+  const constructorArgs = await deployer.convertDeployArgs(
+    [ERC20_NAME, ERC20_SYMBOL, ERC20_TOTAL_SUPPLY, ERC20_SUDT_ID],
+    ABI as AbiItems,
+    BYTECODE
   );
+  const tx = implementationFactory.getDeployTransaction(...constructorArgs);
   tx.gasPrice = 0;
   tx.gasLimit = 500000;
   const res = await deployer.sendTransaction(tx);
