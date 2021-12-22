@@ -14,7 +14,6 @@ import {
 import { serializeAbiItem } from "./abi";
 import { SigningMessageType } from "./types";
 import {
-  DEPLOY_CONTRACT_DOCS_LINK,
   EMPTY_ABI_ITEM_SERIALIZE_STR,
 } from "./constant";
 import _ from "lodash";

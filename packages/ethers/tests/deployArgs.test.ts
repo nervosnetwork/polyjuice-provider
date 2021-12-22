@@ -108,7 +108,7 @@ test.serial("deploy example contract in the right way", async (t) => {
   contractDeployArgs = constructorArgs;
   const implementationFactory = new ContractFactory(ABI, BYTECODE, deployer);
   // you need this extra steps to convert your constructor arguments
-  // for deploying contract otherwise the address will be the
+  // for deploying contract otherwise the address type will go wrong
   const newConstructorArgs = await deployer.convertDeployArgs(
     constructorArgs,
     ABI as AbiItems,
