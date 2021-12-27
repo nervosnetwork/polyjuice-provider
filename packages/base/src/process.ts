@@ -10,12 +10,15 @@ import {
   Godwoker,
   normalizeEthTransaction,
   splitByteCodeAndConstructorArgs,
+  DeploymentRecords,
 } from "./util";
 import { serializeAbiItem } from "./abi";
 import { SigningMessageType } from "./types";
-import { EMPTY_ABI_ITEM_SERIALIZE_STR } from "./constant";
+import {
+  EMPTY_ABI_ITEM_SERIALIZE_STR,
+  DEFAULT_EMPTY_ETH_ADDRESS,
+} from "./constant";
 import _ from "lodash";
-import { DEFAULT_EMPTY_ETH_ADDRESS, DeploymentRecords } from ".";
 
 export type SerializeSignedTransactionString = HexString;
 
