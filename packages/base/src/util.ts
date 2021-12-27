@@ -1361,7 +1361,7 @@ export function checkMatchByteCode(
 
   const bytecode = inputData.slice(0, byteCodeLength);
   const bytecodeSignature = calculateByteCodeSignature(bytecode);
-  return bytecodeSignature === result.byteCodeSignature
+  return bytecodeSignature === result.byteCodeSignature;
 }
 
 export interface ConvertConstructorArgsResult {
