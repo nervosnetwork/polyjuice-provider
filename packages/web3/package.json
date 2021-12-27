@@ -57,14 +57,17 @@
     "ts-node": "^10.0.0",
     "webpack": "^5.28.0",
     "webpack-cli": "^4.5.0",
-    "webpack-node-externals": "^3.0.0"
+    "webpack-node-externals": "^3.0.0",
+    "web3": "^1.6.1"
   },
   "dependencies": {
     "@polyjuice-provider/base": "0.1.1",
     "buffer": "^6.0.3",
     "encoding": "^0.1.13",
-    "web3": "^1.4.0",
-    "web3-providers-ws": "^1.5.2",
+    "web3-core": "^1.6.1",
+    "web3-eth-accounts": "^1.6.1",
+    "web3-providers-ws": "^1.6.1",
+    "web3-core-helpers": "1.6.1",
     "xhr2-cookies": "^1.1.0"
   }
 }
