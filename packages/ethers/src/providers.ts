@@ -23,7 +23,7 @@ const logger = new Logger("Polyjuice-Provider/0.0.1");
 // instant-finality feature of Godwoken enable very quick tx-receipt fetching,
 // so you do not need to wait for blocks to get transaction
 const WAIT_TRANSACTION_TIMEOUT_MILSECS = 20 * 1000; // 20 seconds
-const WAIT_TRANSACTION_INTERVAL_MILSECS = 100; // 100ms
+const WAIT_TRANSACTION_INTERVAL_MILSECS = 500; // 500ms
 
 export interface PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
   constructor(
