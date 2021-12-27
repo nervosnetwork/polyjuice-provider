@@ -58,7 +58,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
-    "@polyjuice-provider/base": "0.1.1",
+    "@polyjuice-provider/base": "0.1.2",
     "@truffle/hdwallet-provider": "^2.0.0",
     "@trufflesuite/web3-provider-engine": "15.0.14",
     "ckb-js-toolkit": "^0.10.2",
