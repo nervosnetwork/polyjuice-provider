@@ -109,7 +109,7 @@ export async function buildDeployProcess(
     signingMethod: signingMethod,
     signingMessageType: signingMessageType_,
   };
-  if (formalizeEthToAddress(tx.to) != DEFAULT_EMPTY_ETH_ADDRESS) {
+  if (formalizeEthToAddress(tx.to) !== DEFAULT_EMPTY_ETH_ADDRESS) {
     throw new Error(`deployTransaction must be a zero to address transaction`);
   }
   if (!tx.from) {
@@ -152,7 +152,7 @@ export async function buildDeployProcess(
   const l2Tx = { raw: rawL2Tx, signature: signature };
 
   const result = splitByteCodeAndConstructorArgs(tx.data, deploymentRecords);
-  if (result == undefined) {
+  if (result == null) {
     // let's build a standard send transaction
     // since we can't find matched deploymentRecords
     return buildSendTransaction(

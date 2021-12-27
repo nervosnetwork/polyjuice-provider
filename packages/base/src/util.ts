@@ -1361,11 +1361,7 @@ export function checkMatchByteCode(
 
   const bytecode = inputData.slice(0, byteCodeLength);
   const bytecodeSignature = calculateByteCodeSignature(bytecode);
-  if (bytecodeSignature != result.byteCodeSignature) {
-    return false;
-  }
-
-  return true;
+  return bytecodeSignature === result.byteCodeSignature
 }
 
 export interface ConvertConstructorArgsResult {
@@ -1426,7 +1422,7 @@ export async function convertContractConstructorArgs(
     };
   }
 
-  if (args.length != abiItem.inputs.length) {
+  if (args.length !== abiItem.inputs.length) {
     throw new Error(
       `args'length ${args.length} and abiItem's inputs length ${abiItem.inputs.length} did not matched!`
     );
@@ -1499,11 +1495,11 @@ export async function convertContractConstructorArgs(
 }
 
 export function validateEthAddress(value: any) {
-  if (typeof value != "string") {
+  if (typeof value !== "string") {
     throw new Error(`ethAddress is not string, ${value}`);
   }
 
-  if (value.length != 42) {
+  if (value.length !== 42) {
     throw new Error(`ethAddress's length is not 42, ${value}`);
   }
 
@@ -1523,7 +1519,7 @@ export function validateEthAddressArray(value: any) {
 }
 
 export function validateBytecode(value: any) {
-  if (typeof value != "string") {
+  if (typeof value !== "string") {
     throw new Error(`bytecode is not string, ${value}`);
   }
 
