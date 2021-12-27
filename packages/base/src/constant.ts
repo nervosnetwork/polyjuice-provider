@@ -28,3 +28,12 @@ export const WAIT_LOOP_INTERVAL_MILSECS = 1000; // 1 secs
 export const DEFAULT_SUDT_ID_HEX_STRING = "0x1";
 export const DEFAULT_SUDT_FEE_HEX_STRING = "0x0";
 export const DEFAULT_ETH_TO_CKB_SUDT_DECIMAL = 100_0000_0000; // 1 eth = 1 ckb in layer2
+
+// contract deployment
+export const MAX_CONTRACT_CODE_SIZE_IN_BYTE = 24000; // 24k byte
+export const CONTRACT_BYTE_CODE_ID_OFFSET = 12; // we use last 12 of bytecode string to identified contract
+export const CONTRACT_BYTE_CODE_HASH_HEAD_IN_BYTE = 8; // keccak(bytecode) first 8 bytes as HASH_HEAD
+
+// docs link
+export const DEPLOY_CONTRACT_DOCS_LINK =
+  "https://github.com/nervosnetwork/polyjuice-provider/readme.md";

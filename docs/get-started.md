@@ -143,9 +143,15 @@ const implementationFactory = new ContractFactory(
   contract.bytecode,
   deployer,
 );
-const tx = implementationFactory.getDeployTransaction(
-  '<your deploy arguments> Note: if the arguments contains address type, you need to provide polyjuiceAddress instead of ethAddress, here provider can not do address-converting for you'
+
+const deployArgs = ['<your contract constructor args>'];
+// you need the following step to convert the deployArgs before deploying contract:
+const newDeployArgs = await deployer.convertDeployArgs(
+    deployArgs,
+    contract.abi as AbiItems,
+    contract.bytecode
 );
+const tx = implementationFactory.getDeployTransaction(...newDeployArgs);
 tx.gasPrice = 0;
 tx.gasLimit = 1_000_000;
 deployer.sendTransaction(tx);
@@ -384,10 +390,17 @@ web3.eth.Contract._accounts = web3.eth.accounts;
 web3.eth.accounts.wallet.add(`your private key`);
 
 const myContract = await web3.eth.Contract(`your contract's abi`);
+const deployArgs = ['your contract constructor args'];
+// you need the following step to convert the deployArgs before deploying contract:
+const newDeployArgs = await polyjuiceAccounts.convertDeployArgs(
+    deployArgs,
+    'contract abi items',
+    'contract binary'
+);
 const contractInstance = myContract
     .deploy({
       data: `contract bin`,
-      arguments: ['<your deploy arguments> Note: if the arguments contains address type, you need to provide polyjuiceAddress instead of ethAddress, here provider can not do address-converting for you'],
+      arguments: newDeployArgs,
     })
     .send({
       gas: "0x30d40", 

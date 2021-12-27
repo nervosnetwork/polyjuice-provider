@@ -130,7 +130,6 @@ test.serial("deploy_example_contract", async (t) => {
     SimpleStorageV2_ByteCode,
     deployer
   );
-
   const tx = implementationFactory.getDeployTransaction();
   tx.gasPrice = 0;
   tx.gasLimit = 500000;
@@ -217,7 +216,6 @@ test.serial("test_error_receipt_contract", async (t) => {
     errorReceiptContract.bytecode,
     deployer
   );
-
   const tx = implementationFactory.getDeployTransaction();
   tx.gasPrice = 0;
   tx.gasLimit = 500000;

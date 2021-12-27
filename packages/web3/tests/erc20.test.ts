@@ -69,10 +69,16 @@ test.serial("deploy example contract", async (t) => {
   web3.eth.accounts.wallet.add(PRIVATE_KEY);
   web3.eth.Contract.setProvider(provider, web3.eth.accounts);
 
+  const args = [ERC20_NAME, ERC20_SYMBOL, ERC20_TOTAL_SUPPLY, ERC20_SUDT_ID];
+  const deployArgs = await polyjuiceAccounts.convertDeployArgs(
+    args,
+    ABI as AbiItems,
+    BYTECODE
+  );
   const deployTx = new web3.eth.Contract(ABI)
     .deploy({
       data: BYTECODE,
-      arguments: [ERC20_NAME, ERC20_SYMBOL, ERC20_TOTAL_SUPPLY, ERC20_SUDT_ID],
+      arguments: deployArgs,
     })
     .send({
       from: ethAddressFromPrivateKey,

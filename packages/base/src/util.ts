@@ -50,7 +50,19 @@ import {
 import { Reader } from "ckb-js-toolkit";
 import crossFetch from "cross-fetch"; // for nodejs compatibility polyfill
 import { Buffer } from "buffer"; // for browser compatibility polyfill
-import { ShortAddress, ShortAddressType, SigningMessageType } from "./types";
+import {
+  AbiItems,
+  ShortAddress,
+  ShortAddressType,
+  SigningMessageType,
+} from "./types";
+import { AbiItem } from "web3-utils";
+import {
+  MAX_CONTRACT_CODE_SIZE_IN_BYTE,
+  CONTRACT_BYTE_CODE_HASH_HEAD_IN_BYTE,
+  CONTRACT_BYTE_CODE_ID_OFFSET,
+} from "./constant";
+import keccak256 from "keccak256";
 
 // replace for buffer polyfill under 0.6 version.
 // eg: for react project using webpack 4 (this is the most common case when created by running `npx create-react-app`),
@@ -1268,7 +1280,270 @@ export class Godwoker {
   }
 }
 
+// UInt32ToLeBytes(bytecode_length) + bytecode.slice(-CONTRACT_BYTE_CODE_ID_OFFSET) + keccak256(bytecode).slice(8)
+export type DeploymentSignature = HexString;
+
+// if constructor args contains address type,
+// then the contract deployment is considered interesting.
+export interface DeploymentRecords {
+  [signature: string]: AbiItem;
+}
+
+export function calculateByteCodeSignature(bytecode: string) {
+  const byteCodeSignature = keccak256(Buffer.from(bytecode, "hex"))
+    .slice(0, CONTRACT_BYTE_CODE_HASH_HEAD_IN_BYTE)
+    .toString("hex");
+  return "0x" + byteCodeSignature;
+}
+
+export function calculateDeploymentSignature(
+  bytecode: string // does not contains with "0x"
+): DeploymentSignature {
+  validateBytecode(bytecode);
+  const length = bytecode.length;
+  const byteCodeId = bytecode.slice(-CONTRACT_BYTE_CODE_ID_OFFSET);
+  const byteCodeSignature = calculateByteCodeSignature(bytecode).slice(2);
+  const deploymentSignature =
+    UInt32ToLeBytes(length) + byteCodeId + byteCodeSignature;
+  return deploymentSignature as DeploymentSignature;
+}
+
+export function restoreDeploymentSignature(signature: DeploymentSignature) {
+  const lengthHexString = signature.slice(0, 10); // "0x" + first 4 bytes = uint32LeByte(length)
+  const length = LeBytesToUInt32(lengthHexString);
+  const byteCodeId = signature.slice(10, CONTRACT_BYTE_CODE_ID_OFFSET + 10);
+  const byteCodeSignature = signature.slice(
+    -(CONTRACT_BYTE_CODE_HASH_HEAD_IN_BYTE * 2)
+  );
+  return {
+    length,
+    byteCodeId,
+    byteCodeSignature,
+  };
+}
+
+export function splitByteCodeAndConstructorArgs(
+  inputData: HexString,
+  deploymentRecords: DeploymentRecords
+) {
+  const signatures: DeploymentSignature[] = Object.keys(deploymentRecords);
+  for (const signature of signatures) {
+    const byteCodeLength = restoreDeploymentSignature(signature).length;
+    const isMatched = checkMatchByteCode(inputData, signature);
+    if (isMatched) {
+      const bytecode = inputData.slice(2).slice(0, byteCodeLength);
+      const args = inputData.slice(2).slice(byteCodeLength);
+      return {
+        bytecode,
+        args,
+        signature,
+      };
+    }
+
+    // did not find matched deploymentRecords
+    return undefined;
+  }
+}
+
+export function checkMatchByteCode(
+  inputData_: HexString,
+  deploymentSignature: DeploymentSignature
+) {
+  const inputData = inputData_.slice(2); // remove "0x"
+  const result = restoreDeploymentSignature(deploymentSignature);
+  if (!inputData.includes(result.byteCodeId)) {
+    return false;
+  }
+  const byteCodeLength = result.length;
+  if (inputData.length < byteCodeLength) {
+    return false;
+  }
+
+  const bytecode = inputData.slice(0, byteCodeLength);
+  const bytecodeSignature = calculateByteCodeSignature(bytecode).slice(2);
+  return bytecodeSignature === result.byteCodeSignature;
+}
+
+export interface ConvertConstructorArgsResult {
+  newArgs: any[];
+  isInterested: boolean;
+  addressMapping: AddressMappingItem[];
+  deploymentRecords: DeploymentRecords;
+}
+
+// replace the constructor arguments for contract deployment if it is address-type related.
+// since the input data do not contains function signature(format = contract bytecode + args), and we support multiple ABIs,
+// it is not possible to decode the constructor args in the stage of sending transaction from providers,
+// we will require developers do address converting using the below method before deploying contract explicitly.
+export async function convertContractConstructorArgs(
+  args: any[],
+  abiItems: AbiItems,
+  bytecode: string,
+  calculate_short_address: (ethAddress: HexString) => Promise<ShortAddress>
+): Promise<ConvertConstructorArgsResult> {
+  validateBytecode(bytecode);
+  const deploymentSignature = calculateDeploymentSignature(bytecode);
+
+  let deploymentRecords: DeploymentRecords = {};
+  let addressMapping: AddressMappingItem[] = [];
+
+  const constructorAbiItems = abiItems.filter(
+    (item) => item.type === "constructor"
+  );
+
+  if (constructorAbiItems.length === 0) {
+    return {
+      newArgs: args,
+      isInterested: false,
+      addressMapping,
+      deploymentRecords,
+    };
+  }
+
+  if (constructorAbiItems.length > 1) {
+    throw new Error(
+      `invalid abiItems! more than one constructor found. ${JSON.stringify(
+        abiItems,
+        null,
+        2
+      )}`
+    );
+  }
+
+  const abiItem = constructorAbiItems[0];
+  deploymentRecords[deploymentSignature] = abiItem;
+
+  if (!abiItem.inputs) {
+    return {
+      newArgs: args,
+      isInterested: false,
+      addressMapping,
+      deploymentRecords,
+    };
+  }
+
+  if (args.length !== abiItem.inputs.length) {
+    throw new Error(
+      `args'length ${args.length} and abiItem's inputs length ${abiItem.inputs.length} did not matched!`
+    );
+  }
+
+  const isInterested =
+    abiItem.inputs.filter(
+      (input) => input.type === "address" || input.type === "address[]"
+    ).length > 0;
+
+  if (!isInterested) {
+    return {
+      newArgs: args,
+      isInterested: false,
+      addressMapping,
+      deploymentRecords,
+    };
+  }
+
+  const convertArgs = await Promise.all(
+    args.map(async (arg, index) => {
+      let newArg: any;
+      const type = abiItem.inputs![index].type;
+
+      switch (type) {
+        case "address":
+          validateEthAddress(arg);
+          const shortAddress = await calculate_short_address(arg);
+          newArg = shortAddress.value;
+          if (shortAddress.type === ShortAddressType.notExistEoaAddress) {
+            // save the mapping for later usage
+            addressMapping.push({
+              eth_address: arg,
+              gw_short_address: shortAddress.value,
+            });
+          }
+          break;
+
+        case "address[]":
+          validateEthAddressArray(arg);
+          newArg = await Promise.all(
+            await arg.map(async (item: string) => {
+              const shortAddress = await calculate_short_address(item);
+              if (shortAddress.type === ShortAddressType.notExistEoaAddress) {
+                addressMapping.push({
+                  eth_address: item,
+                  gw_short_address: shortAddress.value,
+                });
+              }
+
+              return shortAddress.value;
+            })
+          );
+          break;
+
+        default:
+          newArg = arg;
+          break;
+      }
+      return newArg;
+    })
+  );
+
+  return {
+    newArgs: convertArgs,
+    isInterested: true,
+    addressMapping,
+    deploymentRecords,
+  };
+}
+
+export function validateEthAddress(value: any) {
+  if (typeof value !== "string") {
+    throw new Error(`ethAddress is not string, ${value}`);
+  }
+
+  if (value.length !== 42) {
+    throw new Error(`ethAddress's length is not 42, ${value}`);
+  }
+
+  if (!value.startsWith("0x")) {
+    throw new Error(`ethAddress does not start with 0x, ${value}`);
+  }
+}
+
+export function validateEthAddressArray(value: any) {
+  if (!Array.isArray(value)) {
+    throw new Error(`ethAddressArray is not a array, ${value}`);
+  }
+
+  for (let item of value) {
+    validateEthAddress(item);
+  }
+}
+
+export function validateBytecode(value: any) {
+  if (typeof value !== "string") {
+    throw new Error(`bytecode is not string, ${value}`);
+  }
+
+  if (value === "") {
+    throw new Error(`contract bytecode can not be empty, ${value}`);
+  }
+
+  const byteSize = Buffer.from(value, "hex").byteLength;
+  if (byteSize >= MAX_CONTRACT_CODE_SIZE_IN_BYTE) {
+    throw new Error(
+      `max bytecode size: ${MAX_CONTRACT_CODE_SIZE_IN_BYTE},  found ${byteSize}.`
+    );
+  }
+
+  // todo: add more validation
+}
+
 // todo: move to another file
+export function UInt8ToLeBytes(num: number): HexString {
+  const buf = Buffer.allocUnsafe(1);
+  buf.writeUInt8(+num, 0);
+  return "0x" + buf.toString("hex");
+}
+
 export function UInt32ToLeBytes(num: number): HexString {
   const buf = Buffer.allocUnsafe(4);
   buf.writeUInt32LE(+num, 0);
@@ -1293,6 +1568,11 @@ export function UInt128ToLeBytes(u128: bigint): HexString {
   buf.writeBigUInt64LE(u128 & BigInt("0xFFFFFFFFFFFFFFFF"), 0);
   buf.writeBigUInt64LE(u128 >> BigInt(64), 8);
   return "0x" + buf.toString("hex");
+}
+
+export function LeBytesToUInt8(hex: HexString): number {
+  const buf = Buffer.from(hex.slice(2), "hex");
+  return buf.readUInt8();
 }
 
 export function LeBytesToUInt32(hex: HexString): number {
