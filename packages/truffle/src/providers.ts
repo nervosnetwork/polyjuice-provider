@@ -183,8 +183,6 @@ export class PolyjuiceHDWalletProvider extends HDWalletProvider {
     }
 
     // Required by the provider engine.
-    this.engine.start((err: any) => {
-      if (err) throw err;
-    });
+    this.engine.start();
   }
 }
