@@ -1293,7 +1293,7 @@ export function calculateByteCodeSignature(bytecode: string) {
   const byteCodeSignature = keccak256(Buffer.from(bytecode, "hex"))
     .slice(0, CONTRACT_BYTE_CODE_HASH_HEAD_IN_BYTE)
     .toString("hex");
-  return byteCodeSignature;
+  return "0x" + byteCodeSignature;
 }
 
 export function calculateDeploymentSignature(
@@ -1302,7 +1302,7 @@ export function calculateDeploymentSignature(
   validateBytecode(bytecode);
   const length = bytecode.length;
   const byteCodeId = bytecode.slice(-CONTRACT_BYTE_CODE_ID_OFFSET);
-  const byteCodeSignature = calculateByteCodeSignature(bytecode);
+  const byteCodeSignature = calculateByteCodeSignature(bytecode).slice(2);
   const deploymentSignature =
     UInt32ToLeBytes(length) + byteCodeId + byteCodeSignature;
   return deploymentSignature as DeploymentSignature;
@@ -1360,7 +1360,7 @@ export function checkMatchByteCode(
   }
 
   const bytecode = inputData.slice(0, byteCodeLength);
-  const bytecodeSignature = calculateByteCodeSignature(bytecode);
+  const bytecodeSignature = calculateByteCodeSignature(bytecode).slice(2);
   return bytecodeSignature === result.byteCodeSignature;
 }
 
