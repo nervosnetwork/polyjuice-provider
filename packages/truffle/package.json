@@ -59,8 +59,8 @@
   },
   "dependencies": {
     "@polyjuice-provider/base": "0.1.1",
-    "@truffle/hdwallet-provider": "^1.4.1",
-    "@trufflesuite/web3-provider-engine": "15.0.13-1",
+    "@truffle/hdwallet-provider": "^2.0.0",
+    "@trufflesuite/web3-provider-engine": "15.0.14",
     "ckb-js-toolkit": "^0.10.2",
     "ethereumjs-util": "6.1.0"
   }
