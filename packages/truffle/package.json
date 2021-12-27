@@ -1,6 +1,6 @@
 {
   "name": "@polyjuice-provider/truffle",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",

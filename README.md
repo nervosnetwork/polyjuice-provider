@@ -6,6 +6,8 @@ godwoken-polyjuice compatible providers for ethereum library like [ethers](https
 
 ## Important Notes
 
+- new version [v0.1.2](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.1.2) has been release which [support contract deployment arguments address converting](docs/get-started.md#example-deploy-contract), please upgrade to latest version. (2021.12.27)
+
 - new version [v0.1.0](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.1.0) has been release including some bug fixed, please upgrade to latest version. (2021.11.18)
 
 - since [Godwoken](https://github.com/nervosnetwork/godwoken) had some changed for instant-finality, please upgrade your Polyjuice-Provider over [0.0.1-rc14](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.0.1-rc10) version or above. otherwise you might not be able to fetch tx-receipt as fast as possible. (2021.11.15)
@@ -39,13 +41,13 @@ the polyjuice-provider convert the two different address type automatically for 
 
 short version:
 
-- you need to take care of the address converting by yourself when deploying contract with constructor arguments which contains address type.
+- ~~you need to take care of the address converting by yourself when deploying contract with constructor arguments which contains address type.~~ For web3.js and ethers, we provide one helper function to convert deployment arguments to save some works for you, checkout [how to use it](docs/get-started.md#example-deploy-contract).
 - do not use polyjuice-provider with contract address which has not been created on-chain.
 - do not use polyjuice-provider to transfer ether.
 
 long version and why:
 
-- currently we do **NOT** support address-converting [for contract deployment arguments](packages/ethers/tests/deployArgs.test.ts#L77), that is to say, when you use ethers/web3.js/truffle to deploy contract with address as constructor arguments, you should take care of the address converting by yourself to pass the right polyjuiceAddress instead of ethAddress. however, this limits might be removed in the future for new release version. please stay alert.
+- ~~currently we do **NOT** support address-converting [for contract deployment arguments](packages/ethers/tests/deployArgs.test.ts#L77), that is to say, when you use ethers/web3.js/truffle to deploy contract with address as constructor arguments, you should take care of the address converting by yourself to pass the right polyjuiceAddress instead of ethAddress. however, this limits might be removed in the future for new release version. please stay alert.~~ For web3.js and ethers, Converting address for deployment arguments are supported now, you need to [call this function](docs/get-started.md#example-deploy-contract) to convert it explicitly before deploy your contract.
 - currently we do **NOT** support passing contract-address which has not been created yet on chain as address parameter in tx's [data field](https://ethereum.org/en/developers/docs/transactions/) to interact with smart-contract. noticed that, this doesn't mean we do not support `create2`. you can use create2 whenever you want. but if it has not been created on chain, you can not use this address as parameter to feed other contracts. the address-converting will go wrong. as soon as the contract been created, there is no limit.
 - currently we are **NOT** supporting transfer ether to another EOA address directly via provider for safety reason, so if you are sending a transfer transaction through polyjuice-provider, it won't work. however, you can still construct a transaction which interact with ERC20-contract and tell the contract to transfer token for you.
 

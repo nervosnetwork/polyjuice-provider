@@ -14,6 +14,10 @@ import {
   buildSendTransaction,
   executeCallTransaction,
   SigningMessageType,
+  convertContractConstructorArgs,
+  DeploymentRecords,
+  buildDeployProcess,
+  DEFAULT_EMPTY_ETH_ADDRESS,
 } from "@polyjuice-provider/base";
 import {
   errors,
@@ -21,6 +25,7 @@ import {
   JsonRpcResponse,
   RequestItem,
 } from "web3-core-helpers";
+import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
 
 const Web3WsProvider = require("web3-providers-ws");
 
@@ -50,6 +55,9 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
   requestQueue: Map<number | string, RequestItem>;
   responseQueue: Map<number | string, RequestItem>;
 
+  deployAddressMapping: AddressMappingItem[];
+  deploymentRecords: DeploymentRecords;
+
   constructor(
     host: string,
     polyjuiceConfig: PolyjuiceConfig,
@@ -78,6 +86,9 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
 
     this.godwoker = new Godwoker(polyjuiceConfig.web3Url, godwoker_option); // must use http url here
     this.abi = new Abi(polyjuiceConfig.abiItems || []);
+
+    this.deployAddressMapping = [];
+    this.deploymentRecords = {};
   }
 
   setAbi(abiItems: AbiItems) {
@@ -92,6 +103,27 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
   addAbi(_abiItems: AbiItems) {
     const abiItems = this.abi.get_abi_items().concat(_abiItems);
     this.abi = new Abi(abiItems);
+  }
+
+  async convertDeployArgs(args: any[], abiItems: AbiItems, bytecode: string) {
+    const convertResult = await convertContractConstructorArgs(
+      args,
+      abiItems,
+      bytecode,
+      this.godwoker.getShortAddressByAllTypeEthAddress.bind(this.godwoker)
+    );
+
+    // later when sending this deployment transaction,
+    // we will submit this.deployContractAddressMapping to web3 as well,
+    // for saving address mapping if needed.
+    this.deployAddressMapping = convertResult.addressMapping;
+    // deploymentRecords will be used to extract constructor args from eth_tx's input data
+    this.deploymentRecords = {
+      ...this.deploymentRecords,
+      ...convertResult.deploymentRecords,
+    };
+
+    return convertResult.newArgs;
   }
 
   async send(
@@ -166,13 +198,25 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
             const signingMethod = async (message: string) => {
               return await this.signer.sign_with_metamask(message, from);
             };
-            const rawTxString = await buildSendTransaction(
-              this.abi,
-              this.godwoker,
-              t,
-              signingMethod.bind(this),
-              SigningMessageType.noPrefix
-            );
+
+            const rawTxString =
+              t.to === DEFAULT_EMPTY_ETH_ADDRESS
+                ? await buildDeployProcess(
+                    this.deployAddressMapping,
+                    this.deploymentRecords,
+                    this.abi,
+                    this.godwoker,
+                    t,
+                    signingMethod.bind(this)
+                  )
+                : await buildSendTransaction(
+                    this.abi,
+                    this.godwoker,
+                    t,
+                    signingMethod.bind(this),
+                    SigningMessageType.noPrefix
+                  );
+
             const tx_hash =
               await this.godwoker.poly_submitSerializedL2Transaction(
                 rawTxString
