@@ -6,6 +6,8 @@ godwoken-polyjuice compatible providers for ethereum library like [ethers](https
 
 ## Important Notes
 
+- new version [v0.1.2](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.1.2) has been release which [support contract deployment arguments address converting](docs/get-started.md#example-deploy-contract), please upgrade to latest version. (2021.12.27)
+
 - new version [v0.1.0](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.1.0) has been release including some bug fixed, please upgrade to latest version. (2021.11.18)
 
 - since [Godwoken](https://github.com/nervosnetwork/godwoken) had some changed for instant-finality, please upgrade your Polyjuice-Provider over [0.0.1-rc14](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.0.1-rc10) version or above. otherwise you might not be able to fetch tx-receipt as fast as possible. (2021.11.15)
