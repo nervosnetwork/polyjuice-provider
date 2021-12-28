@@ -40,6 +40,7 @@
     ]
   },
   "devDependencies": {
+    "@metamask/eth-sig-util": "^4.0.0",
     "@types/node": "^14.14.37",
     "ava": "^3.15.0",
     "babel-plugin-transform-runtime": "^6.23.0",
@@ -55,19 +56,19 @@
     "stream-browserify": "^3.0.0",
     "ts-loader": "^8.0.12",
     "ts-node": "^10.0.0",
+    "web3": "^1.6.1",
     "webpack": "^5.28.0",
     "webpack-cli": "^4.5.0",
-    "webpack-node-externals": "^3.0.0",
-    "web3": "^1.6.1"
+    "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
     "@polyjuice-provider/base": "0.1.2",
     "buffer": "^6.0.3",
     "encoding": "^0.1.13",
     "web3-core": "^1.6.1",
+    "web3-core-helpers": "1.6.1",
     "web3-eth-accounts": "^1.6.1",
     "web3-providers-ws": "^1.6.1",
-    "web3-core-helpers": "1.6.1",
     "xhr2-cookies": "^1.1.0"
   }
 }

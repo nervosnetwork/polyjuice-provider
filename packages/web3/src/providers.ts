@@ -207,7 +207,8 @@ export class PolyjuiceHttpProvider {
                   this.abi,
                   this.godwoker,
                   t,
-                  signingMethod.bind(this)
+                  signingMethod.bind(this),
+                  SigningMessageType.noPrefix
                 )
               : await buildSendTransaction(
                   this.abi,

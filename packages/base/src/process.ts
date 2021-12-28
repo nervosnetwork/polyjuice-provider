@@ -124,6 +124,19 @@ export async function buildDeployProcess(
     );
   }
 
+  const result = splitByteCodeAndConstructorArgs(tx.data, deploymentRecords);
+  if (result == null) {
+    // let's build a standard send transaction
+    // since we can't find matched deploymentRecords
+    return buildSendTransaction(
+      abi,
+      godwoker,
+      tx,
+      signingMethod,
+      signingMessageType_
+    );
+  }
+
   const t = normalizeEthTransaction({
     from: tx.from,
     to: tx.to,
@@ -153,19 +166,6 @@ export async function buildDeployProcess(
   const _signature = await process.signingMethod!(message);
   const signature = godwoker.packSignature(_signature);
   const l2Tx = { raw: rawL2Tx, signature: signature };
-
-  const result = splitByteCodeAndConstructorArgs(tx.data, deploymentRecords);
-  if (result == null) {
-    // let's build a standard send transaction
-    // since we can't find matched deploymentRecords
-    return buildSendTransaction(
-      abi,
-      godwoker,
-      tx,
-      signingMethod,
-      signingMessageType_
-    );
-  }
 
   const abiItem = deploymentRecords[result.signature];
   const _abiItem = _.cloneDeep(abiItem); // do not change the original abi object
