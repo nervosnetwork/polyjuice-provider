@@ -1191,18 +1191,18 @@ export class Godwoker {
   async waitForTransactionReceipt(
     tx_hash: Hash,
     timeout_ms: number = WAIT_TIMEOUT_MILSECS,
-    loopInterval_ms = WAIT_LOOP_INTERVAL_MILSECS,
-    showLog = false
+    loop_interval_ms = WAIT_LOOP_INTERVAL_MILSECS,
+    show_log = false
   ) {
-    for (let index = 0; index < timeout_ms; index += loopInterval_ms) {
+    for (let index = 0; index < timeout_ms; index += loop_interval_ms) {
       const tx_with_status: L2TransactionWithStatus | null =
         await this.gw_getTransaction(tx_hash);
       if (tx_with_status !== null) {
         return;
       }
 
-      await this.asyncSleep(loopInterval_ms);
-      if (showLog === true) {
+      await this.asyncSleep(loop_interval_ms);
+      if (show_log === true) {
         console.log(
           `keep fetching tx_receipt with ${tx_hash}, waited for ${index} mil seconds`
         );
