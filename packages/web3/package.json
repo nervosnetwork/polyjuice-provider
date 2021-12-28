@@ -30,6 +30,9 @@
     "/lib"
   ],
   "ava": {
+    "files": [
+      "!tests/helper.ts"
+    ],
     "extensions": [
       "ts"
     ],
