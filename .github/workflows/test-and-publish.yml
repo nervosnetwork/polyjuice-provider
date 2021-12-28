@@ -65,10 +65,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('tools/kicker/docker/.build.mode.env') }}
 
+      - name: output kicker verison
+        run: cd tools/kicker && make version
+
       - name: start kicker
         run: |
           cd tools/kicker && make init && make start
           docker-compose --file docker/docker-compose.yml logs --tail 6
+
       - name: make sure kicker is starting..
         run: cd tools/kicker && make start
 
