@@ -6,7 +6,7 @@ godwoken-polyjuice compatible providers for ethereum library like [ethers](https
 
 ## Important Notes
 
-- new version [v0.1.2](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.1.2) has been release which [support contract deployment arguments address converting](docs/get-started.md#example-deploy-contract), please upgrade to latest version. (2021.12.27)
+- new version [v0.1.3](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.1.3) has been release which [support contract deployment arguments address converting](docs/get-started.md#example-deploy-contract), please upgrade to latest version. (2021.12.28)
 
 - new version [v0.1.0](https://github.com/nervosnetwork/polyjuice-provider/releases/tag/v0.1.0) has been release including some bug fixed, please upgrade to latest version. (2021.11.18)
 
