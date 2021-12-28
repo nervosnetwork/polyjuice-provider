@@ -5,7 +5,7 @@ import { AbiItems, PolyjuiceConfig } from "@polyjuice-provider/base";
 import anotherContract from "../../../contract-testcase/ErrorReceipt.json";
 import deployArgsTestContract from "../../../contract-testcase/DeployArgs.json";
 import { genNewEthAddress } from "../../../contract-testcase/helper";
-import { personalSign } from "@metamask/eth-sig-util";
+import { initMockWindowsEthereum } from "./helper";
 const Contract = require("web3-eth-contract");
 
 const root = require("path").join.bind(this, __dirname, "..");
@@ -30,30 +30,6 @@ let contractDeployArgs: any[];
 let provider: PolyjuiceHttpProvider;
 let web3: Web3;
 
-async function initMockWindowsEthereum() {
-  let window = {
-    ethereum: {
-      request: async function ({ method, params }) {
-        if (method !== "personal_sign") {
-          throw new Error(
-            "mock window.ethereum only impl personal_sign method."
-          );
-        }
-        const [message_without_prefix, address] = params;
-        if (address === ethAddressFromPrivateKey.toLocaleLowerCase()) {
-          return personalSign({
-            privateKey: Buffer.from(PRIVATE_KEY.slice(2), "hex"),
-            data: message_without_prefix,
-          });
-        }
-
-        throw new Error("invalid test data");
-      },
-    },
-  };
-  return window;
-}
-
 test.before(async (t) => {
   // init provider and web3
   const web3Rpc = process.env.WEB3_JSON_RPC;
@@ -64,8 +40,7 @@ test.before(async (t) => {
 
   provider = new PolyjuiceHttpProvider(web3Rpc, polyjuiceConfig);
   web3 = new Web3(provider);
-  // @ts-ignore
-  global.window = await initMockWindowsEthereum();
+  (global as any).window = await initMockWindowsEthereum(PRIVATE_KEY);
   Contract.setProvider(provider);
 });
 
