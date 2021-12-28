@@ -8,10 +8,10 @@ import {
 } from "../lib/index";
 import {
   AbiItems,
-  DEFAULT_EMPTY_ETH_ADDRESS,
   PolyjuiceConfig,
   RpcFailedError,
 } from "@polyjuice-provider/base";
+import { initMockWindowsEthereum } from "./helper";
 import errorReceiptContract from "../../../contract-testcase/ErrorReceipt.json";
 
 const Contract = require("web3-eth-contract");
@@ -340,6 +340,26 @@ test.serial("ws: test-ws-provider-with-account", async (t) => {
   wsWeb3.eth.accounts = wsPolyjuiceAccounts;
   wsWeb3.eth.Contract._ethAccounts = wsWeb3.eth.accounts;
   wsPolyjuiceAccounts.wallet.add(PRIVATE_KEY);
+
+  const simpleStorageV2 = new wsWeb3.eth.Contract(
+    EXAMPLE_CONTRACT.abi as AbiItems,
+    contract_address!
+  );
+
+  const id = await wsWeb3.eth.net.getId();
+  const txRes = await simpleStorageV2.methods
+    .set(ETH_ADDRESS)
+    .send({ from: ETH_ADDRESS, gas: "0x30d40", gasPrice: "0x00" });
+
+  t.is(id, 1024777);
+  t.is(txRes.transactionHash.slice(0, 2), "0x");
+  t.is(txRes.transactionHash.length, 66);
+  t.is(typeof txRes.gasUsed, "number");
+  t.is(txRes.status, true);
+});
+
+test.serial("ws: test-ws-provider-with-metamask", async (t) => {
+  (global as any).window = await initMockWindowsEthereum(PRIVATE_KEY);
 
   const simpleStorageV2 = new wsWeb3.eth.Contract(
     EXAMPLE_CONTRACT.abi as AbiItems,
