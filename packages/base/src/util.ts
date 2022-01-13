@@ -591,7 +591,7 @@ export class Godwoker {
         .then(function (res: Response) {
           return res.text();
         })
-        .then(function (text: Response) {
+        .then(function (text: string) {
           callback(null, text);
         })
         .catch(function (err: Error) {
@@ -799,7 +799,7 @@ export class Godwoker {
     }
 
     try {
-      // assume it is an contract address (thus already an short address)
+      // assume it is a contract address (thus already a short address)
       const isContractAddress = await this.isShortAddressOnChain(_address);
       if (isContractAddress) {
         return {
@@ -898,7 +898,7 @@ export class Godwoker {
   }
 
   // re-compute the eth address with code_hash info to make sure
-  // it indeed match with short_address
+  // it indeed matches with short_address
   checkEthAddressIsEoa(
     eth_address: string,
     _target_short_address: string
