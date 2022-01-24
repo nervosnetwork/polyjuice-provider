@@ -143,6 +143,7 @@ const implementationFactory = new ContractFactory(
   contract.bytecode,
   deployer,
 );
+await deployer.godwoker.init();
 
 const deployArgs = ['<your contract constructor args>'];
 // you need the following step to convert the deployArgs before deploying contract:
@@ -383,6 +384,7 @@ provider = new PolyjuiceHttpProvider(
   polyjuiceConfig,
 );
 polyjuiceAccounts = new PolyjuiceAccounts(polyjuiceConfig);
+await polyjuiceAccounts.godwoker.init();
 
 const web3 = new Web3(provider);
 web3.eth.accounts = polyjuiceAccounts;
