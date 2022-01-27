@@ -372,6 +372,7 @@ export class Abi {
       const isUint = abiItem.inputs[i].type.indexOf("uint") === 0;
       const isInt = abiItem.inputs[i].type.indexOf("int") === 0;
       const isAddress = abiItem.inputs[i].type.indexOf("address") === 0;
+      const isBytes = abiItem.inputs[i].type.indexOf("bytes") === 0;
 
       if (isUint || isInt) {
         const isArray = Array.isArray(param);
@@ -394,9 +395,13 @@ export class Abi {
         }
       }
 
+      if (isBytes) {
+        parsedParam = parsedParam === null ? "0x" : parsedParam;
+      }
+
       retData.params.push({
         name: abiItem.inputs[i].name,
-        value: parsedParam === null ? "0x" : parsedParam,
+        value: parsedParam,
         type: abiItem.inputs[i].type,
       });
     }
