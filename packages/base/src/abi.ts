@@ -257,7 +257,7 @@ export function decodeInputDataByAbi(data: HexString, abiItem: AbiItem) {
     }
 
     if (isBytes) {
-      parsedParam = parsedParam === null ? '0x' : parsedParam;
+      parsedParam = parsedParam === null ? "0x" : parsedParam;
     }
 
     retData.params.push({
