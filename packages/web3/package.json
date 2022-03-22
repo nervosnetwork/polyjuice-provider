@@ -12,7 +12,7 @@
     "build": "tsc",
     "boundle": "webpack",
     "example": "yarn boundle && yarn gen-config-for-example && cp ./dist/PolyjuiceHttpProvider.js example/web/static/js/ && node example/web/server.js",
-    "test": "ava --timeout=100s --serial",
+    "test": "ava --timeout=200s --serial",
     "publish": "npm publish",
     "test-publish": "npm publish --dry-run",
     "pack": "npm pack",

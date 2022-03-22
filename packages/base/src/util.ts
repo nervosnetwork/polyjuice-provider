@@ -52,6 +52,7 @@ import crossFetch from "cross-fetch"; // for nodejs compatibility polyfill
 import { Buffer } from "buffer"; // for browser compatibility polyfill
 import {
   AbiItems,
+  BlockParameter,
   ShortAddress,
   ShortAddressType,
   SigningMessageType,
@@ -1058,14 +1059,15 @@ export class Godwoker {
 
   // poly_executeRawL2Transaction diff from gw_executeRawL2Transaction for it carry extra addressMapping data
   async poly_executeRawL2Transaction(
-    raw_tx: RawL2TransactionWithAddressMapping
+    raw_tx: RawL2TransactionWithAddressMapping,
+    blockParameter?: BlockParameter
   ): Promise<RunResult> {
     const serialize_tx =
       this.serializeRawL2TransactionWithAddressMapping(raw_tx);
     const errorWhenNoResult = `failed to get poly_execute_raw_l2transaction runResult`;
     return this.jsonRPC(
       "poly_executeRawL2Transaction",
-      [serialize_tx],
+      [serialize_tx, blockParameter],
       errorWhenNoResult
     );
   }

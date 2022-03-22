@@ -30,6 +30,9 @@ export enum SigningMessageType {
   noPrefix,
 }
 
+export type BlockTag = "latest" | "earliest" | "pending";
+export type BlockParameter = HexString | BlockTag;
+
 export enum FailedReasonStatusType {
   "SUCCESS",
   "FAILURE",

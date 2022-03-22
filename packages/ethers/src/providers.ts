@@ -15,6 +15,7 @@ import {
   POLY_MIN_GAS_PRICE,
   verifyHttpUrl,
   executeCallTransaction,
+  BlockParameter,
 } from "@polyjuice-provider/base";
 
 import { Logger } from "@ethersproject/logger";
@@ -133,7 +134,13 @@ export class PolyjuiceJsonRpcProvider extends providers.JsonRpcProvider {
           params[0].value = params[0].value || "0x00";
 
           const t = params[0];
-          return await executeCallTransaction(this.abi, this.godwoker, t);
+          const blockParameter: BlockParameter | undefined = params[1];
+          return await executeCallTransaction(
+            this.abi,
+            this.godwoker,
+            t,
+            blockParameter
+          );
         } catch (error) {
           this.emit("debug", {
             action: "response",
@@ -337,10 +344,12 @@ export class PolyjuiceWebsocketProvider extends providers.WebSocketProvider {
               params[0].value = params[0].value || "0x00";
 
               const t = params[0];
+              const blockParameter: BlockParameter | undefined = params[1];
               const return_value = await executeCallTransaction(
                 this.abi,
                 this.godwoker,
-                t
+                t,
+                blockParameter
               );
               return callback(null, return_value);
             } catch (error) {
