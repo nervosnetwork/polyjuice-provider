@@ -102,3 +102,23 @@ test.serial("call getBlockNumber at second latest block", async (t) => {
   });
   t.is(secondLatestBlockNumber.toString(), blockNumber.toString());
 });
+
+test.serial(
+  "compare getBlockTimestamp at pending and second latest block",
+  async (t) => {
+    const contract = new Contract(
+      contractAddress,
+      blockParameterArtifact.abi,
+      deployer
+    );
+    const latestBlockNumber = await contract.provider.getBlockNumber();
+    const secondLatestBlockNumber = latestBlockNumber - 1;
+    const pendingBlockTimestamp = await contract.currentTimestamp({
+      blockTag: "pending",
+    });
+    const secondLatestBlockTimestamp = await contract.currentTimestamp({
+      blockTag: "0x" + secondLatestBlockNumber.toString(16),
+    });
+    t.true(pendingBlockTimestamp - secondLatestBlockTimestamp > 0);
+  }
+);
