@@ -26,6 +26,7 @@ import {
   buildDeployProcess,
   convertContractConstructorArgs,
   DeploymentRecords,
+  BlockParameter,
 } from "@polyjuice-provider/base";
 import { AddressMappingItem } from "@polyjuice-provider/godwoken/lib/addressTypes";
 
@@ -249,10 +250,13 @@ export class PolyjuiceHttpProvider {
             gasPrice: gasPrice || POLY_MIN_GAS_PRICE,
           };
 
+          const blockParameter: BlockParameter | undefined = params[1];
+
           const return_data = await executeCallTransaction(
             this.abi,
             this.godwoker,
-            t
+            t,
+            blockParameter
           );
           const res = {
             jsonrpc: payload.jsonrpc,

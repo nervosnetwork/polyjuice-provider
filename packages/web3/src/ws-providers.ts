@@ -18,6 +18,7 @@ import {
   DeploymentRecords,
   buildDeployProcess,
   DEFAULT_EMPTY_ETH_ADDRESS,
+  BlockParameter,
 } from "@polyjuice-provider/base";
 import {
   errors,
@@ -249,10 +250,13 @@ export class PolyjuiceWebsocketProvider extends Web3WsProvider {
               gasPrice: gasPrice || POLY_MIN_GAS_PRICE,
             };
 
+            const blockParameter: BlockParameter | undefined = params[1];
+
             const return_data = await executeCallTransaction(
               this.abi,
               this.godwoker,
-              t
+              t,
+              blockParameter
             );
             const res = {
               jsonrpc: payload.jsonrpc,

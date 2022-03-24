@@ -13,7 +13,7 @@ import {
   DeploymentRecords,
 } from "./util";
 import { serializeAbiItem } from "./abi";
-import { SigningMessageType } from "./types";
+import { BlockParameter, SigningMessageType } from "./types";
 import {
   EMPTY_ABI_ITEM_SERIALIZE_STR,
   DEFAULT_EMPTY_ETH_ADDRESS,
@@ -59,12 +59,19 @@ export async function buildSendTransaction(
 export async function executeCallTransaction(
   abi: Abi,
   godwoker: Godwoker,
-  tx: EthTransaction
+  tx: EthTransaction,
+  blockParameter?: BlockParameter
 ): Promise<string> {
   const process: Process = {
     type: ProcessTransactionType.call,
   };
-  const callReturnData = await buildProcess(abi, godwoker, tx, process);
+  const callReturnData = await buildProcess(
+    abi,
+    godwoker,
+    tx,
+    process,
+    blockParameter
+  );
   if (typeof callReturnData !== "string")
     throw new Error("execute callTransaction end up with non-string return!");
 
@@ -183,7 +190,8 @@ export async function buildProcess(
   abi: Abi,
   godwoker: Godwoker,
   tx: EthTransaction,
-  process: Process
+  process: Process,
+  blockParameter?: BlockParameter
 ): Promise<HexString | RawL2Transaction> {
   if (!tx.from && process.type === ProcessTransactionType.send) {
     throw new Error("tx.from can not be missing in sendTransaction!");
@@ -274,7 +282,8 @@ export async function buildProcess(
         serializedAbiItem
       );
       const run_result = await godwoker.poly_executeRawL2Transaction(
-        polyRawL2Tx
+        polyRawL2Tx,
+        blockParameter
       );
 
       const abi_item = abi.get_interested_abi_item_by_encoded_data(tx.data);

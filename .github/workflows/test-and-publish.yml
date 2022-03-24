@@ -41,7 +41,7 @@ jobs:
         with:
           repository: RetricSu/godwoken-kicker
           path: tools/kicker/
-          ref: master
+          ref: develop
 
       - name: Cache Kicker cache folder
         uses: john-shaffer/cache@sudo-tar
@@ -95,14 +95,15 @@ jobs:
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
 
-      - name: Node Cache
-        uses: actions/cache@v2
-        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
+      # Uncomment after fix: https://github.com/actions/runner/issues/449
+      # - name: Node Cache
+      #   uses: actions/cache@v2
+      #   id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+      #   with:
+      #     path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+      #     key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-yarn-
 
       - name: build and test
         run: yarn && yarn build && yarn test
