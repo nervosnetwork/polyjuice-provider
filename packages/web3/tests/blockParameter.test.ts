@@ -51,28 +51,33 @@ test.serial("deploy_test_contract", async (t) => {
 
 test.serial("call getBlockNumber without blockTag", async (t) => {
   const contract = new Contract(blockParameterArtifact.abi, contractAddress);
-  const latestBlockNumber = await web3.eth.getBlockNumber(); // default BlockTag should use "latest"
-  const blockNumber = await contract.methods.currentBlockNumber().call();
-  t.is(latestBlockNumber.toString(), blockNumber.toString());
+  const latestBlockNumber = await web3.eth.getBlockNumber();
+  const expectPendingBlockNumber = latestBlockNumber + 1;
+  // default BlockTag should use "latest",
+  // which is the same with "pending" in godwoken
+  const pendingBlockNumber = await contract.methods.currentBlockNumber().call();
+  t.is(expectPendingBlockNumber.toString(), pendingBlockNumber.toString());
 });
 
 test.serial("call getBlockNumber at latest", async (t) => {
   const contract = new Contract(blockParameterArtifact.abi, contractAddress);
   const latestBlockNumber = await web3.eth.getBlockNumber();
-  const blockNumber = await contract.methods
+  const expectPendingBlockNumber = latestBlockNumber + 1;
+  // "latest" is the same with "pending" in godwoken
+  const pendingBlockNumber = await contract.methods
     .currentBlockNumber()
     .call({}, "latest");
-  t.is(latestBlockNumber.toString(), blockNumber.toString());
+  t.is(expectPendingBlockNumber.toString(), pendingBlockNumber.toString());
 });
 
 test.serial("call getBlockNumber at pending", async (t) => {
   const contract = new Contract(blockParameterArtifact.abi, contractAddress);
-  // pending is the same with latest in godwoken
-  const pendingBlockNumber = await web3.eth.getBlockNumber();
-  const blockNumber = await contract.methods
+  const latestBlockNumber = await web3.eth.getBlockNumber();
+  const expectPendingBlockNumber = latestBlockNumber + 1;
+  const pendingBlockNumber = await contract.methods
     .currentBlockNumber()
     .call({}, "pending");
-  t.is(pendingBlockNumber.toString(), blockNumber.toString());
+  t.is(expectPendingBlockNumber.toString(), pendingBlockNumber.toString());
 });
 
 test.serial("call getBlockNumber at second latest block", async (t) => {
