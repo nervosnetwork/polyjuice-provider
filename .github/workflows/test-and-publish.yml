@@ -41,7 +41,7 @@ jobs:
         with:
           repository: RetricSu/godwoken-kicker
           path: tools/kicker/
-          ref: master
+          ref: develop
 
       - name: Cache Kicker cache folder
         uses: john-shaffer/cache@sudo-tar
