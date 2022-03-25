@@ -453,7 +453,7 @@ export function _wrapTransaction(
         );
       } catch (error) {
         console.log(
-          `instant-finality failed: unable to fetch ${tx.hash} tx receipt under ${WAIT_TRANSACTION_TIMEOUT_MILSECS} ms. will continue fetch the tx receipt.`
+          `instant-finality failed: unable to fetch ${tx.hash} tx receipt under ${WAIT_TRANSACTION_TIMEOUT_MILSECS} ms, will continue to fetch the tx receipt.`
         );
       }
     }
