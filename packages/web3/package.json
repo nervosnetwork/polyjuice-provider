@@ -49,7 +49,6 @@
     "babel-plugin-transform-runtime": "^6.23.0",
     "browser-env": "^3.3.0",
     "browserify": "^17.0.0",
-    "cross-fetch": "^3.1.4",
     "crypto-browserify": "^3.12.0",
     "dotenv": "^10.0.0",
     "husky": "^6.0.0",
