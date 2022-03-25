@@ -3320,7 +3320,7 @@ ethereumjs-util@^6.0.0, ethereumjs-util@^6.1.0, ethereumjs-util@^6.2.1:
 
 ethereumjs-util@^7.0.10:
   version "7.0.10"
-  resolved "https://registry.npm.taobao.org/ethereumjs-util/download/ethereumjs-util-7.0.10.tgz#5fb7b69fa1fda0acc59634cf39d6b0291180fc1f"
+  resolved "https://registry.yarnpkg.org/ethereumjs-util/download/ethereumjs-util-7.0.10.tgz#5fb7b69fa1fda0acc59634cf39d6b0291180fc1f"
   integrity sha1-X7e2n6H9oKzFljTPOdawKRGA/B8=
   dependencies:
     "@types/bn.js" "^5.1.0"
@@ -3565,7 +3565,7 @@ fast-levenshtein@^2.0.6, fast-levenshtein@~2.0.6:
 
 fast-safe-stringify@^2.0.6:
   version "2.0.7"
-  resolved "https://registry.npm.taobao.org/fast-safe-stringify/download/fast-safe-stringify-2.0.7.tgz#124aa885899261f68aedb42a7c080de9da608743"
+  resolved "https://registry.yarnpkg.org/fast-safe-stringify/download/fast-safe-stringify-2.0.7.tgz#124aa885899261f68aedb42a7c080de9da608743"
   integrity sha1-EkqohYmSYfaK7bQqfAgN6dpgh0M=
 
 fast-safe-stringify@^2.0.7:
