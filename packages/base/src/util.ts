@@ -47,7 +47,7 @@ import {
   WAIT_LOOP_INTERVAL_MILSECS,
   DEFAULT_ETH_TO_CKB_SUDT_DECIMAL,
 } from "./constant";
-import { Reader } from "ckb-js-toolkit";
+import { Reader } from "@ckb-lumos/toolkit";
 import crossFetch from "cross-fetch"; // for nodejs compatibility polyfill
 import { Buffer } from "buffer"; // for browser compatibility polyfill
 import {
