@@ -10,7 +10,7 @@
     "lint": "eslint -c ../../.eslintrc.js \"src/**/*.ts\"",
     "clean": "rm -rf lib/* && rm -rf dist/*",
     "build": "tsc",
-    "test": "ava --timeout=100s --serial",
+    "test": "ava --timeout=300s --serial",
     "publish": "npm publish",
     "test-publish": "npm publish --dry-run",
     "pack": "npm pack"
