@@ -20,7 +20,7 @@ import {
   hexStringToUtfString,
 } from "@polyjuice-provider/godwoken/lib/normalizer";
 import _ from "lodash";
-import { Reader } from "ckb-js-toolkit";
+import { Reader } from "@ckb-lumos/toolkit";
 const Web3EthAbi = require("web3-eth-abi");
 
 export interface MethodIDs {

@@ -35,8 +35,8 @@
     "/schemas"
   ],
   "dependencies": {
-    "@ckb-lumos/base": "0.18.0-rc1",
-    "ckb-js-toolkit": "^0.9.3",
+    "@ckb-lumos/base": "0.18.0-rc6",
+    "@ckb-lumos/toolkit": "0.18.0-rc6",
     "immutable": "^4.0.0-rc.12",
     "keccak256": "^1.0.2"
   }

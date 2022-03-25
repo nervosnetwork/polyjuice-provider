@@ -1,5 +1,5 @@
 import { Hash, HexNumber, HexString, Script } from "@ckb-lumos/base";
-import { normalizers, Reader } from "ckb-js-toolkit";
+import { normalizers, Reader } from "@ckb-lumos/toolkit";
 import { L2Transaction, WithdrawalRequest } from "../index";
 import {
   AddressMapping,

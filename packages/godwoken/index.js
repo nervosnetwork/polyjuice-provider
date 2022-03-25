@@ -1,4 +1,4 @@
-const { RPC, Reader } = require("ckb-js-toolkit");
+const { RPC, Reader } = require("@ckb-lumos/toolkit");
 const { utils } = require("@ckb-lumos/base");
 const keccak256 = require("keccak256");
 const {
