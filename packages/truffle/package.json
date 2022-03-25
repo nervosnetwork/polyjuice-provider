@@ -1,6 +1,6 @@
 {
   "name": "@polyjuice-provider/truffle",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "main": "lib/index.js",
   "license": "MIT",
   "author": "RetricSu <inneverland2013@gmail.com>",
@@ -59,7 +59,7 @@
   },
   "dependencies": {
     "@ckb-lumos/toolkit": "0.18.0-rc6",
-    "@polyjuice-provider/base": "0.1.4",
+    "@polyjuice-provider/base": "0.1.5",
     "@truffle/hdwallet-provider": "^1.7.0",
     "@trufflesuite/web3-provider-engine": "15.0.14",
     "ethereumjs-util": "6.1.0"
